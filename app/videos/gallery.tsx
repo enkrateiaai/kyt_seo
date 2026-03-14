@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 
 interface Video {
   id: string
@@ -17,6 +17,15 @@ interface Playlist {
   page?: number
 }
 
+interface SearchResult {
+  id: string
+  title: string
+  thumbnail: string
+  excerpt: string
+  matchStart: number
+  matchEnd: number
+}
+
 interface Props {
   isMember: boolean
 }
@@ -27,8 +36,31 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [activeVideo, setActiveVideo] = useState<Video | null>(null)
   const [activePlaylistId, setActivePlaylistId] = useState<number | null>(null)
+  const [query, setQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
+  const [searchLoading, setSearchLoading] = useState(false)
   const playerRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
+
+  const handleSearch = useCallback((value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!value.trim() || value.trim().length < 2) {
+      setSearchResults(null)
+      setSearchLoading(false)
+      return
+    }
+    setSearchLoading(true)
+    debounceRef.current = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(value.trim())}`)
+        .then(r => r.json())
+        .then((data: SearchResult[]) => {
+          setSearchResults(data)
+          setSearchLoading(false)
+        })
+        .catch(() => setSearchLoading(false))
+    }, 350)
+  }, [])
 
   useEffect(() => {
     fetch('/api/playlists')
@@ -84,6 +116,159 @@ export default function YouTubeGallery({ isMember }: Props) {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .v-search {
+          position: relative;
+          margin-bottom: 40px;
+        }
+        .v-search__icon {
+          position: absolute;
+          left: 16px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #9B8E7E;
+          pointer-events: none;
+          font-size: 16px;
+          line-height: 1;
+        }
+        .v-search__input {
+          width: 100%;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 15px;
+          padding: 14px 44px 14px 44px;
+          border: 1px solid #DDD5C8;
+          border-radius: 100px;
+          background: #fff;
+          color: #2C2416;
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+          box-shadow: 0 2px 8px rgba(44,36,22,0.04);
+        }
+        .v-search__input::placeholder { color: #B8AFA6; }
+        .v-search__input:focus {
+          border-color: #C4873B;
+          box-shadow: 0 0 0 3px rgba(196,135,59,0.12), 0 2px 8px rgba(44,36,22,0.04);
+        }
+        .v-search__clear {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #EDE8E0;
+          border: none;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #6B5D4F;
+          font-size: 12px;
+          transition: background 0.2s;
+        }
+        .v-search__clear:hover { background: #DDD5C8; }
+        .v-search__spinner {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 18px; height: 18px;
+          border: 2px solid #EDE8E0;
+          border-top-color: #C4873B;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+        }
+
+        .v-results { animation: fadeIn 0.25s ease; }
+        .v-results__meta {
+          font-size: 12px;
+          color: #9B8E7E;
+          margin-bottom: 20px;
+          letter-spacing: 0.03em;
+        }
+        .v-results__meta strong { color: #6B5D4F; }
+        .v-results__empty {
+          text-align: center;
+          padding: 60px 20px;
+          color: #9B8E7E;
+          font-size: 14px;
+        }
+        .v-results__empty-icon { font-size: 32px; margin-bottom: 12px; }
+
+        .v-result {
+          display: flex;
+          gap: 16px;
+          padding: 16px;
+          background: #fff;
+          border: 1px solid #EDE8E0;
+          border-radius: 12px;
+          margin-bottom: 12px;
+          text-decoration: none;
+          color: inherit;
+          transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+          animation: fadeIn 0.3s ease;
+        }
+        .v-result:hover {
+          border-color: #C4873B;
+          box-shadow: 0 4px 16px rgba(44,36,22,0.08);
+          transform: translateY(-1px);
+        }
+        .v-result__thumb {
+          flex-shrink: 0;
+          width: 140px;
+          height: 79px;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #F3EDE4;
+        }
+        .v-result__thumb img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .v-result__body {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .v-result__title {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 1.05rem;
+          font-weight: 400;
+          color: #2C2416;
+          margin: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .v-result__excerpt {
+          font-size: 13px;
+          color: #6B5D4F;
+          line-height: 1.55;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .v-result__excerpt mark {
+          background: rgba(196,135,59,0.2);
+          color: #2C2416;
+          border-radius: 2px;
+          padding: 0 2px;
+          font-weight: 500;
+        }
+        .v-result__cta {
+          font-size: 12px;
+          color: #C4873B;
+          font-weight: 500;
+          margin-top: auto;
+        }
+        @media (max-width: 480px) {
+          .v-result__thumb { width: 100px; height: 56px; }
+        }
 
         .v-container { max-width: 1100px; margin: 0 auto; }
 
@@ -369,8 +554,70 @@ export default function YouTubeGallery({ isMember }: Props) {
           )}
         </div>
 
+        {/* Search */}
+        <div className="v-search">
+          <span className="v-search__icon">⌕</span>
+          <input
+            className="v-search__input"
+            type="text"
+            placeholder="In Transkripten suchen…"
+            value={query}
+            onChange={e => {
+              setQuery(e.target.value)
+              handleSearch(e.target.value)
+            }}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {searchLoading && <div className="v-search__spinner" />}
+          {!searchLoading && query && (
+            <button
+              className="v-search__clear"
+              onClick={() => { setQuery(''); setSearchResults(null) }}
+              aria-label="Suche zurücksetzen"
+            >✕</button>
+          )}
+        </div>
+
+        {/* Search Results */}
+        {searchResults !== null && (
+          <div className="v-results">
+            {searchResults.length > 0 ? (
+              <>
+                <p className="v-results__meta">
+                  <strong>{searchResults.length} {searchResults.length === 1 ? 'Ergebnis' : 'Ergebnisse'}</strong> für „{query}"
+                </p>
+                {searchResults.map(result => {
+                  const before = result.excerpt.slice(0, result.matchStart)
+                  const match = result.excerpt.slice(result.matchStart, result.matchEnd)
+                  const after = result.excerpt.slice(result.matchEnd)
+                  return (
+                    <a key={result.id} href={`/videos/${result.id}`} className="v-result">
+                      <div className="v-result__thumb">
+                        <img src={result.thumbnail} alt={result.title} loading="lazy" />
+                      </div>
+                      <div className="v-result__body">
+                        <p className="v-result__title">{result.title}</p>
+                        <p className="v-result__excerpt">
+                          {before}<mark>{match}</mark>{after}
+                        </p>
+                        <span className="v-result__cta">Zur Seite →</span>
+                      </div>
+                    </a>
+                  )
+                })}
+              </>
+            ) : (
+              <div className="v-results__empty">
+                <div className="v-results__empty-icon">🔍</div>
+                <p>Kein Treffer für „{query}"</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Player */}
-        {activeVideo && (
+        {activeVideo && !searchResults && (
           <div className="v-player" ref={playerRef}>
             <div className="v-player__iframe-wrap">
               <iframe
@@ -387,7 +634,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         )}
 
         {/* Global loading */}
-        {playlists.length === 0 && (
+        {playlists.length === 0 && !searchResults && (
           <div className="v-loading-global">
             <div className="v-spinner" />
             Lade Playlists…
@@ -395,7 +642,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         )}
 
         {/* Playlists */}
-        {playlists.map(playlist => {
+        {!searchResults && playlists.map(playlist => {
           const page = playlist.page || 0
           const videos = playlist.videos || []
           const totalPages = Math.ceil(videos.length / PAGE_SIZE)
