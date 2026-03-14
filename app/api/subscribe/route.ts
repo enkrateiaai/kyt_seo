@@ -11,11 +11,17 @@ export async function POST(req: NextRequest) {
   const secretKey = process.env.MAILJET_SECRET_KEY
   const listId = process.env.MAILJET_LIST_ID
 
+  if (!apiKey || !secretKey || !listId) {
+    console.error('Missing env vars:', { apiKey: !!apiKey, secretKey: !!secretKey, listId: !!listId })
+    return NextResponse.json({ error: 'Konfigurationsfehler' }, { status: 500 })
+  }
+
   try {
+    const credentials = btoa(`${apiKey}:${secretKey}`)
     const res = await fetch(`https://api.mailjet.com/v3/REST/contactslist/${listId}/managecontact`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from(`${apiKey}:${secretKey}`).toString('base64'),
+        'Authorization': `Basic ${credentials}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -25,14 +31,14 @@ export async function POST(req: NextRequest) {
     })
 
     if (!res.ok) {
-      const err = await res.json()
-      console.error('Mailjet error:', err)
+      const err = await res.text()
+      console.error('Mailjet error:', res.status, err)
       return NextResponse.json({ error: 'Fehler beim Eintragen' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (e) {
-    console.error(e)
+    console.error('Subscribe catch:', e)
     return NextResponse.json({ error: 'Server-Fehler' }, { status: 500 })
   }
 }
