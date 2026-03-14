@@ -100,7 +100,7 @@ export default async function VideosPage() {
           {user ? (
             <>
               <span className="v-nav__email">{email}</span>
-              <SignOutButton redirectUrl="/">
+              <SignOutButton redirectUrl="https://kundaliniyogatribe.de">
                 <button className="v-btn">Abmelden</button>
               </SignOutButton>
             </>
