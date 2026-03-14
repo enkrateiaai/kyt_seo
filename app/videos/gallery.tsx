@@ -329,6 +329,35 @@ export default function YouTubeGallery({ isMember }: Props) {
           font-size: 11px;
           color: #9B8E7E;
         }
+
+        .v-item { display: flex; flex-direction: column; }
+        .v-item__meta {
+          padding: 8px 2px 0;
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .v-item__title {
+          font-size: 12px;
+          color: #6B5D4F;
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          flex: 1;
+        }
+        .v-item__link {
+          font-size: 11px;
+          color: #C4873B;
+          text-decoration: none;
+          white-space: nowrap;
+          flex-shrink: 0;
+          font-weight: 500;
+          transition: opacity 0.2s;
+        }
+        .v-item__link:hover { opacity: 0.7; }
       `}</style>
 
       <div className="v-container">
@@ -410,23 +439,34 @@ export default function YouTubeGallery({ isMember }: Props) {
                     const isActive = activeVideo?.id === video.id && activePlaylistId === playlist.id
 
                     return (
-                      <div
-                        key={video.id}
-                        onClick={() => handleVideoClick(video, playlist)}
-                        className={`v-card${isLocked ? ' v-card--locked' : ''}${isActive ? ' v-card--active' : ''}`}
-                      >
-                        <img src={video.thumbnail} alt={video.title} loading="lazy" />
+                      <div key={video.id} className="v-item">
+                        <div
+                          onClick={() => handleVideoClick(video, playlist)}
+                          className={`v-card${isLocked ? ' v-card--locked' : ''}${isActive ? ' v-card--active' : ''}`}
+                        >
+                          <img src={video.thumbnail} alt={video.title} loading="lazy" />
 
-                        {isLocked && (
-                          <div className="v-card__lock">
-                            <div className="v-card__lock-icon">🔒</div>
-                            <span className="v-card__lock-text">Mitglieder</span>
-                          </div>
-                        )}
-                        {isActive && <span className="v-card__playing">▶ Läuft</span>}
-                        {globalIndex === 0 && !isMember && (
-                          <span className="v-card__free">Gratis</span>
-                        )}
+                          {isLocked && (
+                            <div className="v-card__lock">
+                              <div className="v-card__lock-icon">🔒</div>
+                              <span className="v-card__lock-text">Mitglieder</span>
+                            </div>
+                          )}
+                          {isActive && <span className="v-card__playing">▶ Läuft</span>}
+                          {globalIndex === 0 && !isMember && (
+                            <span className="v-card__free">Gratis</span>
+                          )}
+                        </div>
+                        <div className="v-item__meta">
+                          <span className="v-item__title">{video.title}</span>
+                          <a
+                            href={`/videos/${video.id}`}
+                            className="v-item__link"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            Zur Seite →
+                          </a>
+                        </div>
                       </div>
                     )
                   })}
