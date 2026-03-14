@@ -492,7 +492,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
                 synth.cancel();
                 var utt = new SpeechSynthesisUtterance(getPlainText());
                 utt.lang   = 'de-DE';
-                utt.rate   = 0.95;
+                utt.rate   = 0.75;
                 utt.pitch  = 1.0;
                 utt.volume = 1.0;
                 var v = getVoice(); if (v) utt.voice = v;
