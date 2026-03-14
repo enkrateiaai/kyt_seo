@@ -594,7 +594,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
             <p className="vd-section-kicker">Transkription</p>
             <h2 className="vd-section-title">Videoinhalt</h2>
 
-            {transcript && !isLocked && (
+            {transcript && (
               <div className="vd-tts">
                 <button id="tts-play" className="vd-tts__btn" title="Vorlesen">
                   <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 3.5v9l10-4.5L3 3.5z"/></svg>
@@ -611,22 +611,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {isLocked ? (
-              <div className="vd-content-lock">
-                <div className="vd-content-lock__blur">
-                  <div className="vd-transcript">
-                    <p>Diese Meditation beginnt mit einer tiefen Erdungsübung. Du verbindest dich mit deinem energetischen Nabel und setzt eine persönliche Intention für die Praxis. Wir arbeiten heute mit Mudras, Mantras und Feueratem, um innere Spannung zu lösen und in Präsenz zu kommen...</p>
-                  </div>
-                </div>
-                <div className="vd-content-lock__gate">
-                  <p className="vd-content-lock__label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                    Vollständiges Transkript nur für Mitglieder
-                  </p>
-                  <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" className="vd-lock__btn vd-lock__btn--primary" style={{display:'inline-block'}}>Mitglied werden →</a>
-                </div>
-              </div>
-            ) : transcript ? (
+            {transcript ? (
               <div id="vd-transcript-text" className="vd-transcript" dangerouslySetInnerHTML={{ __html: transcript as string }} />
             ) : (
               <div className="vd-transcript vd-transcript--placeholder">
@@ -696,29 +681,6 @@ export default async function VideoDetailPage({ params }: PageProps) {
           <div className="vd-glossary">
             <p className="vd-section-kicker">Begriffe</p>
             <h2 className="vd-section-title">Kundalini Glossar</h2>
-            {isLocked ? (
-              <div className="vd-content-lock">
-                <div className="vd-content-lock__blur">
-                  <div className="vd-glossary-grid" style={{pointerEvents:'none'}}>
-                    {[{term:'Sat Nam',origin:'Sanskrit · Urmantra'},{term:'Pranayama',origin:'Sanskrit · Atemübung'},{term:'Mudra',origin:'Sanskrit · Handgeste'},{term:'Kriya',origin:'Sanskrit · Übungssequenz'}].map(g => (
-                      <div key={g.term} className="vd-glossary-item">
-                        <div className="vd-glossary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/></svg></div>
-                        <div className="vd-glossary-term">{g.term}</div>
-                        <div className="vd-glossary-origin">{g.origin}</div>
-                        <div className="vd-glossary-def">████████ ██████ ████ ████████ ███████ ██████ ████.</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="vd-content-lock__gate">
-                  <p className="vd-content-lock__label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                    Glossar nur für Mitglieder
-                  </p>
-                  <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" className="vd-lock__btn vd-lock__btn--primary" style={{display:'inline-block'}}>Mitglied werden →</a>
-                </div>
-              </div>
-            ) : (
             <div className="vd-glossary-grid">
 
               <div className="vd-glossary-item">
@@ -894,7 +856,6 @@ export default async function VideoDetailPage({ params }: PageProps) {
               </div>
 
             </div>
-            )}
           </div>
         </div>
       </div>
