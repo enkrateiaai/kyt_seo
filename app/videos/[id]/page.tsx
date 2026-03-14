@@ -302,6 +302,57 @@ export default async function VideoDetailPage({ params }: PageProps) {
           color: #9B8E7E;
           font-style: italic;
         }
+
+        .vd-glossary {
+          margin-top: 52px;
+        }
+
+        .vd-glossary-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        @media (max-width: 600px) {
+          .vd-glossary-grid { grid-template-columns: 1fr; }
+        }
+
+        .vd-glossary-item {
+          background: #fff;
+          border: 1px solid #EDE8E0;
+          border-radius: 10px;
+          padding: 16px 18px;
+        }
+
+        .vd-glossary-term {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 1rem;
+          font-weight: 600;
+          color: #2C2416;
+          margin-bottom: 4px;
+        }
+
+        .vd-glossary-origin {
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #C4873B;
+          margin-bottom: 6px;
+        }
+
+        .vd-glossary-def {
+          font-size: 13px;
+          color: #6B5D4F;
+          line-height: 1.6;
+        }
+
+        .vd-glossary-def a {
+          color: #C4873B;
+          text-decoration: underline;
+          text-decoration-color: rgba(196,135,59,0.35);
+          text-underline-offset: 2px;
+        }
+        .vd-glossary-def a:hover { color: #A66E2B; }
       `}</style>
 
       <script
@@ -363,6 +414,86 @@ export default async function VideoDetailPage({ params }: PageProps) {
                 Transkription folgt in Kürze.
               </div>
             )}
+          </div>
+
+          <div className="vd-glossary">
+            <p className="vd-section-kicker">Begriffe</p>
+            <h2 className="vd-section-title">Kundalini Glossar</h2>
+            <div className="vd-glossary-grid">
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Sat Nam</div>
+                <div className="vd-glossary-origin">Sanskrit · Urmantra</div>
+                <div className="vd-glossary-def">„Ich bin Wahrheit." Das Grundmantra des <a href="https://kundaliniyogatribe.de/">Kundalini Yoga</a>. Sat steht für Wahrheit, Nam für Identität. Es wird beim Ein- und Ausatmen still wiederholt und verankert das Bewusstsein im gegenwärtigen Moment.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Anahata</div>
+                <div className="vd-glossary-origin">Sanskrit · 4. Chakra</div>
+                <div className="vd-glossary-def">Das Herzchakra – Energiezentrum in der Mitte der Brust. Anahata bedeutet „unberührt" oder „unverletzt". Es ist das Zentrum von Liebe, Mitgefühl, Kreativität und Verbindung. Viele <a href="https://kundaliniyogatribe.de/kriyas">Kriyas</a> zielen darauf ab, dieses Chakra zu öffnen.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Pranayama</div>
+                <div className="vd-glossary-origin">Sanskrit · Atemübung</div>
+                <div className="vd-glossary-def">„Prana" bedeutet Lebensenergie, „Yama" Kontrolle oder Ausdehnung. Pranayama bezeichnet gezielte Atemtechniken, die das Nervensystem regulieren, die Lungen stärken und den Energiefluss im Körper lenken. Grundbaustein jeder Kundalini-Praxis.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Feueratem (Breath of Fire)</div>
+                <div className="vd-glossary-origin">Kundalini Yoga · Atemtechnik</div>
+                <div className="vd-glossary-def">Schnelle, gleichmäßige Atemstöße durch die Nase – Einatem und Ausatem gleich lang. Der Bauch pumpt aktiv. Feueratem reinigt das Blut, weckt die Energie, stärkt das Nervensystem und löst emotionale Blockaden. Nicht geeignet in der Schwangerschaft.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Kriya</div>
+                <div className="vd-glossary-origin">Sanskrit · Übungssequenz</div>
+                <div className="vd-glossary-def">Eine vollständige Abfolge von Körperhaltungen, Atemübungen und Mantras, die als Einheit wirken. Jede <a href="https://kundaliniyogatribe.de/kriyas">Kriya</a> hat eine spezifische Wirkung – etwa für das Nervensystem, die Organe oder emotionale Themen wie Angst oder Kreativität.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Mudra</div>
+                <div className="vd-glossary-origin">Sanskrit · Handgeste</div>
+                <div className="vd-glossary-def">Eine symbolische Haltung der Hände oder des Körpers. Mudras lenken die Energieströme (Prana) im Körper. Bekannte Mudras im Kundalini Yoga: Gyan Mudra (Weisheit), Anjali Mudra (Dankbarkeit), Shuni Mudra (Geduld).</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Shavasana</div>
+                <div className="vd-glossary-origin">Sanskrit · Entspannungshaltung</div>
+                <div className="vd-glossary-def">„Totenhaltung" – flach auf dem Rücken liegend, Arme locker neben dem Körper, Handflächen nach oben. In dieser Haltung integriert das Nervensystem alle Eindrücke der Praxis. Oft als wichtigste Übung der ganzen Stunde bezeichnet.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Chakra</div>
+                <div className="vd-glossary-origin">Sanskrit · Energiezentrum</div>
+                <div className="vd-glossary-def">„Rad" oder „Kreis". Im Yoga bezeichnet es eines der sieben Hauptenergiezentren entlang der Wirbelsäule – vom Wurzelchakra (Muladhara) bis zum Kronenchakra (Sahasrara). Kundalini-Energie steigt durch diese Zentren auf.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Kundalini</div>
+                <div className="vd-glossary-origin">Sanskrit · Lebensenergie</div>
+                <div className="vd-glossary-def">„Die Gewickelte" – eine schlafende Energie, die bildlich am unteren Ende der Wirbelsäule (Wurzelchakra) ruht. <a href="https://kundaliniyogatribe.de/">Kundalini Yoga</a> weckt diese Energie durch Kriyas, Atemübungen und Mantras, damit sie die Wirbelsäule aufsteigen und das Bewusstsein erweitern kann.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Prana</div>
+                <div className="vd-glossary-origin">Sanskrit · Lebensatem</div>
+                <div className="vd-glossary-def">Die universelle Lebensenergie, die in allem vorhanden ist. Im menschlichen Körper fließt Prana durch feinstoffliche Kanäle (Nadis). Pranayama-Übungen stärken und lenken diese Energie. Ein gut gefülltes Pranafeld zeigt sich in Vitalität, Klarheit und Kreativität.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Drittes Auge (Ajna)</div>
+                <div className="vd-glossary-origin">Sanskrit · 6. Chakra</div>
+                <div className="vd-glossary-def">Das Stirnchakra, Sitz der Intuition und inneren Wahrnehmung. Im Kundalini Yoga richtet man den inneren Blick oft auf diesen Punkt – den Raum zwischen den Augenbrauen. Dies fördert Fokus, Klarheit und die Verbindung zum höheren Selbst.</div>
+              </div>
+
+              <div className="vd-glossary-item">
+                <div className="vd-glossary-term">Ego Eradicator</div>
+                <div className="vd-glossary-origin">Kundalini Yoga · Übung</div>
+                <div className="vd-glossary-def">Eine klassische Kundalini-Übung: Arme in 60°-Winkel gehoben, Daumen nach oben, Feueratem. Sie öffnet die Lungen vollständig, stärkt das Nervensystem und hilft, einschränkende Denkmuster des Egos aufzulösen – ein Schlüssel für kreatives Denken und innere Freiheit.</div>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
