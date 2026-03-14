@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const credentials = btoa(`${apiKey}:${secretKey}`)
+    const credentials = Buffer.from(`${apiKey}:${secretKey}`).toString('base64')
     const res = await fetch(`https://api.mailjet.com/v3/REST/contactslist/${listId}/managecontact`, {
       method: 'POST',
       headers: {
@@ -39,6 +39,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error('Subscribe catch:', e)
-    return NextResponse.json({ error: 'Server-Fehler' }, { status: 500 })
+    return NextResponse.json({ error: 'Server-Fehler', detail: String(e) }, { status: 500 })
   }
 }
