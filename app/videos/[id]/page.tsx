@@ -73,14 +73,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function VideoDetailPage({ params }: PageProps) {
   const { id } = await params
-  const [user, video, transcript, customTitle] = await Promise.all([
+  const [user, video, transcript, customTitle, isFree] = await Promise.all([
     currentUser(),
     fetchVideoDetails(id),
     redis.get(`transcript:${id}`),
     redis.get(`title:${id}`),
+    redis.get(`free:${id}`),
   ])
 
   const email = user?.emailAddresses[0]?.emailAddress
+  const isMember = user?.publicMetadata?.role === 'member'
+  const isLocked = !isFree && !isMember
   const title = (customTitle as string | null) ?? video?.title ?? 'Kundalini Yoga Video'
   const description = video?.description ?? ''
   const publishedAt = video?.publishedAt ?? new Date().toISOString()
@@ -398,6 +401,122 @@ export default async function VideoDetailPage({ params }: PageProps) {
         .vd-tts__btn--active:hover { background: #A66E2B; border-color: #A66E2B; color: #fff; }
         .vd-tts__btn:disabled { opacity: 0.4; cursor: default; }
         .vd-tts__btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+        .vd-lock {
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid #DDD5C8;
+          background: #000;
+          box-shadow: 0 4px 24px rgba(44,36,22,0.08);
+          margin-bottom: 32px;
+          position: relative;
+        }
+        .vd-lock__ratio {
+          position: relative;
+          padding-bottom: 56.25%;
+          height: 0;
+        }
+        .vd-lock__thumb {
+          position: absolute;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          object-fit: cover;
+          filter: blur(6px) brightness(0.4);
+        }
+        .vd-lock__overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          text-align: center;
+          padding: 24px;
+        }
+        .vd-lock__icon {
+          width: 56px; height: 56px;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .vd-lock__icon svg { width: 24px; height: 24px; color: #fff; }
+        .vd-lock__text {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 1.2rem;
+          font-weight: 400;
+          color: #fff;
+        }
+        .vd-lock__sub {
+          font-size: 13px;
+          color: rgba(255,255,255,0.6);
+          max-width: 340px;
+        }
+        .vd-lock__actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          justify-content: center;
+          margin-top: 4px;
+        }
+        .vd-lock__btn {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          padding: 9px 22px;
+          border-radius: 100px;
+          cursor: pointer;
+          text-decoration: none;
+          transition: all 0.2s;
+        }
+        .vd-lock__btn--primary {
+          background: #C4873B;
+          border: 1px solid #C4873B;
+          color: #fff;
+        }
+        .vd-lock__btn--primary:hover { background: #A66E2B; }
+        .vd-lock__btn--secondary {
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.3);
+          color: #fff;
+        }
+        .vd-lock__btn--secondary:hover { border-color: rgba(255,255,255,0.6); }
+
+        .vd-content-lock {
+          position: relative;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+        .vd-content-lock__blur {
+          filter: blur(4px);
+          pointer-events: none;
+          user-select: none;
+          opacity: 0.5;
+          max-height: 160px;
+          overflow: hidden;
+        }
+        .vd-content-lock__gate {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, transparent 0%, rgba(250,247,242,0.95) 40%, #FAF7F2 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-end;
+          padding: 24px;
+          gap: 10px;
+        }
+        .vd-content-lock__label {
+          font-size: 13px;
+          color: #6B5D4F;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .vd-content-lock__label svg { width: 14px; height: 14px; color: #C4873B; }
       `}</style>
 
       <script
@@ -430,15 +549,37 @@ export default async function VideoDetailPage({ params }: PageProps) {
         <div className="vd-container">
           <a href="/videos" className="vd-back">← Zurück zur Bibliothek</a>
 
-          <div className="vd-embed">
-            <div className="vd-embed__ratio">
-              <iframe
-                src={`https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+          {isLocked ? (
+            <div className="vd-lock">
+              <div className="vd-lock__ratio">
+                <img className="vd-lock__thumb" src={thumbnailUrl} alt={title} />
+                <div className="vd-lock__overlay">
+                  <div className="vd-lock__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
+                  </div>
+                  <p className="vd-lock__text">Nur für Mitglieder</p>
+                  <p className="vd-lock__sub">Dieses Video ist Teil der Mitgliedschaft. Melde dich an oder werde Mitglied, um vollen Zugang zu erhalten.</p>
+                  <div className="vd-lock__actions">
+                    <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" className="vd-lock__btn vd-lock__btn--primary">Mitglied werden →</a>
+                    {!user && <a href="/sign-in" className="vd-lock__btn vd-lock__btn--secondary">Anmelden</a>}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="vd-embed">
+              <div className="vd-embed__ratio">
+                <iframe
+                  src={`https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
 
           <h1 className="vd-title">{title}</h1>
 
@@ -453,7 +594,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
             <p className="vd-section-kicker">Transkription</p>
             <h2 className="vd-section-title">Videoinhalt</h2>
 
-            {transcript && (
+            {transcript && !isLocked && (
               <div className="vd-tts">
                 <button id="tts-play" className="vd-tts__btn" title="Vorlesen">
                   <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 3.5v9l10-4.5L3 3.5z"/></svg>
@@ -470,7 +611,22 @@ export default async function VideoDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {transcript ? (
+            {isLocked ? (
+              <div className="vd-content-lock">
+                <div className="vd-content-lock__blur">
+                  <div className="vd-transcript">
+                    <p>Diese Meditation beginnt mit einer tiefen Erdungsübung. Du verbindest dich mit deinem energetischen Nabel und setzt eine persönliche Intention für die Praxis. Wir arbeiten heute mit Mudras, Mantras und Feueratem, um innere Spannung zu lösen und in Präsenz zu kommen...</p>
+                  </div>
+                </div>
+                <div className="vd-content-lock__gate">
+                  <p className="vd-content-lock__label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    Vollständiges Transkript nur für Mitglieder
+                  </p>
+                  <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" className="vd-lock__btn vd-lock__btn--primary" style={{display:'inline-block'}}>Mitglied werden →</a>
+                </div>
+              </div>
+            ) : transcript ? (
               <div id="vd-transcript-text" className="vd-transcript" dangerouslySetInnerHTML={{ __html: transcript as string }} />
             ) : (
               <div className="vd-transcript vd-transcript--placeholder">
@@ -540,6 +696,29 @@ export default async function VideoDetailPage({ params }: PageProps) {
           <div className="vd-glossary">
             <p className="vd-section-kicker">Begriffe</p>
             <h2 className="vd-section-title">Kundalini Glossar</h2>
+            {isLocked ? (
+              <div className="vd-content-lock">
+                <div className="vd-content-lock__blur">
+                  <div className="vd-glossary-grid" style={{pointerEvents:'none'}}>
+                    {[{term:'Sat Nam',origin:'Sanskrit · Urmantra'},{term:'Pranayama',origin:'Sanskrit · Atemübung'},{term:'Mudra',origin:'Sanskrit · Handgeste'},{term:'Kriya',origin:'Sanskrit · Übungssequenz'}].map(g => (
+                      <div key={g.term} className="vd-glossary-item">
+                        <div className="vd-glossary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/></svg></div>
+                        <div className="vd-glossary-term">{g.term}</div>
+                        <div className="vd-glossary-origin">{g.origin}</div>
+                        <div className="vd-glossary-def">████████ ██████ ████ ████████ ███████ ██████ ████.</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="vd-content-lock__gate">
+                  <p className="vd-content-lock__label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    Glossar nur für Mitglieder
+                  </p>
+                  <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" className="vd-lock__btn vd-lock__btn--primary" style={{display:'inline-block'}}>Mitglied werden →</a>
+                </div>
+              </div>
+            ) : (
             <div className="vd-glossary-grid">
 
               <div className="vd-glossary-item">
@@ -715,6 +894,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
               </div>
 
             </div>
+            )}
           </div>
         </div>
       </div>
