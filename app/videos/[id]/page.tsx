@@ -353,6 +353,33 @@ export default async function VideoDetailPage({ params }: PageProps) {
           text-underline-offset: 2px;
         }
         .vd-glossary-def a:hover { color: #A66E2B; }
+
+        .vd-tts {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+        .vd-tts__btn {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          padding: 7px 16px;
+          border-radius: 100px;
+          border: 1px solid #DDD5C8;
+          background: #fff;
+          color: #6B5D4F;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.2s;
+        }
+        .vd-tts__btn:hover { border-color: #C4873B; color: #C4873B; }
+        .vd-tts__btn--active { background: #C4873B; border-color: #C4873B; color: #fff; }
+        .vd-tts__btn--active:hover { background: #A66E2B; border-color: #A66E2B; color: #fff; }
+        .vd-tts__btn:disabled { opacity: 0.4; cursor: default; }
+        .vd-tts__btn svg { width: 13px; height: 13px; flex-shrink: 0; }
       `}</style>
 
       <script
@@ -407,14 +434,90 @@ export default async function VideoDetailPage({ params }: PageProps) {
           <div className="vd-transcript-section">
             <p className="vd-section-kicker">Transkription</p>
             <h2 className="vd-section-title">Videoinhalt</h2>
+
+            {transcript && (
+              <div className="vd-tts">
+                <button id="tts-play" className="vd-tts__btn" title="Vorlesen">
+                  <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 3.5v9l10-4.5L3 3.5z"/></svg>
+                  Vorlesen
+                </button>
+                <button id="tts-pause" className="vd-tts__btn" title="Pause" style={{display:'none'}}>
+                  <svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg>
+                  Pause
+                </button>
+                <button id="tts-stop" className="vd-tts__btn" title="Stopp" style={{display:'none'}}>
+                  <svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="1"/></svg>
+                  Stopp
+                </button>
+              </div>
+            )}
+
             {transcript ? (
-              <div className="vd-transcript" dangerouslySetInnerHTML={{ __html: transcript as string }} />
+              <div id="vd-transcript-text" className="vd-transcript" dangerouslySetInnerHTML={{ __html: transcript as string }} />
             ) : (
               <div className="vd-transcript vd-transcript--placeholder">
                 Transkription folgt in Kürze.
               </div>
             )}
           </div>
+
+          <script dangerouslySetInnerHTML={{ __html: `
+            (function() {
+              var synth = window.speechSynthesis;
+              var playBtn  = document.getElementById('tts-play');
+              var pauseBtn = document.getElementById('tts-pause');
+              var stopBtn  = document.getElementById('tts-stop');
+              if (!playBtn || !synth) return;
+
+              function getVoice() {
+                var voices = synth.getVoices();
+                return voices.find(function(v) { return v.lang.startsWith('de') && (v.name.includes('Google') || v.name.includes('Natural')); })
+                  || voices.find(function(v) { return v.lang.startsWith('de'); })
+                  || voices[0];
+              }
+
+              function getPlainText() {
+                var el = document.getElementById('vd-transcript-text');
+                return el ? el.innerText : '';
+              }
+
+              function setPlaying(active) {
+                playBtn.style.display  = active ? 'none' : 'flex';
+                pauseBtn.style.display = active ? 'flex' : 'none';
+                stopBtn.style.display  = active ? 'flex' : 'none';
+              }
+
+              playBtn.addEventListener('click', function() {
+                if (synth.paused) { synth.resume(); setPlaying(true); return; }
+                synth.cancel();
+                var utt = new SpeechSynthesisUtterance(getPlainText());
+                utt.lang   = 'de-DE';
+                utt.rate   = 0.95;
+                utt.pitch  = 1.0;
+                utt.volume = 1.0;
+                var v = getVoice(); if (v) utt.voice = v;
+                utt.onend = function() { setPlaying(false); };
+                utt.onerror = function() { setPlaying(false); };
+                synth.speak(utt);
+                setPlaying(true);
+              });
+
+              pauseBtn.addEventListener('click', function() {
+                synth.pause();
+                pauseBtn.style.display = 'none';
+                playBtn.style.display  = 'flex';
+                playBtn.querySelector && (playBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor" style="width:13px;height:13px"><path d="M3 3.5v9l10-4.5L3 3.5z"/></svg> Weiter');
+              });
+
+              stopBtn.addEventListener('click', function() {
+                synth.cancel();
+                setPlaying(false);
+                if (playBtn.innerHTML.includes('Weiter')) playBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor" style="width:13px;height:13px"><path d="M3 3.5v9l10-4.5L3 3.5z"/></svg> Vorlesen';
+              });
+
+              synth.onvoiceschanged = function() {};
+            })();
+          ` }} />
 
           <div className="vd-glossary">
             <p className="vd-section-kicker">Begriffe</p>
