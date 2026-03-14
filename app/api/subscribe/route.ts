@@ -7,9 +7,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültige E-Mail-Adresse' }, { status: 400 })
   }
 
-  const apiKey = process.env.MAILJET_API_KEY
-  const secretKey = process.env.MAILJET_SECRET_KEY
-  const listId = process.env.MAILJET_LIST_ID
+  const apiKey = process.env.MAILJET_API_KEY?.trim()
+  const secretKey = process.env.MAILJET_SECRET_KEY?.trim()
+  const listId = process.env.MAILJET_LIST_ID?.trim()
 
   if (!apiKey || !secretKey || !listId) {
     console.error('Missing env vars:', { apiKey: !!apiKey, secretKey: !!secretKey, listId: !!listId })
