@@ -94,7 +94,7 @@ export default async function VideosPage() {
       <nav className="v-nav">
         <a href="https://kundaliniyogatribe.de/" className="v-nav__logo">
           <span className="v-nav__logo-mark">◯</span>
-          Sat Nam Rasayan
+          Kundalini Yoga Tribe
         </a>
         <div className="v-nav__right">
           {user ? (
