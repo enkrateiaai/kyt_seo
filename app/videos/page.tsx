@@ -8,41 +8,111 @@ export default async function VideosPage() {
   const email = user?.emailAddresses[0]?.emailAddress
 
   return (
-    <div>
-      {/* Top bar */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '12px 16px', background: '#06060a', borderBottom: '1px solid #1a1a2e',
-        fontFamily: 'monospace'
-      }}>
-        {user ? (
-          <>
-            <span style={{ fontSize: 11, color: '#444' }}>{email}</span>
-            <SignOutButton>
-              <button style={{
-                background: 'transparent', border: '1px solid #1a1a2e',
-                color: '#555', padding: '6px 14px', borderRadius: 6,
-                fontFamily: 'monospace', fontSize: 11, cursor: 'pointer'
-              }}>
-                Abmelden →
-              </button>
-            </SignOutButton>
-          </>
-        ) : (
-          <div style={{ marginLeft: 'auto' }}>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+          font-family: 'DM Sans', -apple-system, sans-serif;
+          background: #FAF7F2;
+          color: #2C2416;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .v-nav {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          background: #FAF7F2;
+          border-bottom: 1px solid #DDD5C8;
+          padding: 14px 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .v-nav__logo {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          text-decoration: none;
+          color: #2C2416;
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 1.1rem;
+          font-weight: 400;
+        }
+
+        .v-nav__logo-mark {
+          color: #C4873B;
+          font-size: 1.2rem;
+        }
+
+        .v-nav__right {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .v-nav__email {
+          font-size: 12px;
+          color: #9B8E7E;
+        }
+
+        .v-btn {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          padding: 8px 18px;
+          border-radius: 100px;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: 1px solid #DDD5C8;
+          background: transparent;
+          color: #6B5D4F;
+        }
+
+        .v-btn:hover {
+          border-color: #C4873B;
+          color: #C4873B;
+        }
+
+        .v-btn--primary {
+          background: #C4873B;
+          border-color: #C4873B;
+          color: #fff;
+        }
+
+        .v-btn--primary:hover {
+          background: #A66E2B;
+          border-color: #A66E2B;
+          color: #fff;
+        }
+      `}</style>
+
+      <nav className="v-nav">
+        <a href="/" className="v-nav__logo">
+          <span className="v-nav__logo-mark">◯</span>
+          Sat Nam Rasayan
+        </a>
+        <div className="v-nav__right">
+          {user ? (
+            <>
+              <span className="v-nav__email">{email}</span>
+              <SignOutButton>
+                <button className="v-btn">Abmelden</button>
+              </SignOutButton>
+            </>
+          ) : (
             <SignInButton>
-              <button style={{
-                background: 'transparent', border: '1px solid #1a1a2e',
-                color: '#c8f064', padding: '6px 14px', borderRadius: 6,
-                fontFamily: 'monospace', fontSize: 11, cursor: 'pointer'
-              }}>
-                Anmelden / Log in →
-              </button>
+              <button className="v-btn v-btn--primary">Anmelden →</button>
             </SignInButton>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </nav>
+
       <YouTubeGallery isMember={isMember} />
-    </div>
+    </>
   )
 }

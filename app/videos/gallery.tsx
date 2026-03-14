@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 
 interface Video {
   id: string
@@ -29,7 +28,6 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [activeVideo, setActiveVideo] = useState<Video | null>(null)
   const [activePlaylistId, setActivePlaylistId] = useState<number | null>(null)
   const playerRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
   const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
 
   useEffect(() => {
@@ -69,7 +67,7 @@ export default function YouTubeGallery({ isMember }: Props) {
     setPlaylists(prev => prev.map(p => p.id === playlistId ? { ...p, page } : p))
   }
 
-  const handleVideoClick = (video: Video, playlist: Playlist, index: number) => {
+  const handleVideoClick = (video: Video, playlist: Playlist) => {
     const allVideos = playlist.videos || []
     const globalIndex = allVideos.findIndex(v => v.id === video.id)
     const isLocked = !isMember && globalIndex !== 0
@@ -81,179 +79,383 @@ export default function YouTubeGallery({ isMember }: Props) {
     setActivePlaylistId(playlist.id)
   }
 
-  const btnStyle = (disabled: boolean) => ({
-    background: disabled ? '#0d0d14' : '#1a1a2e',
-    color: disabled ? '#333' : '#c8f064',
-    border: '1px solid #1a1a2e',
-    borderRadius: 6,
-    padding: '8px 18px',
-    fontFamily: 'monospace',
-    fontSize: 12,
-    cursor: disabled ? 'default' : 'pointer',
-    opacity: disabled ? 0.4 : 1,
-    transition: 'all 0.2s'
-  })
-
   return (
-    <div style={{ minHeight: '100vh', background: '#06060a', color: '#e0e0e0', fontFamily: 'monospace', padding: '32px 16px' }}>
+    <div style={{ minHeight: '100vh', background: '#FAF7F2', padding: '40px 24px 80px' }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-      {/* Header */}
-      <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #1a1a2e' }}>
-        <p style={{ fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#c8f064', marginBottom: 8 }}>
-          // Exklusiv für Mitglieder
-        </p>
-        <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
-          Video Bibliothek
-        </h1>
-        {!isMember && (
-          <p style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
-            🔒 Werde Mitglied um alle Videos freizuschalten
-          </p>
+        .v-container { max-width: 1100px; margin: 0 auto; }
+
+        .v-header { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid #DDD5C8; }
+        .v-header__kicker {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: #C4873B;
+          margin-bottom: 10px;
+        }
+        .v-header__title {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: clamp(2rem, 5vw, 3.2rem);
+          font-weight: 300;
+          color: #2C2416;
+          line-height: 1.15;
+          margin-bottom: 10px;
+        }
+        .v-header__sub {
+          font-size: 14px;
+          color: #9B8E7E;
+        }
+        .v-header__badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 12px;
+          padding: 6px 14px;
+          background: #F3EDE4;
+          border: 1px solid #DDD5C8;
+          border-radius: 100px;
+          font-size: 12px;
+          color: #6B5D4F;
+        }
+
+        .v-player {
+          margin-bottom: 48px;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid #DDD5C8;
+          background: #fff;
+          animation: fadeIn 0.3s ease;
+          box-shadow: 0 4px 24px rgba(44,36,22,0.06);
+        }
+        .v-player__iframe-wrap {
+          position: relative;
+          padding-bottom: 56.25%;
+          height: 0;
+        }
+        .v-player__iframe-wrap iframe {
+          position: absolute;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          border: none;
+        }
+        .v-player__title {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 20px;
+          border-top: 1px solid #EDE8E0;
+        }
+        .v-player__dot {
+          width: 8px; height: 8px;
+          border-radius: 50%;
+          background: #C4873B;
+          flex-shrink: 0;
+        }
+        .v-player__title-text {
+          font-size: 13px;
+          color: #2C2416;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-weight: 400;
+        }
+
+        .v-loading-global {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-height: 200px;
+          justify-content: center;
+          color: #9B8E7E;
+          font-size: 13px;
+        }
+        .v-spinner {
+          width: 28px; height: 28px;
+          border: 2px solid #EDE8E0;
+          border-top-color: #C4873B;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          flex-shrink: 0;
+        }
+
+        .v-section { margin-bottom: 52px; }
+        .v-section__header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+        .v-section__title {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 1.35rem;
+          font-weight: 400;
+          color: #2C2416;
+          margin: 0;
+          white-space: nowrap;
+        }
+        .v-section__line {
+          flex: 1;
+          height: 1px;
+          background: #EDE8E0;
+        }
+        .v-section__count {
+          font-size: 11px;
+          color: #9B8E7E;
+          flex-shrink: 0;
+        }
+
+        .v-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 14px;
+        }
+        @media (max-width: 640px) {
+          .v-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .v-card {
+          position: relative;
+          background: #F3EDE4;
+          border: 1px solid #EDE8E0;
+          border-radius: 10px;
+          overflow: hidden;
+          cursor: pointer;
+          aspect-ratio: 16/9;
+          transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+        }
+        .v-card:hover {
+          border-color: #DDD5C8;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(44,36,22,0.08);
+        }
+        .v-card--active {
+          border-color: #C4873B !important;
+          box-shadow: 0 0 0 3px rgba(196,135,59,0.15), 0 4px 16px rgba(44,36,22,0.1) !important;
+        }
+        .v-card img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          display: block;
+          transition: filter 0.2s;
+        }
+        .v-card--locked img { filter: brightness(0.35) saturate(0.3); }
+
+        .v-card__lock {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        }
+        .v-card__lock-icon {
+          width: 32px; height: 32px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+        }
+        .v-card__lock-text {
+          font-size: 9px;
+          color: rgba(255,255,255,0.5);
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .v-card__playing {
+          position: absolute;
+          top: 7px; left: 7px;
+          z-index: 10;
+          background: #C4873B;
+          color: #fff;
+          font-size: 8px;
+          font-weight: 600;
+          padding: 3px 8px;
+          border-radius: 100px;
+          font-family: 'DM Sans', sans-serif;
+          letter-spacing: 0.05em;
+        }
+        .v-card__free {
+          position: absolute;
+          top: 7px; right: 7px;
+          z-index: 10;
+          background: #7A8B6F;
+          color: #fff;
+          font-size: 8px;
+          font-weight: 600;
+          padding: 3px 8px;
+          border-radius: 100px;
+          font-family: 'DM Sans', sans-serif;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .v-pagination {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-top: 18px;
+        }
+        .v-pagination__btn {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          padding: 7px 16px;
+          border-radius: 100px;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: 1px solid #DDD5C8;
+          background: #fff;
+          color: #6B5D4F;
+        }
+        .v-pagination__btn:hover:not(:disabled) {
+          border-color: #C4873B;
+          color: #C4873B;
+        }
+        .v-pagination__btn:disabled {
+          opacity: 0.35;
+          cursor: default;
+        }
+        .v-pagination__info {
+          font-size: 11px;
+          color: #9B8E7E;
+        }
+      `}</style>
+
+      <div className="v-container">
+
+        {/* Header */}
+        <div className="v-header">
+          <p className="v-header__kicker">Kundalini Yoga Tribe</p>
+          <h1 className="v-header__title">Video Bibliothek</h1>
+          {isMember ? (
+            <p className="v-header__sub">Vollständiger Zugriff auf alle Kriyas und Meditationen.</p>
+          ) : (
+            <>
+              <p className="v-header__sub">Das erste Video jeder Playlist ist kostenlos zugänglich.</p>
+              <div className="v-header__badge">
+                <span>🔒</span>
+                <span>Mitgliedschaft für vollen Zugriff</span>
+                <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" style={{ color: '#C4873B', fontWeight: 500 }}>
+                  Mehr erfahren →
+                </a>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Player */}
+        {activeVideo && (
+          <div className="v-player" ref={playerRef}>
+            <div className="v-player__iframe-wrap">
+              <iframe
+                src={`https://www.youtube.com/embed/${activeVideo.id}?autoplay=1&rel=0&modestbranding=1`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            <div className="v-player__title">
+              <div className="v-player__dot" />
+              <p className="v-player__title-text">{activeVideo.title}</p>
+            </div>
+          </div>
         )}
-      </div>
 
-      {/* Player */}
-      {activeVideo && (
-        <div ref={playerRef} style={{ marginBottom: 40, background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
-            <iframe
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-              src={`https://www.youtube.com/embed/${activeVideo.id}?autoplay=1&rel=0&modestbranding=1`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+        {/* Global loading */}
+        {playlists.length === 0 && (
+          <div className="v-loading-global">
+            <div className="v-spinner" />
+            Lade Playlists…
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', borderTop: '1px solid #1a1a2e' }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#c8f064', boxShadow: '0 0 8px #c8f064', flexShrink: 0 }} />
-            <p style={{ fontSize: 13, color: '#e0e0e0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {activeVideo.title}
-            </p>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Loading */}
-      {playlists.length === 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 200, justifyContent: 'center' }}>
-          <div style={{ width: 32, height: 32, border: '2px solid #1a1a2e', borderTopColor: '#c8f064', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>
-      )}
+        {/* Playlists */}
+        {playlists.map(playlist => {
+          const page = playlist.page || 0
+          const videos = playlist.videos || []
+          const totalPages = Math.ceil(videos.length / PAGE_SIZE)
+          const pageVideos = videos.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
-      {/* Playlists */}
-      {playlists.map(playlist => {
-        const page = playlist.page || 0
-        const videos = playlist.videos || []
-        const totalPages = Math.ceil(videos.length / PAGE_SIZE)
-        const pageVideos = videos.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+          return (
+            <div key={playlist.id} className="v-section">
+              <div className="v-section__header">
+                <h2 className="v-section__title">{playlist.title}</h2>
+                <div className="v-section__line" />
+                {!playlist.loading && (
+                  <span className="v-section__count">{videos.length} Videos</span>
+                )}
+              </div>
 
-        return (
-          <div key={playlist.id} style={{ marginBottom: 48 }}>
+              {playlist.loading && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#9B8E7E', fontSize: 13 }}>
+                  <div className="v-spinner" style={{ width: 18, height: 18 }} />
+                  Lade Videos…
+                </div>
+              )}
 
-            {/* Playlist Title */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', margin: 0 }}>
-                {playlist.title}
-              </h2>
-              <div style={{ flex: 1, height: 1, background: '#1a1a2e' }} />
-              {!playlist.loading && (
-                <span style={{ fontSize: 11, color: '#444', flexShrink: 0 }}>
-                  {videos.length} Videos
-                </span>
+              {!playlist.loading && pageVideos.length > 0 && (
+                <div className="v-grid">
+                  {pageVideos.map(video => {
+                    const globalIndex = videos.findIndex(v => v.id === video.id)
+                    const isLocked = !isMember && globalIndex !== 0
+                    const isActive = activeVideo?.id === video.id && activePlaylistId === playlist.id
+
+                    return (
+                      <div
+                        key={video.id}
+                        onClick={() => handleVideoClick(video, playlist)}
+                        className={`v-card${isLocked ? ' v-card--locked' : ''}${isActive ? ' v-card--active' : ''}`}
+                      >
+                        <img src={video.thumbnail} alt={video.title} loading="lazy" />
+
+                        {isLocked && (
+                          <div className="v-card__lock">
+                            <div className="v-card__lock-icon">🔒</div>
+                            <span className="v-card__lock-text">Mitglieder</span>
+                          </div>
+                        )}
+                        {isActive && <span className="v-card__playing">▶ Läuft</span>}
+                        {globalIndex === 0 && !isMember && (
+                          <span className="v-card__free">Gratis</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {!playlist.loading && totalPages > 1 && (
+                <div className="v-pagination">
+                  <button
+                    className="v-pagination__btn"
+                    onClick={() => setPage(playlist.id, page - 1)}
+                    disabled={page === 0}
+                  >
+                    ← Vorherige
+                  </button>
+                  <span className="v-pagination__info">{page + 1} / {totalPages}</span>
+                  <button
+                    className="v-pagination__btn"
+                    onClick={() => setPage(playlist.id, page + 1)}
+                    disabled={page >= totalPages - 1}
+                  >
+                    Nächste →
+                  </button>
+                </div>
               )}
             </div>
-
-            {/* Loading */}
-            {playlist.loading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#444', fontSize: 12 }}>
-                <div style={{ width: 20, height: 20, border: '2px solid #1a1a2e', borderTopColor: '#c8f064', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                Lade Videos...
-              </div>
-            )}
-
-            {/* Grid */}
-            {!playlist.loading && pageVideos.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-                {pageVideos.map(video => {
-                  const globalIndex = videos.findIndex(v => v.id === video.id)
-                  const isLocked = !isMember && globalIndex !== 0
-                  const isActive = activeVideo?.id === video.id && activePlaylistId === playlist.id
-
-                  return (
-                    <div
-                      key={video.id}
-                      onClick={() => handleVideoClick(video, playlist, globalIndex)}
-                      style={{
-                        position: 'relative', background: '#0d0d14',
-                        border: `1px solid ${isActive ? '#c8f064' : '#1a1a2e'}`,
-                        borderRadius: 10, overflow: 'hidden', cursor: 'pointer',
-                        aspectRatio: '16/9',
-                        boxShadow: isActive ? '0 0 20px rgba(200,240,100,0.1)' : 'none',
-                        transition: 'border-color 0.2s',
-                      }}
-                    >
-                      <img
-                        src={video.thumbnail}
-                        alt={video.title}
-                        loading="lazy"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: isLocked ? 'brightness(0.4)' : 'none' }}
-                      />
-
-                      {/* Lock overlay */}
-                      {isLocked && (
-                        <div style={{
-                          position: 'absolute', inset: 0,
-                          display: 'flex', flexDirection: 'column',
-                          alignItems: 'center', justifyContent: 'center',
-                          gap: 4
-                        }}>
-                          <span style={{ fontSize: 32 }}>🔒</span>
-                          <span style={{ fontSize: 9, color: '#888', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                            Mitglieder
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Playing indicator */}
-                      {isActive && (
-                        <span style={{
-                          position: 'absolute', top: 6, left: 6, zIndex: 10,
-                          background: '#c8f064', color: '#000', fontSize: 8,
-                          fontWeight: 600, padding: '2px 6px', borderRadius: 100,
-                        }}>▶</span>
-                      )}
-
-                      {/* Free badge on first video */}
-                      {globalIndex === 0 && !isMember && (
-                        <span style={{
-                          position: 'absolute', top: 6, right: 6, zIndex: 10,
-                          background: '#c8f064', color: '#000', fontSize: 8,
-                          fontWeight: 700, padding: '2px 8px', borderRadius: 100,
-                          textTransform: 'uppercase', letterSpacing: '0.1em'
-                        }}>Gratis</span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {!playlist.loading && totalPages > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-                <button onClick={() => setPage(playlist.id, page - 1)} disabled={page === 0} style={btnStyle(page === 0)}>
-                  ← Vorherige
-                </button>
-                <span style={{ fontSize: 11, color: '#444' }}>{page + 1} / {totalPages}</span>
-                <button onClick={() => setPage(playlist.id, page + 1)} disabled={page >= totalPages - 1} style={btnStyle(page >= totalPages - 1)}>
-                  Nächste →
-                </button>
-              </div>
-            )}
-
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
