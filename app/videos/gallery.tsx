@@ -39,6 +39,7 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
   const [searchLoading, setSearchLoading] = useState(false)
+  const [transcriptIds, setTranscriptIds] = useState<Set<string>>(new Set())
   const playerRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
@@ -60,6 +61,13 @@ export default function YouTubeGallery({ isMember }: Props) {
         })
         .catch(() => setSearchLoading(false))
     }, 350)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/transcripts')
+      .then(r => r.json())
+      .then((ids: string[]) => setTranscriptIds(new Set(ids)))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -691,15 +699,17 @@ export default function YouTubeGallery({ isMember }: Props) {
                             <span className="v-card__free">Gratis</span>
                           )}
                         </div>
-                        <div className="v-item__meta">
-                          <a
-                            href={`/videos/${video.id}`}
-                            className="v-item__link"
-                            onClick={e => e.stopPropagation()}
-                          >
-                            Zur Seite →
-                          </a>
-                        </div>
+                        {transcriptIds.has(video.id) && (
+                          <div className="v-item__meta">
+                            <a
+                              href={`/videos/${video.id}`}
+                              className="v-item__link"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              Zur Seite →
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
