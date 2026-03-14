@@ -44,8 +44,9 @@ async function fetchVideoDetails(videoId: string): Promise<YouTubeVideoDetails |
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const video = await fetchVideoDetails(id)
-  const title = video ? `${video.title} – Kundalini Yoga Tribe` : 'Video – Kundalini Yoga Tribe'
+  const [video, customTitle] = await Promise.all([fetchVideoDetails(id), redis.get(`title:${id}`)])
+  const baseTitle = (customTitle as string | null) ?? video?.title
+  const title = baseTitle ? `${baseTitle} – Kundalini Yoga Tribe` : 'Video – Kundalini Yoga Tribe'
   const description = video
     ? video.description.slice(0, 160)
     : 'Kundalini Yoga Video auf Kundalini Yoga Tribe'
@@ -72,14 +73,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function VideoDetailPage({ params }: PageProps) {
   const { id } = await params
-  const [user, video, transcript] = await Promise.all([
+  const [user, video, transcript, customTitle] = await Promise.all([
     currentUser(),
     fetchVideoDetails(id),
     redis.get(`transcript:${id}`),
+    redis.get(`title:${id}`),
   ])
 
   const email = user?.emailAddresses[0]?.emailAddress
-  const title = video?.title ?? 'Kundalini Yoga Video'
+  const title = (customTitle as string | null) ?? video?.title ?? 'Kundalini Yoga Video'
   const description = video?.description ?? ''
   const publishedAt = video?.publishedAt ?? new Date().toISOString()
   const thumbnailUrl = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`
