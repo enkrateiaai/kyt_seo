@@ -4,7 +4,7 @@ import redis from '@/lib/redis'
 import { Metadata } from 'next'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 interface YouTubeVideoDetails {
@@ -43,7 +43,7 @@ async function fetchVideoDetails(videoId: string): Promise<YouTubeVideoDetails |
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = params
+  const { id } = await params
   const video = await fetchVideoDetails(id)
   const title = video ? `${video.title} – Kundalini Yoga Tribe` : 'Video – Kundalini Yoga Tribe'
   const description = video
@@ -71,7 +71,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function VideoDetailPage({ params }: PageProps) {
-  const { id } = params
+  const { id } = await params
   const [user, video, transcript] = await Promise.all([
     currentUser(),
     fetchVideoDetails(id),

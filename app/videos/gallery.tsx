@@ -332,28 +332,15 @@ export default function YouTubeGallery({ isMember }: Props) {
 
         .v-item { display: flex; flex-direction: column; }
         .v-item__meta {
-          padding: 8px 2px 0;
+          padding: 6px 2px 0;
           display: flex;
-          align-items: baseline;
-          justify-content: space-between;
-          gap: 8px;
-        }
-        .v-item__title {
-          font-size: 12px;
-          color: #6B5D4F;
-          line-height: 1.4;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          flex: 1;
+          justify-content: flex-end;
         }
         .v-item__link {
           font-size: 11px;
           color: #C4873B;
           text-decoration: none;
           white-space: nowrap;
-          flex-shrink: 0;
           font-weight: 500;
           transition: opacity 0.2s;
         }
@@ -458,7 +445,6 @@ export default function YouTubeGallery({ isMember }: Props) {
                           )}
                         </div>
                         <div className="v-item__meta">
-                          <span className="v-item__title">{video.title}</span>
                           <a
                             href={`/videos/${video.id}`}
                             className="v-item__link"
