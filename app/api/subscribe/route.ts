@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       const err = await res.text()
       console.error('Mailjet error:', res.status, err)
-      return NextResponse.json({ error: 'Fehler beim Eintragen' }, { status: 500 })
+      return NextResponse.json({ error: 'Fehler beim Eintragen', detail: `${res.status}: ${err}` }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
