@@ -533,7 +533,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
           {user ? (
             <>
               <span className="v-nav__email">{email}</span>
-              <SignOutButton>
+              <SignOutButton redirectUrl="/">
                 <button className="v-btn">Abmelden</button>
               </SignOutButton>
             </>

@@ -24,7 +24,7 @@ export default async function DashboardPage() {
           {user ? (
             <>
               <p style={{ color: '#555', fontSize: '12px' }}>{email}</p>
-              <SignOutButton>
+              <SignOutButton redirectUrl="/">
                 <button style={{
                   background: 'transparent',
                   border: '1px solid #1e1e1e',
