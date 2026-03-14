@@ -323,6 +323,22 @@ export default async function VideoDetailPage({ params }: PageProps) {
           padding: 16px 18px;
         }
 
+        .vd-glossary-icon {
+          width: 38px;
+          height: 38px;
+          background: rgba(196,135,59,0.1);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 10px;
+          color: #C4873B;
+        }
+        .vd-glossary-icon svg {
+          width: 18px;
+          height: 18px;
+        }
+
         .vd-glossary-term {
           font-family: 'Cormorant Garamond', Georgia, serif;
           font-size: 1rem;
@@ -525,72 +541,172 @@ export default async function VideoDetailPage({ params }: PageProps) {
             <div className="vd-glossary-grid">
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M3 7 Q6 4 9 7 Q12 10 15 7 Q18 4 21 7"/>
+                    <path d="M3 12 Q6 9 9 12 Q12 15 15 12 Q18 9 21 12"/>
+                    <path d="M3 17 Q6 14 9 17 Q12 20 15 17 Q18 14 21 17"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Sat Nam</div>
                 <div className="vd-glossary-origin">Sanskrit · Urmantra</div>
                 <div className="vd-glossary-def">„Ich bin Wahrheit." Das Grundmantra des <a href="https://kundaliniyogatribe.de/">Kundalini Yoga</a>. Sat steht für Wahrheit, Nam für Identität. Es wird beim Ein- und Ausatmen still wiederholt und verankert das Bewusstsein im gegenwärtigen Moment.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 20.5l-1.3-1.2C5.4 14.6 2 11.7 2 8.2 2 5.3 4.2 3 7 3c1.6 0 3.1.8 4 2 .9-1.2 2.4-2 4-2 2.8 0 5 2.3 5 5.2 0 3.5-3.4 6.4-8.7 11.1L12 20.5z"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Anahata</div>
                 <div className="vd-glossary-origin">Sanskrit · 4. Chakra</div>
                 <div className="vd-glossary-def">Das Herzchakra – Energiezentrum in der Mitte der Brust. Anahata bedeutet „unberührt" oder „unverletzt". Es ist das Zentrum von Liebe, Mitgefühl, Kreativität und Verbindung. Viele <a href="https://kundaliniyogatribe.de/kriyas">Kriyas</a> zielen darauf ab, dieses Chakra zu öffnen.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M12 3 L12 11"/>
+                    <path d="M12 11 Q7 11 5 14 Q3 17 5 20 Q7 22 9 20 Q11 18 11 16 L11 11"/>
+                    <path d="M12 11 Q17 11 19 14 Q21 17 19 20 Q17 22 15 20 Q13 18 13 16 L13 11"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Pranayama</div>
                 <div className="vd-glossary-origin">Sanskrit · Atemübung</div>
                 <div className="vd-glossary-def">„Prana" bedeutet Lebensenergie, „Yama" Kontrolle oder Ausdehnung. Pranayama bezeichnet gezielte Atemtechniken, die das Nervensystem regulieren, die Lungen stärken und den Energiefluss im Körper lenken. Grundbaustein jeder Kundalini-Praxis.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2c0 0-6 7-6 12a6 6 0 0012 0c0-3-1.5-5.5-2.5-7 0 2.5-1 4-2 4s-2-1.5-2-3.5C11.5 6 12 2 12 2z"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Feueratem (Breath of Fire)</div>
                 <div className="vd-glossary-origin">Kundalini Yoga · Atemtechnik</div>
                 <div className="vd-glossary-def">Schnelle, gleichmäßige Atemstöße durch die Nase – Einatem und Ausatem gleich lang. Der Bauch pumpt aktiv. Feueratem reinigt das Blut, weckt die Energie, stärkt das Nervensystem und löst emotionale Blockaden. Nicht geeignet in der Schwangerschaft.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M12 21 L12 14"/>
+                    <path d="M12 14 Q9 9 6 8 Q7 12 12 14"/>
+                    <path d="M12 14 Q15 9 18 8 Q17 12 12 14"/>
+                    <path d="M12 14 Q7 12 4 14 Q7 16 12 14"/>
+                    <path d="M12 14 Q17 12 20 14 Q17 16 12 14"/>
+                    <path d="M12 14 Q11 9 12 5 Q13 9 12 14"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Kriya</div>
                 <div className="vd-glossary-origin">Sanskrit · Übungssequenz</div>
                 <div className="vd-glossary-def">Eine vollständige Abfolge von Körperhaltungen, Atemübungen und Mantras, die als Einheit wirken. Jede <a href="https://kundaliniyogatribe.de/kriyas">Kriya</a> hat eine spezifische Wirkung – etwa für das Nervensystem, die Organe oder emotionale Themen wie Angst oder Kreativität.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 13V6a1 1 0 012 0v4"/>
+                    <path d="M10 10V5a1 1 0 012 0v5"/>
+                    <path d="M12 10V6a1 1 0 012 0v4"/>
+                    <path d="M14 11V8a1 1 0 012 0v5c0 3-2 5-5 5H9a5 5 0 01-5-5v-2a1 1 0 012 0"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Mudra</div>
                 <div className="vd-glossary-origin">Sanskrit · Handgeste</div>
                 <div className="vd-glossary-def">Eine symbolische Haltung der Hände oder des Körpers. Mudras lenken die Energieströme (Prana) im Körper. Bekannte Mudras im Kundalini Yoga: Gyan Mudra (Weisheit), Anjali Mudra (Dankbarkeit), Shuni Mudra (Geduld).</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <circle cx="6" cy="8" r="2" fill="currentColor" stroke="none"/>
+                    <path d="M3 15 L21 15"/>
+                    <path d="M9 15 L7 19"/>
+                    <path d="M15 15 L17 19"/>
+                    <path d="M9 15 L11 10 L13 15"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Shavasana</div>
                 <div className="vd-glossary-origin">Sanskrit · Entspannungshaltung</div>
                 <div className="vd-glossary-def">„Totenhaltung" – flach auf dem Rücken liegend, Arme locker neben dem Körper, Handflächen nach oben. In dieser Haltung integriert das Nervensystem alle Eindrücke der Praxis. Oft als wichtigste Übung der ganzen Stunde bezeichnet.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="9"/>
+                    <circle cx="12" cy="12" r="3"/>
+                    <line x1="12" y1="3" x2="12" y2="9"/>
+                    <line x1="12" y1="15" x2="12" y2="21"/>
+                    <line x1="3" y1="12" x2="9" y2="12"/>
+                    <line x1="15" y1="12" x2="21" y2="12"/>
+                    <line x1="5.6" y1="5.6" x2="9.2" y2="9.2"/>
+                    <line x1="14.8" y1="14.8" x2="18.4" y2="18.4"/>
+                    <line x1="18.4" y1="5.6" x2="14.8" y2="9.2"/>
+                    <line x1="9.2" y1="14.8" x2="5.6" y2="18.4"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Chakra</div>
                 <div className="vd-glossary-origin">Sanskrit · Energiezentrum</div>
                 <div className="vd-glossary-def">„Rad" oder „Kreis". Im Yoga bezeichnet es eines der sieben Hauptenergiezentren entlang der Wirbelsäule – vom Wurzelchakra (Muladhara) bis zum Kronenchakra (Sahasrara). Kundalini-Energie steigt durch diese Zentren auf.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M12 21 C8 21 5 18 5 14 C5 10 8 8 11 9 C14 9 16 12 15 15 C14 17 12 17 11 16 C10 15 11 13 12 13"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Kundalini</div>
                 <div className="vd-glossary-origin">Sanskrit · Lebensenergie</div>
                 <div className="vd-glossary-def">„Die Gewickelte" – eine schlafende Energie, die bildlich am unteren Ende der Wirbelsäule (Wurzelchakra) ruht. <a href="https://kundaliniyogatribe.de/">Kundalini Yoga</a> weckt diese Energie durch Kriyas, Atemübungen und Mantras, damit sie die Wirbelsäule aufsteigen und das Bewusstsein erweitern kann.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <circle cx="12" cy="12" r="4"/>
+                    <line x1="12" y1="2" x2="12" y2="5"/>
+                    <line x1="12" y1="19" x2="12" y2="22"/>
+                    <line x1="2" y1="12" x2="5" y2="12"/>
+                    <line x1="19" y1="12" x2="22" y2="12"/>
+                    <line x1="4.9" y1="4.9" x2="7.1" y2="7.1"/>
+                    <line x1="16.9" y1="16.9" x2="19.1" y2="19.1"/>
+                    <line x1="19.1" y1="4.9" x2="16.9" y2="7.1"/>
+                    <line x1="7.1" y1="16.9" x2="4.9" y2="19.1"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Prana</div>
                 <div className="vd-glossary-origin">Sanskrit · Lebensatem</div>
                 <div className="vd-glossary-def">Die universelle Lebensenergie, die in allem vorhanden ist. Im menschlichen Körper fließt Prana durch feinstoffliche Kanäle (Nadis). Pranayama-Übungen stärken und lenken diese Energie. Ein gut gefülltes Pranafeld zeigt sich in Vitalität, Klarheit und Kreativität.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M2 12 Q6 5 12 5 Q18 5 22 12 Q18 19 12 19 Q6 19 2 12z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                    <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Drittes Auge (Ajna)</div>
                 <div className="vd-glossary-origin">Sanskrit · 6. Chakra</div>
                 <div className="vd-glossary-def">Das Stirnchakra, Sitz der Intuition und inneren Wahrnehmung. Im Kundalini Yoga richtet man den inneren Blick oft auf diesen Punkt – den Raum zwischen den Augenbrauen. Dies fördert Fokus, Klarheit und die Verbindung zum höheren Selbst.</div>
               </div>
 
               <div className="vd-glossary-item">
+                <div className="vd-glossary-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <circle cx="12" cy="5" r="2" fill="currentColor" stroke="none"/>
+                    <line x1="12" y1="7" x2="12" y2="14"/>
+                    <path d="M12 9 L5 5"/>
+                    <path d="M12 9 L19 5"/>
+                    <path d="M12 14 L9 20"/>
+                    <path d="M12 14 L15 20"/>
+                  </svg>
+                </div>
                 <div className="vd-glossary-term">Ego Eradicator</div>
                 <div className="vd-glossary-origin">Kundalini Yoga · Übung</div>
                 <div className="vd-glossary-def">Eine klassische Kundalini-Übung: Arme in 60°-Winkel gehoben, Daumen nach oben, Feueratem. Sie öffnet die Lungen vollständig, stärkt das Nervensystem und hilft, einschränkende Denkmuster des Egos aufzulösen – ein Schlüssel für kreatives Denken und innere Freiheit.</div>
