@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/videos/:path*", "destination": "https://my-dashboard-eta-one.vercel.app/videos/:path*" }
+  ]
+}
