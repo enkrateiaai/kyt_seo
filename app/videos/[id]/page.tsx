@@ -276,8 +276,27 @@ export default async function VideoDetailPage({ params }: PageProps) {
           font-size: 14px;
           color: #4A3F32;
           line-height: 1.8;
-          white-space: pre-wrap;
         }
+
+        .vd-transcript p { margin-bottom: 1em; }
+        .vd-transcript p:last-child { margin-bottom: 0; }
+
+        .vd-transcript h3 {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 1.05rem;
+          font-weight: 500;
+          color: #2C2416;
+          margin: 1.4em 0 0.4em;
+        }
+
+        .vd-transcript a {
+          color: #C4873B;
+          text-decoration: underline;
+          text-decoration-color: rgba(196,135,59,0.4);
+          text-underline-offset: 2px;
+          transition: color 0.2s;
+        }
+        .vd-transcript a:hover { color: #A66E2B; }
 
         .vd-transcript--placeholder {
           color: #9B8E7E;
@@ -338,7 +357,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
             <p className="vd-section-kicker">Transkription</p>
             <h2 className="vd-section-title">Videoinhalt</h2>
             {transcript ? (
-              <div className="vd-transcript">{transcript}</div>
+              <div className="vd-transcript" dangerouslySetInnerHTML={{ __html: transcript as string }} />
             ) : (
               <div className="vd-transcript vd-transcript--placeholder">
                 Transkription folgt in Kürze.
