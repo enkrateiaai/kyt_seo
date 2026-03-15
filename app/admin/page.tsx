@@ -178,8 +178,12 @@ export default function AdminPage() {
           />
           <input
             value={playlistId}
-            onChange={e => setPlaylistId(e.target.value)}
-            placeholder="YouTube Playlist ID"
+            onChange={e => {
+              const v = e.target.value.trim()
+              const match = v.match(/[?&]list=([A-Za-z0-9_-]+)/)
+              setPlaylistId(match ? match[1] : v)
+            }}
+            placeholder="YouTube Playlist ID oder kompletter Link"
             style={{ ...inputStyle, marginBottom: 16 }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -213,7 +217,11 @@ export default function AdminPage() {
                   📺 Aus YouTube Channel auswählen
                 </button>
                 <input value={editTitle} onChange={e => setEditTitle(e.target.value)} style={{ ...inputStyle, marginBottom: 10 }} />
-                <input value={editPlaylistId} onChange={e => setEditPlaylistId(e.target.value)} style={{ ...inputStyle, marginBottom: 14 }} />
+                <input value={editPlaylistId} onChange={e => {
+                  const v = e.target.value.trim()
+                  const match = v.match(/[?&]list=([A-Za-z0-9_-]+)/)
+                  setEditPlaylistId(match ? match[1] : v)
+                }} placeholder="Playlist ID oder kompletter Link" style={{ ...inputStyle, marginBottom: 14 }} />
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => saveEdit(p.id)} style={btnStyle()}>Speichern</button>
                   <button onClick={() => setEditingId(null)} style={btnStyle('#1a1a2e', '#888')}>Abbrechen</button>
