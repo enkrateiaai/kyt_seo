@@ -7,7 +7,28 @@
       "name": "When called by another workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [-240, 0]
+      "position": [-460, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "email-field",
+              "name": "email",
+              "value": "test@example.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "✏️ Set Email Here",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-220, 0],
+      "notes": "Ersetze test@example.com mit der echten Käufer-E-Mail,\nz.B. {{ $('Trigger Node').item.json.customer.email }}"
     },
     {
       "parameters": {
@@ -31,12 +52,22 @@
       "name": "Clerk: Set Member Role",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [0, 0],
-      "notes": "Setzt publicMetadata.role = 'member' für den Käufer in Clerk.\nVorher sicherstellen dass $json.email die Käufer-E-Mail enthält."
+      "position": [40, 0]
     }
   ],
   "connections": {
     "When called by another workflow": {
+      "main": [
+        [
+          {
+            "node": "✏️ Set Email Here",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✏️ Set Email Here": {
       "main": [
         [
           {
