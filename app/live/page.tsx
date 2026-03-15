@@ -44,26 +44,21 @@ function Header({ loggedIn, name }: { loggedIn: boolean; name: string }) {
     }}>
       <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: C.text }}>
         <Image src="/icon.png" alt="Logo" width={32} height={32} style={{ borderRadius: 4 }} />
-        <span style={{ fontSize: 15, fontWeight: 500, letterSpacing: '0.04em', fontFamily: "'DM Sans', sans-serif" }}>
+        <span className="live-logo-text" style={{ fontSize: 15, fontWeight: 500, letterSpacing: '0.04em', fontFamily: "'DM Sans', sans-serif" }}>
           Kundalini Yoga Tribe
         </span>
       </a>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <a href="/videos" style={{ fontSize: 13, color: C.textSoft, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>
           Videos
         </a>
         {loggedIn ? (
-          <>
-            <span style={{ fontSize: 13, color: C.textMuted, fontFamily: "'DM Sans', sans-serif" }}>
-              Sat Nam, {name}
-            </span>
-            <SignOutButton>
-              <button style={btnStyle}>Abmelden →</button>
-            </SignOutButton>
-          </>
+          <SignOutButton>
+            <button style={btnStyle}>Abmelden</button>
+          </SignOutButton>
         ) : (
           <SignInButton>
-            <button style={{ ...btnStyle, color: C.accent, borderColor: C.accent }}>Anmelden →</button>
+            <button style={{ ...btnStyle, color: C.accent, borderColor: C.accent }}>Anmelden</button>
           </SignInButton>
         )}
       </div>
@@ -166,6 +161,9 @@ export default async function LivePage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @media (max-width: 600px) {
+          .live-logo-text { display: none; }
+        }
       `}</style>
     </main>
   )
