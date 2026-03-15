@@ -238,11 +238,11 @@
           <h2>Jeden Monat neue Kriyas & Impulse</h2>
           <p>Erhalte Anleitungen, saisonale Meditationen und Hintergründe zu Sat Nam Rasayan – direkt in dein Postfach.</p>
         </div>
-        <div class="cta-box__form">
-          <input type="email" placeholder="Deine E-Mail-Adresse" aria-label="E-Mail-Adresse">
-          <button class="btn btn--primary" type="button">Anmelden</button>
+        <div class="cta-box__form" id="newsletterForm">
+          <input type="email" id="newsletterEmail" placeholder="Deine E-Mail-Adresse" aria-label="E-Mail-Adresse">
+          <button class="btn btn--primary" id="newsletterBtn" type="button">Anmelden</button>
         </div>
-        <p class="cta-box__note">Kein Spam. Jederzeit abmeldbar. Datenschutz respektiert.</p>
+        <p class="cta-box__note" id="newsletterNote">Kein Spam. Jederzeit abmeldbar. Datenschutz respektiert.</p>
       </div>
     </div>
   </section>
@@ -289,5 +289,58 @@
   </footer>
 
   <script src="/js/main.js"></script>
+  <script>
+  (function() {
+    var btn = document.getElementById('newsletterBtn');
+    var input = document.getElementById('newsletterEmail');
+    var note = document.getElementById('newsletterNote');
+    if (!btn || !input || !note) return;
+
+    btn.addEventListener('click', function() {
+      var email = input.value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        note.textContent = 'Bitte gib eine gültige E-Mail-Adresse ein.';
+        note.style.color = '#c00';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '...';
+      note.textContent = '';
+
+      fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email }),
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          input.style.display = 'none';
+          btn.style.display = 'none';
+          note.textContent = data.already
+            ? 'Du bist bereits angemeldet. 🙏'
+            : 'Bitte bestätige deine Anmeldung per E-Mail. Sat Nam 🙏';
+          note.style.color = '#C4873B';
+          note.style.fontSize = '15px';
+        } else {
+          note.textContent = data.error || 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+          note.style.color = '#c00';
+          btn.disabled = false;
+          btn.textContent = 'Anmelden';
+        }
+      })
+      .catch(function() {
+        note.textContent = 'Verbindungsfehler. Bitte versuche es erneut.';
+        note.style.color = '#c00';
+        btn.disabled = false;
+        btn.textContent = 'Anmelden';
+      });
+    });
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') btn.click();
+    });
+  })();
+  </script>
 </body>
 </html>
