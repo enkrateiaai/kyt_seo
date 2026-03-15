@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import redis from '@/lib/redis'
 
 export async function GET(req: NextRequest) {
@@ -44,9 +45,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${siteUrl}/anmeldung?status=fehler`)
     }
 
-    // 2. Mark as confirmed, delete token
+    // 2. Mark as confirmed, delete token; create/retrieve unsubscribe token
     await redis.setex(`confirmed:${email}`, 2592000, '1') // 30 days
     await redis.del(`doi:${token}`)
+
+    // Generate a persistent unsubscribe token for this email (or reuse existing)
+    let unsubToken = await redis.get(`unsub_for:${email}`)
+    if (!unsubToken) {
+      unsubToken = randomBytes(32).toString('hex')
+      await redis.setex(`unsub:${unsubToken}`, 31536000, email) // 1 year
+      await redis.setex(`unsub_for:${email}`, 31536000, unsubToken)
+    }
+    const unsubUrl = `${siteUrl}/api/unsubscribe?token=${unsubToken}`
 
     // 3. Send welcome email (fire-and-forget — don't block redirect on failure)
     fetch('https://api.mailjet.com/v3.1/send', {
@@ -108,9 +118,12 @@ export async function GET(req: NextRequest) {
 
               <hr style="border: none; border-top: 1px solid #EDE8E0; margin: 28px 0;">
               <p style="font-size: 12px; color: #9B8E7E;">kundaliniyogatribe.de · Sat Nam Rasayan & Kundalini Kriyas</p>
+              <p style="font-size: 11px; color: #B0A090; margin-top: 8px;">
+                Du möchtest keine E-Mails mehr erhalten? <a href="${unsubUrl}" style="color: #B0A090; text-decoration: underline;">Hier abmelden</a>
+              </p>
             </div>
           `,
-          TextPart: `Sat Nam — willkommen im Kundalini Yoga Tribe!\n\nDeine ersten Schritte:\n\n1. Was ist Kundalini Yoga? → ${siteUrl}/artikel/was-ist-kundalini-yoga\n2. Sat Kriya Anleitung → ${siteUrl}/artikel/sat-kriya-anleitung\n3. Video-Bibliothek → ${siteUrl}/videos\n\nMitgliedschaft für vollen Zugriff: ${shopUrl}`,
+          TextPart: `Sat Nam — willkommen im Kundalini Yoga Tribe!\n\nDeine ersten Schritte:\n\n1. Was ist Kundalini Yoga? → ${siteUrl}/artikel/was-ist-kundalini-yoga\n2. Sat Kriya Anleitung → ${siteUrl}/artikel/sat-kriya-anleitung\n3. Video-Bibliothek → ${siteUrl}/videos\n\nMitgliedschaft für vollen Zugriff: ${shopUrl}\n\nAbmelden: ${unsubUrl}`,
         }],
       }),
     }).catch(err => console.error('Welcome email error:', err))
