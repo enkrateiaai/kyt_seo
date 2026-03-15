@@ -1,6 +1,10 @@
 {
   "rewrites": [
     { "source": "/videos", "destination": "https://my-dashboard-eta-one.vercel.app/videos" },
-    { "source": "/videos/:path*", "destination": "https://my-dashboard-eta-one.vercel.app/videos/:path*" }
+    { "source": "/videos/:path*", "destination": "https://my-dashboard-eta-one.vercel.app/videos/:path*" },
+    { "source": "/admin", "destination": "https://my-dashboard-eta-one.vercel.app/admin" },
+    { "source": "/admin/:path*", "destination": "https://my-dashboard-eta-one.vercel.app/admin/:path*" },
+    { "source": "/dashboard", "destination": "https://my-dashboard-eta-one.vercel.app/dashboard" },
+    { "source": "/api/:path*", "destination": "https://my-dashboard-eta-one.vercel.app/api/:path*" }
   ]
 }
