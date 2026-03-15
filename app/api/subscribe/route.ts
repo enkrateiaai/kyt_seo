@@ -24,11 +24,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, already: true })
   }
 
-  // Generate token, store in Redis for 24h
+  // Generate confirm token (24h) + unsubscribe token (1 year)
   const token = randomBytes(32).toString('hex')
+  const unsubToken = randomBytes(32).toString('hex')
   await redis.setex(`doi:${token}`, 86400, email)
+  await redis.setex(`unsub:${unsubToken}`, 31536000, email) // 1 year
 
   const confirmUrl = `${siteUrl}/api/confirm?token=${token}`
+  const unsubUrl = `${siteUrl}/api/unsubscribe?token=${unsubToken}`
 
   // Send confirmation email via Mailjet
   const credentials = Buffer.from(`${apiKey}:${secretKey}`).toString('base64')
@@ -57,9 +60,12 @@ export async function POST(req: NextRequest) {
               <p style="font-size: 13px; color: #9B8E7E; line-height: 1.6;">Wenn du dich nicht angemeldet hast, kannst du diese E-Mail ignorieren. Der Link ist 24 Stunden gültig.</p>
               <hr style="border: none; border-top: 1px solid #EDE8E0; margin: 32px 0;">
               <p style="font-size: 12px; color: #9B8E7E;">kundaliniyogatribe.de · Sat Nam Rasayan & Kundalini Kriyas</p>
+              <p style="font-size: 11px; color: #B0A090; margin-top: 8px;">
+                Du möchtest keinen Newsletter? <a href="${unsubUrl}" style="color: #B0A090; text-decoration: underline;">Hier abmelden</a>
+              </p>
             </div>
           `,
-          TextPart: `Bitte bestätige deine Anmeldung:\n\n${confirmUrl}\n\nDer Link ist 24 Stunden gültig.`,
+          TextPart: `Bitte bestätige deine Anmeldung:\n\n${confirmUrl}\n\nDer Link ist 24 Stunden gültig.\n\nAbmelden: ${unsubUrl}`,
         }],
       }),
     })

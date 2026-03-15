@@ -10,7 +10,7 @@ const C = {
   border: '#DDD5C8',
 }
 
-type Status = 'bestaetigt' | 'abgelaufen' | 'fehler' | null
+type Status = 'bestaetigt' | 'abgelaufen' | 'fehler' | 'abgemeldet' | null
 
 const messages: Record<NonNullable<Status>, { icon: string; title: string; body: string }> = {
   bestaetigt: {
@@ -27,6 +27,11 @@ const messages: Record<NonNullable<Status>, { icon: string; title: string; body:
     icon: '✦',
     title: 'Etwas ist schiefgelaufen',
     body: 'Es gab einen technischen Fehler. Bitte versuche es erneut oder schreib uns an noreply@kundaliniyogatribe.de.',
+  },
+  abgemeldet: {
+    icon: '🌿',
+    title: 'Du wurdest abgemeldet',
+    body: 'Deine E-Mail-Adresse wurde aus unserem Newsletter entfernt. Du erhältst keine weiteren E-Mails von uns. Sat Nam.',
   },
 }
 
