@@ -58,9 +58,6 @@ export async function POST(req: NextRequest) {
                 </a>
               </div>
               <p style="font-size: 13px; color: #9B8E7E; line-height: 1.6;">Wenn du dich nicht angemeldet hast, kannst du diese E-Mail ignorieren. Der Link ist 24 Stunden gültig.</p>
-              <p style="font-size: 12px; color: #B0A090; margin-top: 8px; padding: 10px 14px; background: #F3EDE4; border-radius: 8px;">
-                📬 Tipp: Falls du diese E-Mail nicht siehst, schau kurz in deinen <strong>Spam- oder Junk-Ordner</strong>.
-              </p>
               <hr style="border: none; border-top: 1px solid #EDE8E0; margin: 32px 0;">
               <p style="font-size: 12px; color: #9B8E7E;">kundaliniyogatribe.de · Sat Nam Rasayan & Kundalini Kriyas</p>
               <p style="font-size: 11px; color: #B0A090; margin-top: 8px;">
