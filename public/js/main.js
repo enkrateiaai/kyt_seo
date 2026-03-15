@@ -73,6 +73,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // --- Email obfuscation (anti-crawler) ---
+  document.querySelectorAll('[data-em]').forEach(el => {
+    const addr = atob(el.dataset.em);
+    if (el.tagName === 'A') {
+      el.href = 'mailto:' + addr;
+      el.textContent = addr;
+    } else {
+      el.textContent = addr;
+    }
+  });
+
   // --- Smooth scroll for anchor links ---
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
