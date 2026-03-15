@@ -28,24 +28,26 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [-220, 0],
-      "notes": "Ersetze test@example.com mit der echten Käufer-E-Mail,\nz.B. {{ $('Trigger Node').item.json.customer.email }}"
+      "notes": "Ersetze test@example.com mit der Käufer-E-Mail"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://kundaliniyogatribe.de/api/clerk/set-member",
-        "sendHeaders": true,
-        "headerParameters": {
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
           "parameters": [
             {
-              "name": "Content-Type",
-              "value": "application/json"
+              "name": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "secret",
+              "value": "2adJJshPFKqO31XEdr_EUfwZhuc-Xwr3dAvyhLvacKg"
             }
           ]
         },
-        "sendBody": true,
-        "contentType": "json",
-        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"secret\": \"2adJJshPFKqO31XEdr_EUfwZhuc-Xwr3dAvyhLvacKg\"\n}",
         "options": {}
       },
       "id": "a1b2c3d4-0002-0002-0002-000000000002",
