@@ -8,13 +8,6 @@ interface Playlist {
   playlistId: string
 }
 
-interface YTPlaylist {
-  id: string
-  title: string
-  thumbnail: string
-  itemCount: number
-}
-
 export default function AdminPage() {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [title, setTitle] = useState('')
@@ -23,55 +16,16 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editPlaylistId, setEditPlaylistId] = useState('')
-  const [ytPlaylists, setYtPlaylists] = useState<YTPlaylist[]>([])
-  const [ytLoading, setYtLoading] = useState(false)
-  const [showPicker, setShowPicker] = useState(false)
-  const [pickerFor, setPickerFor] = useState<'new' | number | null>(null)
   const [addSuccess, setAddSuccess] = useState(false)
-
-  const CHANNEL_ID = 'UCzwnk2edclACo1lTwhp5VMQ'
 
   const load = () =>
     fetch('/api/playlists').then(r => r.json()).then(setPlaylists)
 
   useEffect(() => { load() }, [])
 
-  const loadYTPlaylists = async () => {
-    setYtLoading(true)
-    const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
-    try {
-      const res = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${CHANNEL_ID}&maxResults=50&key=${apiKey}`
-      )
-      const data = await res.json()
-      const items: YTPlaylist[] = (data.items || []).map((item: any) => ({
-        id: item.id,
-        title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails?.medium?.url || '',
-        itemCount: item.contentDetails?.itemCount || 0
-      }))
-      setYtPlaylists(items)
-    } catch {
-      console.error('Fehler beim Laden der YouTube Playlisten')
-    }
-    setYtLoading(false)
-  }
-
-  const openPicker = (forWhat: 'new' | number) => {
-    setPickerFor(forWhat)
-    setShowPicker(true)
-    if (ytPlaylists.length === 0) loadYTPlaylists()
-  }
-
-  const selectPlaylist = (yt: YTPlaylist) => {
-    if (pickerFor === 'new') {
-      setPlaylistId(yt.id)
-      if (!title) setTitle(yt.title)
-    } else if (typeof pickerFor === 'number') {
-      setEditPlaylistId(yt.id)
-      if (!editTitle) setEditTitle(yt.title)
-    }
-    setShowPicker(false)
+  const extractId = (v: string) => {
+    const match = v.trim().match(/[?&]list=([A-Za-z0-9_-]+)/)
+    return match ? match[1] : v.trim()
   }
 
   const add = async () => {
@@ -162,14 +116,6 @@ export default function AdminPage() {
         <div style={{ background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 12, padding: 24, marginBottom: 32 }}>
           <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.15em', marginBottom: 16 }}>// Neue Playlist</p>
 
-          {/* YouTube Picker Button */}
-          <button
-            onClick={() => openPicker('new')}
-            style={{ ...btnStyle('#1a1a2e', '#c8f064'), marginBottom: 16, width: '100%', padding: '10px 14px', fontSize: 13 }}
-          >
-            📺 Aus YouTube Channel auswählen
-          </button>
-
           <input
             value={title}
             onChange={e => setTitle(e.target.value)}
@@ -178,11 +124,7 @@ export default function AdminPage() {
           />
           <input
             value={playlistId}
-            onChange={e => {
-              const v = e.target.value.trim()
-              const match = v.match(/[?&]list=([A-Za-z0-9_-]+)/)
-              setPlaylistId(match ? match[1] : v)
-            }}
+            onChange={e => setPlaylistId(extractId(e.target.value))}
             placeholder="YouTube Playlist ID oder kompletter Link"
             style={{ ...inputStyle, marginBottom: 16 }}
           />
@@ -210,18 +152,13 @@ export default function AdminPage() {
           }}>
             {editingId === p.id ? (
               <div>
-                <button
-                  onClick={() => openPicker(p.id)}
-                  style={{ ...btnStyle('#1a1a2e', '#c8f064'), marginBottom: 12, width: '100%', padding: '8px 14px' }}
-                >
-                  📺 Aus YouTube Channel auswählen
-                </button>
-                <input value={editTitle} onChange={e => setEditTitle(e.target.value)} style={{ ...inputStyle, marginBottom: 10 }} />
-                <input value={editPlaylistId} onChange={e => {
-                  const v = e.target.value.trim()
-                  const match = v.match(/[?&]list=([A-Za-z0-9_-]+)/)
-                  setEditPlaylistId(match ? match[1] : v)
-                }} placeholder="Playlist ID oder kompletter Link" style={{ ...inputStyle, marginBottom: 14 }} />
+                <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="Titel" style={{ ...inputStyle, marginBottom: 10 }} />
+                <input
+                  value={editPlaylistId}
+                  onChange={e => setEditPlaylistId(extractId(e.target.value))}
+                  placeholder="Playlist ID oder kompletter Link"
+                  style={{ ...inputStyle, marginBottom: 14 }}
+                />
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => saveEdit(p.id)} style={btnStyle()}>Speichern</button>
                   <button onClick={() => setEditingId(null)} style={btnStyle('#1a1a2e', '#888')}>Abbrechen</button>
@@ -246,70 +183,6 @@ export default function AdminPage() {
           </div>
         ))}
       </div>
-
-      {/* YouTube Picker Modal */}
-      {showPicker && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
-          zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 24
-        }}>
-          <div style={{
-            background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 16,
-            width: '100%', maxWidth: 600, maxHeight: '80vh', overflow: 'hidden',
-            display: 'flex', flexDirection: 'column'
-          }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #1a1a2e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={{ fontSize: 13, color: '#c8f064', letterSpacing: '0.15em' }}>// YouTube Playlisten</p>
-              <button onClick={() => setShowPicker(false)} style={{ ...btnStyle('#1a1a2e', '#888'), padding: '4px 10px' }}>✕</button>
-            </div>
-
-            <div style={{ overflow: 'auto', padding: 16, flex: 1 }}>
-              {ytLoading && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200, gap: 12, color: '#444' }}>
-                  <div style={{ width: 24, height: 24, border: '2px solid #1a1a2e', borderTopColor: '#c8f064', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                  Lade Playlisten...
-                </div>
-              )}
-
-              {!ytLoading && ytPlaylists.length === 0 && (
-                <div style={{ textAlign: 'center', padding: 40, color: '#444' }}>
-                  <p style={{ marginBottom: 8 }}>Keine Playlisten gefunden.</p>
-                  <p style={{ fontSize: 11, marginBottom: 16 }}>Playlist-ID manuell im Feld eingeben oder erneut versuchen.</p>
-                  <button onClick={loadYTPlaylists} style={{ ...btnStyle('#1a1a2e', '#c8f064'), fontSize: 11 }}>
-                    ↺ Erneut laden
-                  </button>
-                </div>
-              )}
-
-              {!ytLoading && ytPlaylists.map(yt => (
-                <div
-                  key={yt.id}
-                  onClick={() => selectPlaylist(yt)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '12px', borderRadius: 8, cursor: 'pointer',
-                    border: '1px solid transparent', marginBottom: 8,
-                    transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#1a1a2e')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  {yt.thumbnail && (
-                    <img src={yt.thumbnail} alt={yt.title} style={{ width: 80, height: 45, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
-                  )}
-                  <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <p style={{ fontSize: 13, color: '#e0e0e0', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{yt.title}</p>
-                    <p style={{ fontSize: 11, color: '#444' }}>{yt.itemCount} Videos</p>
-                  </div>
-                  <span style={{ color: '#c8f064', fontSize: 16, flexShrink: 0 }}>→</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,22 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { NextResponse } from 'next/server'
 
-export async function GET(req: NextRequest) {
-  const session = await getServerSession()
-  
-  if (!session || !(session as any).accessToken) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+const CHANNEL_ID = 'UCzwnk2edclACo1lTwhp5VMQ'
+
+export async function GET() {
+  const apiKey = process.env.YOUTUBE_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
   }
 
-  const res = await fetch(
-    'https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50',
-    {
-      headers: {
-        Authorization: 'Bearer ' + (session as any).accessToken,
-      }
-    }
-  )
-
-  const data = await res.json()
-  return NextResponse.json(data)
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${CHANNEL_ID}&maxResults=50&key=${apiKey}`,
+      { next: { revalidate: 300 } }
+    )
+    const data = await res.json()
+    return NextResponse.json(data)
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to fetch playlists' }, { status: 500 })
+  }
 }
