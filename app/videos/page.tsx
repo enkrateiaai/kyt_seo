@@ -13,6 +13,7 @@ export default async function VideosPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
 
+        @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -122,7 +123,12 @@ export default async function VideosPage() {
           Kundalini Yoga Tribe
         </a>
         <ul className="v-nav__links">
-          <li><a href="/live" className="v-nav__live">⬤ Live</a></li>
+          <li>
+            <a href="/live" className="v-nav__live">
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#c00', display: 'inline-block', animation: 'livePulse 1.5s infinite' }} />
+              Live
+            </a>
+          </li>
         </ul>
         <div className="v-nav__right">
           {user ? (
