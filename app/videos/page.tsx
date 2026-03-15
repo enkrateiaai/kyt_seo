@@ -13,7 +13,6 @@ export default async function VideosPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-        @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -51,30 +50,6 @@ export default async function VideosPage() {
           font-size: 1.2rem;
         }
 
-        .v-nav__links {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          list-style: none;
-        }
-
-        .v-nav__links a {
-          font-size: 13px;
-          color: #6B5D4F;
-          text-decoration: none;
-        }
-
-        .v-nav__links a:hover { color: #C4873B; }
-
-        .v-nav__live {
-          font-size: 12px;
-          font-weight: 600;
-          color: #c00 !important;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        }
-
         .v-nav__right {
           display: flex;
           align-items: center;
@@ -84,6 +59,14 @@ export default async function VideosPage() {
         .v-nav__email {
           font-size: 12px;
           color: #9B8E7E;
+        }
+
+        /* Hide email on small screens */
+        @media (max-width: 600px) {
+          .v-nav__email { display: none; }
+          .v-nav__logo span:last-child { display: none; }
+          .v-nav { padding: 12px 16px; }
+          .v-btn { padding: 6px 14px; font-size: 12px; }
         }
 
         .v-btn {
@@ -122,14 +105,6 @@ export default async function VideosPage() {
           <Image src="/icon.png" alt="Logo" width={30} height={30} style={{ borderRadius: 4 }} />
           Kundalini Yoga Tribe
         </a>
-        <ul className="v-nav__links">
-          <li>
-            <a href="/live" className="v-nav__live">
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#c00', display: 'inline-block', animation: 'livePulse 1.5s infinite' }} />
-              Live
-            </a>
-          </li>
-        </ul>
         <div className="v-nav__right">
           {user ? (
             <>

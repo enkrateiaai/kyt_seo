@@ -604,7 +604,7 @@ export default function YouTubeGallery({ isMember }: Props) {
             </span>
           </a>
         ) : (
-          <a href="/live" style={{
+          <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -617,13 +617,13 @@ export default function YouTubeGallery({ isMember }: Props) {
             gap: 16,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 18 }}>🎥</span>
+              <span style={{ fontSize: 16 }}>🔒</span>
               <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#6B5D4F' }}>
-                Tribe Live Exklusiv – für Mitglieder
+                Tribe Live Exklusiv – nur für Mitglieder
               </span>
             </div>
             <span style={{ fontSize: 13, color: '#C4873B', fontWeight: 500, whiteSpace: 'nowrap' }}>
-              Mehr erfahren →
+              Mitglied werden →
             </span>
           </a>
         )}
