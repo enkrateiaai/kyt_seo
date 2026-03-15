@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { SignOutButton } from '@clerk/nextjs'
 import LivePlayer from './LivePlayer'
 
 export const metadata = {
@@ -7,28 +8,47 @@ export const metadata = {
   description: 'Exklusiver Live-Stream für Mitglieder',
 }
 
-const HEADER = (
-  <header style={{
-    padding: '20px 24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottom: '1px solid #1a1a1a',
-  }}>
-    <a href="/" style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      textDecoration: 'none', color: '#f5f0e8',
+const btnStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: '1px solid #333',
+  color: '#888',
+  padding: '7px 14px',
+  borderRadius: 6,
+  cursor: 'pointer',
+  fontSize: 12,
+  letterSpacing: '0.08em',
+}
+
+function Header({ name }: { name: string }) {
+  return (
+    <header style={{
+      padding: '16px 24px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottom: '1px solid #1a1a1a',
     }}>
-      <span style={{ fontSize: 20, color: '#c9a84c' }}>◯</span>
-      <span style={{ fontSize: 15, fontWeight: 500, letterSpacing: '0.04em' }}>
-        Kundalini Yoga Tribe
-      </span>
-    </a>
-    <a href="/videos" style={{ fontSize: 13, color: '#888', textDecoration: 'none' }}>
-      Alle Videos →
-    </a>
-  </header>
-)
+      <a href="/" style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        textDecoration: 'none', color: '#f5f0e8',
+      }}>
+        <span style={{ fontSize: 20, color: '#c9a84c' }}>◯</span>
+        <span style={{ fontSize: 15, fontWeight: 500, letterSpacing: '0.04em' }}>
+          Kundalini Yoga Tribe
+        </span>
+      </a>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <a href="/videos" style={{ fontSize: 13, color: '#666', textDecoration: 'none' }}>
+          Videos
+        </a>
+        <span style={{ fontSize: 13, color: '#555' }}>Sat Nam, {name}</span>
+        <SignOutButton redirectUrl="https://kundaliniyogatribe.de">
+          <button style={btnStyle}>Abmelden →</button>
+        </SignOutButton>
+      </div>
+    </header>
+  )
+}
 
 function NotAMember({ name }: { name: string }) {
   return (
@@ -36,7 +56,7 @@ function NotAMember({ name }: { name: string }) {
       minHeight: '100vh', background: '#0a0a0a', color: '#f5f0e8',
       fontFamily: "'DM Sans', sans-serif", display: 'flex', flexDirection: 'column',
     }}>
-      {HEADER}
+      <Header name={name} />
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
@@ -91,7 +111,7 @@ export default async function LivePage() {
       minHeight: '100vh', background: '#0a0a0a', color: '#f5f0e8',
       fontFamily: "'DM Sans', sans-serif", display: 'flex', flexDirection: 'column',
     }}>
-      {HEADER}
+      <Header name={name} />
 
       <div style={{ textAlign: 'center', padding: '32px 24px 24px' }}>
         <span style={{
@@ -113,7 +133,6 @@ export default async function LivePage() {
         }}>
           Tribe Live Exklusiv
         </h1>
-        <p style={{ color: '#666', fontSize: 13, margin: 0 }}>Sat Nam, {name}</p>
       </div>
 
       <LivePlayer />
