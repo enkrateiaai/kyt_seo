@@ -40,6 +40,7 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
   const [searchLoading, setSearchLoading] = useState(false)
   const [transcriptIds, setTranscriptIds] = useState<Set<string>>(new Set())
+  const [slugMap, setSlugMap] = useState<Record<string, string>>({})
   const playerRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
@@ -61,6 +62,13 @@ export default function YouTubeGallery({ isMember }: Props) {
         })
         .catch(() => setSearchLoading(false))
     }, 350)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/slugs')
+      .then(r => r.json())
+      .then((map: Record<string, string>) => setSlugMap(map))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -600,7 +608,7 @@ export default function YouTubeGallery({ isMember }: Props) {
                   const match = result.excerpt.slice(result.matchStart, result.matchEnd)
                   const after = result.excerpt.slice(result.matchEnd)
                   return (
-                    <a key={result.id} href={`/videos/${result.id}`} className="v-result">
+                    <a key={result.id} href={`/videos/${slugMap[result.id] ?? result.id}`} className="v-result">
                       <div className="v-result__thumb">
                         <img src={result.thumbnail} alt={result.title} loading="lazy" />
                       </div>
@@ -702,7 +710,7 @@ export default function YouTubeGallery({ isMember }: Props) {
                         {transcriptIds.has(video.id) && (
                           <div className="v-item__meta">
                             <a
-                              href={`/videos/${video.id}`}
+                              href={`/videos/${slugMap[video.id] ?? video.id}`}
                               className="v-item__link"
                               onClick={e => e.stopPropagation()}
                             >

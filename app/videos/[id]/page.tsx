@@ -1,5 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { SignInButton, SignOutButton } from '@clerk/nextjs'
+import { redirect } from 'next/navigation'
 import redis from '@/lib/redis'
 import { Metadata } from 'next'
 
@@ -42,23 +43,36 @@ async function fetchVideoDetails(videoId: string): Promise<YouTubeVideoDetails |
   }
 }
 
+// Resolve slug or videoId → always return the canonical videoId
+async function resolveVideoId(idOrSlug: string): Promise<{ videoId: string; slug: string | null }> {
+  // Check if it's a slug (has slug: mapping)
+  const fromSlug = await redis.get(`slug:${idOrSlug}`) as string | null
+  if (fromSlug) return { videoId: fromSlug, slug: idOrSlug }
+  // Otherwise treat as videoId, look up its slug
+  const slug = await redis.get(`vidslug:${idOrSlug}`) as string | null
+  return { videoId: idOrSlug, slug }
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const [video, customTitle] = await Promise.all([fetchVideoDetails(id), redis.get(`title:${id}`)])
+  const { videoId, slug } = await resolveVideoId(id)
+  const canonicalId = slug ?? id
+  const [video, customTitle] = await Promise.all([fetchVideoDetails(videoId), redis.get(`title:${videoId}`)])
   const baseTitle = (customTitle as string | null) ?? video?.title
   const title = baseTitle ? `${baseTitle} – Kundalini Yoga Tribe` : 'Video – Kundalini Yoga Tribe'
   const description = video
     ? video.description.slice(0, 160)
     : 'Kundalini Yoga Video auf Kundalini Yoga Tribe'
-  const thumbnailUrl = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`
+  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
 
   return {
     title,
     description,
+    alternates: { canonical: `https://kundaliniyogatribe.de/videos/${canonicalId}` },
     openGraph: {
       title,
       description,
-      url: `https://kundaliniyogatribe.de/videos/${id}`,
+      url: `https://kundaliniyogatribe.de/videos/${canonicalId}`,
       images: [{ url: thumbnailUrl, width: 1280, height: 720 }],
       type: 'video.other',
     },
@@ -73,12 +87,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function VideoDetailPage({ params }: PageProps) {
   const { id } = await params
+  const { videoId, slug } = await resolveVideoId(id)
+
+  // Redirect old /videos/[youtubeId] URLs to /videos/[slug]
+  if (slug && id !== slug) {
+    redirect(`/videos/${slug}`)
+  }
+
   const [user, video, transcript, customTitle, isFree] = await Promise.all([
     currentUser(),
-    fetchVideoDetails(id),
-    redis.get(`transcript:${id}`),
-    redis.get(`title:${id}`),
-    redis.get(`free:${id}`),
+    fetchVideoDetails(videoId),
+    redis.get(`transcript:${videoId}`),
+    redis.get(`title:${videoId}`),
+    redis.get(`free:${videoId}`),
   ])
 
   const email = user?.emailAddresses[0]?.emailAddress
@@ -87,7 +108,8 @@ export default async function VideoDetailPage({ params }: PageProps) {
   const title = (customTitle as string | null) ?? video?.title ?? 'Kundalini Yoga Video'
   const description = video?.description ?? ''
   const publishedAt = video?.publishedAt ?? new Date().toISOString()
-  const thumbnailUrl = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`
+  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+  const canonicalSlug = slug ?? videoId
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -96,8 +118,8 @@ export default async function VideoDetailPage({ params }: PageProps) {
     description: description.slice(0, 500),
     thumbnailUrl,
     uploadDate: publishedAt,
-    embedUrl: `https://www.youtube.com/embed/${id}`,
-    url: `https://kundaliniyogatribe.de/videos/${id}`,
+    embedUrl: `https://www.youtube.com/embed/${videoId}`,
+    url: `https://kundaliniyogatribe.de/videos/${canonicalSlug}`,
   }
 
   return (
@@ -573,7 +595,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
             <div className="vd-embed">
               <div className="vd-embed__ratio">
                 <iframe
-                  src={`https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`}
+                  src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
