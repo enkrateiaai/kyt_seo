@@ -982,6 +982,266 @@ h1, h2, h3, h4, h5 {
   .card--kriya { padding: var(--s-lg); }
 }
 
+/* ==========================================================================
+   Article Layout (was-ist-kundalini-yoga / was-bedeutet-heilung style)
+   ========================================================================== */
+
+.article-main {
+  padding-bottom: var(--s-3xl);
+}
+
+/* Two-column layout: article + sidebar */
+.container--article {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 var(--s-lg) var(--s-3xl);
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--s-2xl);
+  align-items: flex-start;
+}
+
+@media (max-width: 860px) {
+  .container--article {
+    grid-template-columns: 1fr;
+  }
+  .article-sidebar {
+    order: -1;
+    display: none; /* hide on mobile to keep it clean */
+  }
+}
+
+/* Hero: category label */
+.article-hero__category {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  background: rgba(196,135,59,0.1);
+  padding: 4px 12px;
+  border-radius: 100px;
+  margin-bottom: var(--s-md);
+}
+
+/* Hero: content wrapper */
+.article-hero__content {
+  /* inherits from .article-hero */
+}
+
+/* Hero: H1 title */
+.article-hero__title {
+  font-family: var(--f-display);
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 300;
+  line-height: 1.15;
+  margin-bottom: var(--s-lg);
+  color: var(--c-text);
+}
+
+.article-hero__title em {
+  font-style: italic;
+  color: var(--c-accent);
+}
+
+/* Hero: lead paragraph */
+.article-hero__lead {
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: var(--c-text-soft);
+  max-width: 680px;
+  margin-bottom: var(--s-lg);
+}
+
+/* Article body (alias of article-content) */
+.article-body {
+  max-width: 100%;
+}
+
+.article-body h2 {
+  font-family: var(--f-display);
+  font-size: 1.8rem;
+  font-weight: 400;
+  margin-top: var(--s-2xl);
+  margin-bottom: var(--s-md);
+  padding-top: var(--s-lg);
+  border-top: 1px solid var(--c-border-light);
+  color: var(--c-text);
+}
+
+.article-body h3 {
+  font-family: var(--f-display);
+  font-size: 1.3rem;
+  font-weight: 500;
+  margin-top: var(--s-xl);
+  margin-bottom: var(--s-md);
+  color: var(--c-text);
+}
+
+.article-body p {
+  margin-bottom: var(--s-lg);
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--c-text-soft);
+}
+
+.article-body p:first-of-type {
+  font-size: 1.1rem;
+  color: var(--c-text);
+}
+
+.article-body ul,
+.article-body ol {
+  margin-bottom: var(--s-lg);
+  padding-left: var(--s-xl);
+}
+
+.article-body li {
+  margin-bottom: var(--s-sm);
+  font-size: 1rem;
+  color: var(--c-text-soft);
+  line-height: 1.7;
+}
+
+.article-body blockquote {
+  border-left: 3px solid var(--c-accent);
+  margin: var(--s-xl) 0;
+  padding: var(--s-lg) var(--s-xl);
+  background: var(--c-bg-warm);
+  border-radius: 0 12px 12px 0;
+}
+
+.article-body blockquote p {
+  font-family: var(--f-display);
+  font-size: 1.2rem;
+  font-style: italic;
+  color: var(--c-text);
+  margin-bottom: 0;
+}
+
+.article-body a {
+  color: var(--c-accent);
+  text-decoration: none;
+}
+
+.article-body a:hover {
+  text-decoration: underline;
+}
+
+/* Sidebar */
+.article-sidebar {
+  position: sticky;
+  top: 88px;
+}
+
+.sidebar-card {
+  background: var(--c-bg-warm);
+  border: 1px solid var(--c-border-light);
+  border-radius: 14px;
+  padding: var(--s-lg) var(--s-xl);
+  margin-bottom: var(--s-lg);
+}
+
+.sidebar-card h4 {
+  font-family: var(--f-display);
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin-bottom: var(--s-md);
+  color: var(--c-text);
+}
+
+.sidebar-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-links li {
+  border-bottom: 1px solid var(--c-border-light);
+  padding: var(--s-sm) 0;
+}
+
+.sidebar-links li:last-child {
+  border-bottom: none;
+}
+
+.sidebar-links a {
+  font-size: 0.9rem;
+  color: var(--c-text-soft);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.sidebar-links a:hover {
+  color: var(--c-accent);
+}
+
+/* Article CTA box */
+.article-cta {
+  background: var(--c-bg-warm);
+  border: 1px solid var(--c-border-light);
+  border-radius: 16px;
+  padding: var(--s-xl) var(--s-2xl);
+  margin-top: var(--s-2xl);
+  text-align: center;
+}
+
+.article-cta h3 {
+  font-family: var(--f-display);
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: var(--s-lg);
+  color: var(--c-text);
+  border-top: none !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.article-cta__links {
+  display: flex;
+  gap: var(--s-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Comparison table (used in kundalini vs. other articles)
+   ========================================================================== */
+
+.comparison-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--c-border-light);
+  margin: var(--s-xl) 0;
+  font-size: 0.9rem;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: var(--s-md) var(--s-lg);
+  text-align: left;
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.comparison-table th {
+  background: var(--c-bg-warm);
+  font-family: var(--f-display);
+  font-weight: 500;
+  color: var(--c-text);
+}
+
+.comparison-table td {
+  color: var(--c-text-soft);
+}
+
+.comparison-table tr:last-child td {
+  border-bottom: none;
+}
+
 /* --- Scroll animations --- */
 .fade-in {
   opacity: 0;
