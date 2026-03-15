@@ -17,6 +17,7 @@ export default function AdminPage() {
   const [editTitle, setEditTitle] = useState('')
   const [editPlaylistId, setEditPlaylistId] = useState('')
   const [addSuccess, setAddSuccess] = useState(false)
+  const [addError, setAddError] = useState('')
 
   const load = () =>
     fetch('/api/playlists').then(r => r.json()).then(setPlaylists)
@@ -29,7 +30,9 @@ export default function AdminPage() {
   }
 
   const add = async () => {
-    if (!title || !playlistId) return
+    setAddError('')
+    if (!title.trim()) { setAddError('Bitte Titel eingeben'); return }
+    if (!playlistId.trim()) { setAddError('Bitte Playlist ID eingeben'); return }
     setLoading(true)
     try {
       const res = await fetch('/api/playlists', {
@@ -43,9 +46,12 @@ export default function AdminPage() {
         await load()
         setAddSuccess(true)
         setTimeout(() => setAddSuccess(false), 3000)
+      } else {
+        setAddError('Fehler beim Speichern')
       }
     } catch (e) {
       console.error(e)
+      setAddError('Fehler beim Speichern')
     }
     setLoading(false)
   }
@@ -131,12 +137,13 @@ export default function AdminPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               onClick={add}
-              disabled={loading || !title || !playlistId}
-              style={{ ...btnStyle(), opacity: loading || !title || !playlistId ? 0.5 : 1 }}
+              disabled={loading}
+              style={{ ...btnStyle(), opacity: loading ? 0.5 : 1 }}
             >
               {loading ? 'Speichern...' : '+ Hinzufügen'}
             </button>
             {addSuccess && <span style={{ color: '#c8f064', fontSize: 12 }}>✓ Gespeichert!</span>}
+            {addError && <span style={{ color: '#ff6b6b', fontSize: 12 }}>{addError}</span>}
           </div>
         </div>
 
