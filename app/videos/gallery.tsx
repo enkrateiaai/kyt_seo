@@ -532,6 +532,47 @@ export default function YouTubeGallery({ isMember }: Props) {
           color: #9B8E7E;
         }
 
+        /* TOC */
+        .v-toc {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 36px;
+          padding-bottom: 28px;
+          border-bottom: 1px solid #EDE8E0;
+        }
+        .v-toc__pill {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          color: #6B5D4F;
+          background: #F3EDE4;
+          border: 1px solid #DDD5C8;
+          border-radius: 100px;
+          padding: 6px 14px;
+          cursor: pointer;
+          transition: background 0.2s, border-color 0.2s, color 0.2s;
+          white-space: nowrap;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .v-toc__pill:hover {
+          background: #EDE8E0;
+          border-color: #C4873B;
+          color: #C4873B;
+        }
+        .v-toc__count {
+          font-size: 10px;
+          color: #9B8E7E;
+          background: #fff;
+          border-radius: 100px;
+          padding: 1px 7px;
+          border: 1px solid #EDE8E0;
+        }
+        .v-toc__pill:hover .v-toc__count { border-color: rgba(196,135,59,0.3); }
+
         .v-item { display: flex; flex-direction: column; }
         .v-item__meta {
           padding: 6px 2px 0;
@@ -626,6 +667,28 @@ export default function YouTubeGallery({ isMember }: Props) {
               Mitglied werden →
             </span>
           </a>
+        )}
+
+        {/* TOC — Section Jump Navigation */}
+        {playlists.length > 0 && !searchResults && (
+          <nav className="v-toc" aria-label="Abschnitte">
+            {playlists.map(playlist => (
+              <a
+                key={playlist.id}
+                href={`#section-${playlist.id}`}
+                className="v-toc__pill"
+                onClick={e => {
+                  e.preventDefault()
+                  document.getElementById(`section-${playlist.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+              >
+                {playlist.title}
+                {!playlist.loading && (playlist.videos?.length ?? 0) > 0 && (
+                  <span className="v-toc__count">{playlist.videos!.length}</span>
+                )}
+              </a>
+            ))}
+          </nav>
         )}
 
         {/* Search */}
@@ -723,7 +786,7 @@ export default function YouTubeGallery({ isMember }: Props) {
           const pageVideos = videos.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
           return (
-            <div key={playlist.id} className="v-section">
+            <div key={playlist.id} id={`section-${playlist.id}`} className="v-section" style={{ scrollMarginTop: 80 }}>
               <div className="v-section__header">
                 <h2 className="v-section__title">{playlist.title}</h2>
                 <div className="v-section__line" />
