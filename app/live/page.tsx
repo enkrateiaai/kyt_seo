@@ -69,7 +69,7 @@ function Header({ name }: { name: string }) {
         <span style={{ fontSize: 13, color: C.textMuted, fontFamily: "'DM Sans', sans-serif" }}>
           Sat Nam, {name}
         </span>
-        <SignOutButton redirectUrl="https://kundaliniyogatribe.de">
+        <SignOutButton>
           <button style={btnStyle}>Abmelden →</button>
         </SignOutButton>
       </div>

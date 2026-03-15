@@ -1,5 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { SignOutButton, SignInButton } from '@clerk/nextjs'
+import Image from 'next/image'
 import YouTubeGallery from './gallery'
 
 export default async function VideosPage() {
@@ -49,6 +50,30 @@ export default async function VideosPage() {
           font-size: 1.2rem;
         }
 
+        .v-nav__links {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          list-style: none;
+        }
+
+        .v-nav__links a {
+          font-size: 13px;
+          color: #6B5D4F;
+          text-decoration: none;
+        }
+
+        .v-nav__links a:hover { color: #C4873B; }
+
+        .v-nav__live {
+          font-size: 12px;
+          font-weight: 600;
+          color: #c00 !important;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+
         .v-nav__right {
           display: flex;
           align-items: center;
@@ -93,14 +118,17 @@ export default async function VideosPage() {
 
       <nav className="v-nav">
         <a href="https://kundaliniyogatribe.de/" className="v-nav__logo">
-          <span className="v-nav__logo-mark">◯</span>
+          <Image src="/icon.png" alt="Logo" width={30} height={30} style={{ borderRadius: 4 }} />
           Kundalini Yoga Tribe
         </a>
+        <ul className="v-nav__links">
+          <li><a href="/live" className="v-nav__live">⬤ Live</a></li>
+        </ul>
         <div className="v-nav__right">
           {user ? (
             <>
               <span className="v-nav__email">{email}</span>
-              <SignOutButton redirectUrl="https://kundaliniyogatribe.de">
+              <SignOutButton>
                 <button className="v-btn">Abmelden</button>
               </SignOutButton>
             </>
