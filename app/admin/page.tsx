@@ -27,6 +27,7 @@ export default function AdminPage() {
   const [ytLoading, setYtLoading] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
   const [pickerFor, setPickerFor] = useState<'new' | number | null>(null)
+  const [addSuccess, setAddSuccess] = useState(false)
 
   const CHANNEL_ID = 'UCzwnk2edclACo1lTwhp5VMQ'
 
@@ -76,14 +77,22 @@ export default function AdminPage() {
   const add = async () => {
     if (!title || !playlistId) return
     setLoading(true)
-    await fetch('/api/playlists', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, playlistId })
-    })
-    setTitle('')
-    setPlaylistId('')
-    await load()
+    try {
+      const res = await fetch('/api/playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, playlistId })
+      })
+      if (res.ok) {
+        setTitle('')
+        setPlaylistId('')
+        await load()
+        setAddSuccess(true)
+        setTimeout(() => setAddSuccess(false), 3000)
+      }
+    } catch (e) {
+      console.error(e)
+    }
     setLoading(false)
   }
 
@@ -173,13 +182,16 @@ export default function AdminPage() {
             placeholder="YouTube Playlist ID"
             style={{ ...inputStyle, marginBottom: 16 }}
           />
-          <button
-            onClick={add}
-            disabled={loading || !title || !playlistId}
-            style={{ ...btnStyle(), opacity: loading || !title || !playlistId ? 0.5 : 1 }}
-          >
-            {loading ? 'Speichern...' : '+ Hinzufügen'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={add}
+              disabled={loading || !title || !playlistId}
+              style={{ ...btnStyle(), opacity: loading || !title || !playlistId ? 0.5 : 1 }}
+            >
+              {loading ? 'Speichern...' : '+ Hinzufügen'}
+            </button>
+            {addSuccess && <span style={{ color: '#c8f064', fontSize: 12 }}>✓ Gespeichert!</span>}
+          </div>
         </div>
 
         {/* Playlist List */}
@@ -250,6 +262,16 @@ export default function AdminPage() {
                   <div style={{ width: 24, height: 24, border: '2px solid #1a1a2e', borderTopColor: '#c8f064', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                   <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   Lade Playlisten...
+                </div>
+              )}
+
+              {!ytLoading && ytPlaylists.length === 0 && (
+                <div style={{ textAlign: 'center', padding: 40, color: '#444' }}>
+                  <p style={{ marginBottom: 8 }}>Keine Playlisten gefunden.</p>
+                  <p style={{ fontSize: 11, marginBottom: 16 }}>Playlist-ID manuell im Feld eingeben oder erneut versuchen.</p>
+                  <button onClick={loadYTPlaylists} style={{ ...btnStyle('#1a1a2e', '#c8f064'), fontSize: 11 }}>
+                    ↺ Erneut laden
+                  </button>
                 </div>
               )}
 
