@@ -132,6 +132,7 @@ export default function YouTubeGallery({ isMember }: Props) {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .v-search {
           position: relative;
@@ -569,6 +570,63 @@ export default function YouTubeGallery({ isMember }: Props) {
             </>
           )}
         </div>
+
+        {/* Live Banner */}
+        {isMember ? (
+          <a href="/live" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#2C2416',
+            color: '#FAF7F2',
+            borderRadius: 12,
+            padding: '20px 28px',
+            marginBottom: 40,
+            textDecoration: 'none',
+            gap: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: '#c00', color: '#fff', fontSize: 11, fontWeight: 700,
+                letterSpacing: '0.12em', padding: '4px 10px', borderRadius: 4,
+                textTransform: 'uppercase', flexShrink: 0,
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block', animation: 'livePulse 1.5s infinite' }} />
+                Live
+              </span>
+              <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 400, letterSpacing: '0.04em' }}>
+                Tribe Live Exklusiv
+              </span>
+            </div>
+            <span style={{ fontSize: 13, color: '#D4A853', fontWeight: 500, whiteSpace: 'nowrap' }}>
+              Jetzt schauen →
+            </span>
+          </a>
+        ) : (
+          <a href="/live" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#F3EDE4',
+            border: '1px solid #DDD5C8',
+            borderRadius: 12,
+            padding: '16px 24px',
+            marginBottom: 40,
+            textDecoration: 'none',
+            gap: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 18 }}>🎥</span>
+              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#6B5D4F' }}>
+                Tribe Live Exklusiv – für Mitglieder
+              </span>
+            </div>
+            <span style={{ fontSize: 13, color: '#C4873B', fontWeight: 500, whiteSpace: 'nowrap' }}>
+              Mehr erfahren →
+            </span>
+          </a>
+        )}
 
         {/* Search */}
         <div className="v-search">
