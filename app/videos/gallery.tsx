@@ -448,35 +448,25 @@ export default function YouTubeGallery({ isMember }: Props) {
           width: 100%; height: 100%;
           object-fit: cover;
           display: block;
-          transition: filter 0.2s;
         }
-        .v-card--locked img { filter: brightness(0.35) saturate(0.3); }
 
         .v-card__lock {
           position: absolute;
           inset: 0;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 6px;
         }
         .v-card__lock-icon {
-          width: 32px; height: 32px;
+          width: 36px; height: 36px;
           border-radius: 50%;
-          background: rgba(255,255,255,0.1);
-          border: 1px solid rgba(255,255,255,0.2);
+          background: rgba(0,0,0,0.45);
+          backdrop-filter: blur(4px);
+          border: 1.5px solid rgba(255,255,255,0.35);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 14px;
-        }
-        .v-card__lock-text {
-          font-size: 9px;
-          color: rgba(255,255,255,0.5);
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          font-family: 'DM Sans', sans-serif;
+          font-size: 16px;
         }
 
         .v-card__playing {
@@ -833,7 +823,6 @@ export default function YouTubeGallery({ isMember }: Props) {
                           {isLocked && (
                             <div className="v-card__lock">
                               <div className="v-card__lock-icon">🔒</div>
-                              <span className="v-card__lock-text">Mitglieder</span>
                             </div>
                           )}
                           {isActive && <span className="v-card__playing">▶ Läuft</span>}
