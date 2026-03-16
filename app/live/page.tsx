@@ -1,7 +1,8 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { SignInButton, SignOutButton } from '@clerk/nextjs'
+import { SignInButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import LivePlayer from './LivePlayer'
+import SiteHeader from '@/app/components/SiteHeader'
 
 export const metadata = {
   title: 'Live Stream – Kundalini Yoga Tribe',
@@ -16,54 +17,6 @@ const C = {
   textMuted:   '#9B8E7E',
   accent:      '#C4873B',
   border:      '#DDD5C8',
-  borderLight: '#EDE8E0',
-}
-
-const btnStyle: React.CSSProperties = {
-  background: 'transparent',
-  border: `1px solid ${C.border}`,
-  color: C.textMuted,
-  padding: '7px 14px',
-  borderRadius: 6,
-  cursor: 'pointer',
-  fontSize: 13,
-  fontFamily: "'DM Sans', sans-serif",
-  letterSpacing: '0.04em',
-}
-
-function Header({ loggedIn, name }: { loggedIn: boolean; name: string }) {
-  return (
-    <header style={{
-      padding: '14px 32px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      background: 'rgba(250,247,242,0.92)',
-      borderBottom: `1px solid ${C.borderLight}`,
-      backdropFilter: 'blur(8px)',
-    }}>
-      <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: C.text }}>
-        <Image src="/icon.png" alt="Logo" width={32} height={32} style={{ borderRadius: 4 }} />
-        <span className="live-logo-text" style={{ fontSize: 15, fontWeight: 500, letterSpacing: '0.04em', fontFamily: "'DM Sans', sans-serif" }}>
-          Kundalini Yoga Tribe
-        </span>
-      </a>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <a href="/videos" style={{ fontSize: 13, color: C.textSoft, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>
-          Videos
-        </a>
-        {loggedIn ? (
-          <SignOutButton>
-            <button style={btnStyle}>Abmelden</button>
-          </SignOutButton>
-        ) : (
-          <SignInButton>
-            <button style={{ ...btnStyle, color: C.accent, borderColor: C.accent }}>Anmelden</button>
-          </SignInButton>
-        )}
-      </div>
-    </header>
-  )
 }
 
 function Gate({ loggedIn }: { loggedIn: boolean }) {
@@ -119,7 +72,6 @@ function Gate({ loggedIn }: { loggedIn: boolean }) {
 export default async function LivePage() {
   const { userId } = await auth()
   const user = userId ? await currentUser() : null
-  const name = user?.firstName ?? 'Sat Nam'
   const isMember =
     (user?.publicMetadata as any)?.role === 'member' ||
     (user?.publicMetadata as any)?.role === 'admin'
@@ -129,7 +81,7 @@ export default async function LivePage() {
       minHeight: '100vh', background: C.bg, color: C.text,
       fontFamily: "'DM Sans', sans-serif", display: 'flex', flexDirection: 'column',
     }}>
-      <Header loggedIn={!!userId} name={name} />
+      <SiteHeader isLoggedIn={!!userId} signOutRedirectUrl="/live" />
 
       {isMember ? (
         <>
@@ -161,9 +113,6 @@ export default async function LivePage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        @media (max-width: 600px) {
-          .live-logo-text { display: none; }
-        }
       `}</style>
     </main>
   )
