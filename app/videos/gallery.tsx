@@ -41,6 +41,7 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [searchLoading, setSearchLoading] = useState(false)
   const [transcriptIds, setTranscriptIds] = useState<Set<string>>(new Set())
   const [slugMap, setSlugMap] = useState<Record<string, string>>({})
+  const [freeIds, setFreeIds] = useState<Set<string>>(new Set())
   const playerRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
@@ -72,6 +73,26 @@ export default function YouTubeGallery({ isMember }: Props) {
   }, [])
 
   useEffect(() => {
+    fetch('/api/free-videos')
+      .then(r => r.json())
+      .then((ids: string[]) => {
+        const set = new Set<string>(ids)
+        setFreeIds(set)
+        // Re-pin free video to top of its playlist now that we know which it is
+        setPlaylists(prev => prev.map(pl => {
+          const vids = pl.videos
+          if (!vids || vids.length === 0) return pl
+          const freePinIndex = vids.findIndex(v => set.has(v.id))
+          if (freePinIndex <= 0) return pl
+          const updated = [...vids]
+          const [pinned] = updated.splice(freePinIndex, 1)
+          return { ...pl, videos: [pinned, ...updated] }
+        }))
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     fetch('/api/transcripts')
       .then(r => r.json())
       .then((ids: string[]) => setTranscriptIds(new Set(ids)))
@@ -88,12 +109,18 @@ export default function YouTubeGallery({ isMember }: Props) {
           fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${p.playlistId}&key=${apiKey}`)
             .then(r => r.json())
             .then(res => {
-              const videos: Video[] = (res.items || []).map((item: any) => ({
+              let videos: Video[] = (res.items || []).map((item: any) => ({
                 id: item.snippet.resourceId.videoId,
                 title: item.snippet.title,
                 thumbnail: item.snippet.thumbnails?.medium?.url ||
                   `https://img.youtube.com/vi/${item.snippet.resourceId.videoId}/mqdefault.jpg`,
               }))
+              // Pin free video to position 0 in its playlist
+              const freePinIndex = videos.findIndex(v => freeIds.has(v.id))
+              if (freePinIndex > 0) {
+                const [pinned] = videos.splice(freePinIndex, 1)
+                videos = [pinned, ...videos]
+              }
               setPlaylists(prev => prev.map(pl =>
                 pl.id === p.id ? { ...pl, videos, loading: false } : pl
               ))
@@ -116,9 +143,7 @@ export default function YouTubeGallery({ isMember }: Props) {
   }
 
   const handleVideoClick = (video: Video, playlist: Playlist) => {
-    const allVideos = playlist.videos || []
-    const globalIndex = allVideos.findIndex(v => v.id === video.id)
-    const isLocked = !isMember && globalIndex !== 0
+    const isLocked = !isMember && !freeIds.has(video.id)
     if (isLocked) {
       window.open('https://www.charan-amrit-kaur.de/yoga-tribe/', '_blank')
       return
@@ -600,7 +625,7 @@ export default function YouTubeGallery({ isMember }: Props) {
             <p className="v-header__sub">Vollständiger Zugriff auf alle Kriyas und Meditationen.</p>
           ) : (
             <>
-              <p className="v-header__sub">Das erste Video jeder Playlist ist kostenlos zugänglich.</p>
+              <p className="v-header__sub">Ein Schnuppervideo ist kostenlos zugänglich.</p>
               <div className="v-header__badge">
                 <span>🔒</span>
                 <span>Mitgliedschaft für vollen Zugriff</span>
@@ -805,8 +830,8 @@ export default function YouTubeGallery({ isMember }: Props) {
               {!playlist.loading && pageVideos.length > 0 && (
                 <div className="v-grid">
                   {pageVideos.map(video => {
-                    const globalIndex = videos.findIndex(v => v.id === video.id)
-                    const isLocked = !isMember && globalIndex !== 0
+                    const isFreeVideo = freeIds.has(video.id)
+                    const isLocked = !isMember && !isFreeVideo
                     const isActive = activeVideo?.id === video.id && activePlaylistId === playlist.id
 
                     return (
@@ -824,7 +849,7 @@ export default function YouTubeGallery({ isMember }: Props) {
                             </div>
                           )}
                           {isActive && <span className="v-card__playing">▶ Läuft</span>}
-                          {globalIndex === 0 && !isMember && (
+                          {isFreeVideo && !isMember && (
                             <span className="v-card__free">Gratis</span>
                           )}
                         </div>
