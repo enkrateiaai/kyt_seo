@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next'
 import redis from '@/lib/redis'
+import fs from 'fs'
+import path from 'path'
 
 const BASE = 'https://kundaliniyogatribe.de'
 
@@ -8,6 +10,7 @@ const STATIC_PAGES: MetadataRoute.Sitemap = [
   { url: `${BASE}/blog`,           lastModified: new Date(), changeFrequency: 'weekly',  priority: 0.8 },
   { url: `${BASE}/glossar`,        lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
   { url: `${BASE}/videos`,         lastModified: new Date(), changeFrequency: 'weekly',  priority: 0.9 },
+  { url: `${BASE}/mantras`,        lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
   { url: `${BASE}/artikel/was-ist-sat-nam-rasayan`,      lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
   { url: `${BASE}/artikel/sat-kriya-anleitung`,          lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
   { url: `${BASE}/artikel/sat-nam-rasayan-erfahrungen`,  lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
@@ -19,7 +22,24 @@ const STATIC_PAGES: MetadataRoute.Sitemap = [
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Fetch all video slugs from Redis
+  // Mantra pages from filesystem
+  let mantraEntries: MetadataRoute.Sitemap = []
+  try {
+    const mantraDir = path.join(process.cwd(), 'public/satnam/mantras')
+    const files = fs.readdirSync(mantraDir)
+    mantraEntries = files
+      .filter(f => f.endsWith('.html'))
+      .map(f => ({
+        url: `${BASE}/mantras/${f.replace('.html', '')}`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.7,
+      }))
+  } catch {
+    // Filesystem unavailable — skip
+  }
+
+  // Video pages from Redis
   let videoEntries: MetadataRoute.Sitemap = []
   try {
     const keys = await redis.keys('vidslug:*')
@@ -36,5 +56,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Redis unavailable — skip video entries
   }
 
-  return [...STATIC_PAGES, ...videoEntries]
+  return [...STATIC_PAGES, ...mantraEntries, ...videoEntries]
 }
