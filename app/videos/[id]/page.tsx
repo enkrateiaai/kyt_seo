@@ -161,12 +161,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
           font-weight: 400;
         }
 
-        .v-nav__logo-mark {
-          color: #C4873B;
-          font-size: 1.2rem;
-        }
-
-        .v-nav__right {
+.v-nav__right {
           display: flex;
           align-items: center;
           gap: 12px;
@@ -578,7 +573,8 @@ export default async function VideoDetailPage({ params }: PageProps) {
 
       <nav className="v-nav">
         <a href="https://kundaliniyogatribe.de/" className="v-nav__logo">
-          <span className="v-nav__logo-mark">◯</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="https://kundaliniyogatribe.de/icon.png" alt="KYT" style={{width:'28px',height:'28px',borderRadius:'4px',objectFit:'cover',flexShrink:0}} />
           Kundalini Yoga Tribe
         </a>
         <div className="v-nav__right">
