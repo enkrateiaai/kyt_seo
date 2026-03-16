@@ -75,20 +75,7 @@ export default function YouTubeGallery({ isMember }: Props) {
   useEffect(() => {
     fetch('/api/free-videos')
       .then(r => r.json())
-      .then((ids: string[]) => {
-        const set = new Set<string>(ids)
-        setFreeIds(set)
-        // Re-pin free video to top of its playlist now that we know which it is
-        setPlaylists(prev => prev.map(pl => {
-          const vids = pl.videos
-          if (!vids || vids.length === 0) return pl
-          const freePinIndex = vids.findIndex(v => set.has(v.id))
-          if (freePinIndex <= 0) return pl
-          const updated = [...vids]
-          const [pinned] = updated.splice(freePinIndex, 1)
-          return { ...pl, videos: [pinned, ...updated] }
-        }))
-      })
+      .then((ids: string[]) => setFreeIds(new Set<string>(ids)))
       .catch(() => {})
   }, [])
 
@@ -109,18 +96,12 @@ export default function YouTubeGallery({ isMember }: Props) {
           fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${p.playlistId}&key=${apiKey}`)
             .then(r => r.json())
             .then(res => {
-              let videos: Video[] = (res.items || []).map((item: any) => ({
+              const videos: Video[] = (res.items || []).map((item: any) => ({
                 id: item.snippet.resourceId.videoId,
                 title: item.snippet.title,
                 thumbnail: item.snippet.thumbnails?.medium?.url ||
                   `https://img.youtube.com/vi/${item.snippet.resourceId.videoId}/mqdefault.jpg`,
               }))
-              // Pin free video to position 0 in its playlist
-              const freePinIndex = videos.findIndex(v => freeIds.has(v.id))
-              if (freePinIndex > 0) {
-                const [pinned] = videos.splice(freePinIndex, 1)
-                videos = [pinned, ...videos]
-              }
               setPlaylists(prev => prev.map(pl =>
                 pl.id === p.id ? { ...pl, videos, loading: false } : pl
               ))
@@ -806,7 +787,12 @@ export default function YouTubeGallery({ isMember }: Props) {
         {/* Playlists */}
         {!searchResults && playlists.map(playlist => {
           const page = playlist.page || 0
-          const videos = playlist.videos || []
+          // Always pin free video to position 0 at render time (no timing issues)
+          const videos = [...(playlist.videos || [])].sort((a, b) => {
+            if (freeIds.has(a.id)) return -1
+            if (freeIds.has(b.id)) return 1
+            return 0
+          })
           const totalPages = Math.ceil(videos.length / PAGE_SIZE)
           const pageVideos = videos.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
