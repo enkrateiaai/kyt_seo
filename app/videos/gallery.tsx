@@ -787,10 +787,12 @@ export default function YouTubeGallery({ isMember }: Props) {
         {/* Playlists */}
         {!searchResults && playlists.map(playlist => {
           const page = playlist.page || 0
-          // Always pin free video to position 0 at render time (no timing issues)
+          // Pin free video to position 0 only for non-members
           const videos = [...(playlist.videos || [])].sort((a, b) => {
-            if (freeIds.has(a.id)) return -1
-            if (freeIds.has(b.id)) return 1
+            if (!isMember) {
+              if (freeIds.has(a.id)) return -1
+              if (freeIds.has(b.id)) return 1
+            }
             return 0
           })
           const totalPages = Math.ceil(videos.length / PAGE_SIZE)
