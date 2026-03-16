@@ -93,7 +93,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         const withLoading = data.map(p => ({ ...p, videos: [], loading: true, page: 0 }))
         setPlaylists(withLoading)
         withLoading.forEach(p => {
-          fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${p.playlistId}&key=${apiKey}`)
+          fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=200&playlistId=${p.playlistId}&key=${apiKey}`)
             .then(r => r.json())
             .then(res => {
               const videos: Video[] = (res.items || []).map((item: any) => ({
