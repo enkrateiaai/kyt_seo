@@ -109,7 +109,7 @@ export default async function VideosPage() {
           {user ? (
             <>
               <span className="v-nav__email">{email}</span>
-              <SignOutButton>
+              <SignOutButton redirectUrl="/videos">
                 <button className="v-btn">Abmelden</button>
               </SignOutButton>
             </>
