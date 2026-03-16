@@ -2,6 +2,10 @@
 const fs = require('fs');
 const path = require('path');
 
+// Reverse index: mantra slug → [{videoId, title, slug, free}]
+const VIDEO_INDEX_PATH = path.join(__dirname, 'mantra-video-index.json');
+const videoIndex = fs.existsSync(VIDEO_INDEX_PATH) ? JSON.parse(fs.readFileSync(VIDEO_INDEX_PATH, 'utf8')) : {};
+
 const NAV = `
   <nav class="nav" id="nav">
     <div class="nav__inner">
@@ -957,6 +961,30 @@ ${NAV}
     <div style="display:flex;flex-direction:column;gap:var(--s-sm);">
       ${relatedLinks}
     </div>` : ''}
+
+    ${(() => {
+      const vids = videoIndex[mantra.slug] || [];
+      if (!vids.length) return '';
+      const MAX = 6;
+      const shown = vids.slice(0, MAX);
+      const cards = shown.map(v => `
+      <a href="/videos/${v.slug}" style="display:flex;gap:12px;align-items:center;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;padding:12px;text-decoration:none;color:inherit;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--c-accent)'" onmouseout="this.style.borderColor='var(--c-border)'">
+        <img src="https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg" alt="${v.title}" style="width:100px;height:56px;object-fit:cover;border-radius:4px;flex-shrink:0;">
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:0.9rem;font-weight:500;margin:0 0 4px;line-height:1.3;color:var(--c-text);">${v.title}</p>
+          <span style="font-size:0.75rem;color:var(--c-accent);">🔒 Mitglied werden →</span>
+        </div>
+      </a>`).join('');
+      const more = vids.length > MAX ? `<p style="text-align:center;margin-top:var(--s-md);font-size:0.85rem;color:var(--c-text-muted);">+${vids.length - MAX} weitere Videos mit diesem Mantra</p>` : '';
+      return `
+    <h2>Videos mit diesem Mantra</h2>
+    <p style="color:var(--c-text-soft);font-size:0.9rem;">In diesen Praxis-Videos wird ${mantra.name} verwendet – als Mitglied kannst du alle Videos in voller Länge sehen.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:var(--s-md);">${cards}</div>
+    ${more}
+    <div style="text-align:center;margin-top:var(--s-xl);">
+      <a href="/videos" style="display:inline-block;padding:10px 28px;background:var(--c-accent);color:#fff;border-radius:4px;font-size:0.9rem;text-decoration:none;font-weight:500;">Alle Videos ansehen</a>
+    </div>`;
+    })()}
 
     <div style="margin-top:var(--s-2xl);padding:var(--s-xl);background:var(--c-surface);border-radius:8px;text-align:center;">
       <p style="color:var(--c-text-muted);font-size:0.85rem;margin-bottom:var(--s-md);">Alle Mantras im Überblick</p>

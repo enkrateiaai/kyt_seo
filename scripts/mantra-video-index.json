@@ -1,0 +1,908 @@
+{
+  "ong-namo-guru-dev-namo": [
+    {
+      "videoId": "MsGF-5NFmE4",
+      "title": "30-Minuten-Kriya – Energie & Transformation",
+      "slug": "30-minuten-kriya-energie-transformation",
+      "free": false
+    },
+    {
+      "videoId": "4wk8uzPihBY",
+      "title": "30-Minuten-Kriya – Innere Stärke & Ausdauer",
+      "slug": "30-minuten-kriya-innere-staerke-ausdauer",
+      "free": false
+    },
+    {
+      "videoId": "7oJxV6tL7QU",
+      "title": "30-Minuten-Kriya – Vollständige Praxis für Körper & Geist",
+      "slug": "30-minuten-kriya-vollstaendige-praxis",
+      "free": false
+    },
+    {
+      "videoId": "HtRKvr5GL5E",
+      "title": "Atemkriya – Tag 2: Vitalität, Energie & Klarheit durch den Atem",
+      "slug": "kriya-atemuebungen-pranayama",
+      "free": false
+    },
+    {
+      "videoId": "6QLA9hoXt4A",
+      "title": "Celestial Communication – Gobinday Mukunday",
+      "slug": "celestial-communication-gobinday-mukunday",
+      "free": false
+    },
+    {
+      "videoId": "jWz5fs7dTeY",
+      "title": "Celestial Communication – Ong So Hung",
+      "slug": "celestial-communication-ong-so-hung",
+      "free": true
+    },
+    {
+      "videoId": "T5chy6Z2CDE",
+      "title": "Celestial Communication – Pavan Pavan",
+      "slug": "celestial-communication-pavan-pavan",
+      "free": false
+    },
+    {
+      "videoId": "EkYO2vJ4T9Q",
+      "title": "Celestial Communication – Sa Re Sa Sa",
+      "slug": "celestial-communication-sa-re-sa-sa",
+      "free": false
+    },
+    {
+      "videoId": "PRYNp2hm5Qk",
+      "title": "Celestial Communication – Sat Narayan",
+      "slug": "celestial-communication-sat-narayan",
+      "free": false
+    },
+    {
+      "videoId": "SozSvZGSJso",
+      "title": "Dein emotionales Herz",
+      "slug": "dein-emotionales-herz",
+      "free": false
+    },
+    {
+      "videoId": "LQDxn2nuHzA",
+      "title": "Deine schöpferische Kraft",
+      "slug": "40-tage-abschluss-schoepferkraft",
+      "free": false
+    },
+    {
+      "videoId": "_a3Of6s62no",
+      "title": "Glückskriya – Opportunity Kriya: Herz öffnen & Fülle empfangen",
+      "slug": "kriya-glueck-herz-oeffnen",
+      "free": false
+    },
+    {
+      "videoId": "xA-sSZiSt4E",
+      "title": "Kriya & Meditation – Deine Schöpferische Kraft",
+      "slug": "kriya-meditation-deine-schoepferische-kraft",
+      "free": false
+    },
+    {
+      "videoId": "iOxUOcDe4PY",
+      "title": "Kriya & Meditation – Interverbundenheit & Heilung",
+      "slug": "kriya-meditation-interverbundenheit-heilung",
+      "free": false
+    },
+    {
+      "videoId": "yooyHIDCNfk",
+      "title": "Kundalini Yoga – Kriya für Selbstheilung & Innere Stille (Aufnahme 2)",
+      "slug": "herzmeditation-atemuebung-einstimmung",
+      "free": false
+    },
+    {
+      "videoId": "bZr2-MP-lqs",
+      "title": "Kundalini Yoga – Kriya für Selbstheilung & Meditation in Stille",
+      "slug": "herzmeditation-einstimmung-atem",
+      "free": false
+    },
+    {
+      "videoId": "SY924BoGtEc",
+      "title": "Kundalini Yoga – Kurze Morgenpraxis (30 Min.) mit Laya Yoga",
+      "slug": "kurze-kriya-herzmeditation",
+      "free": false
+    },
+    {
+      "videoId": "MobxlCVQHt0",
+      "title": "Kundalini Yoga – Vollständige Morgenkriya mit Laya Yoga",
+      "slug": "laya-yoga-kreativitaet-chakren",
+      "free": false
+    },
+    {
+      "videoId": "9-5NqyG3QjY",
+      "title": "Kundalini Yoga zum Jahresanfang – Schöpferische Kraft & innere Ausrichtung",
+      "slug": "kriya-jahresanfang-kundalini-energie",
+      "free": false
+    },
+    {
+      "videoId": "kSuZH5l2iok",
+      "title": "Meditation – Emotionen & Kreativität",
+      "slug": "meditation-emotionen-befreien-klarheit",
+      "free": true
+    },
+    {
+      "videoId": "jugwEwiiTlg",
+      "title": "Meditation: Spannungen Lösen",
+      "slug": "meditation-innere-stabilitaet-stille",
+      "free": false
+    },
+    {
+      "videoId": "apKp-Ef5pIs",
+      "title": "Morgenroutine – Kraftvolle Morgenpraxis für Klarheit & Fokus",
+      "slug": "morgenroutine-klarheit-fokus",
+      "free": false
+    },
+    {
+      "videoId": "WVa0v_rWan0",
+      "title": "Morgenroutine – Tiefe Morgenpraxis für Herzöffnung & Dankbarkeit",
+      "slug": "morgenroutine-herzoeffnung-dankbarkeit",
+      "free": false
+    },
+    {
+      "videoId": "5S4MD0NEE-o",
+      "title": "Morgenroutine – Vollständige Morgenpraxis für den neuen Tag",
+      "slug": "morgenroutine-vollstaendige-praxis-neuer-tag",
+      "free": false
+    },
+    {
+      "videoId": "lSvsWkNdCPU",
+      "title": "Nervensystem-Kriya – Tag 3: Starke Nerven, innere Ruhe & Gelassenheit",
+      "slug": "kriya-nervensystem-kurze-praxis",
+      "free": false
+    },
+    {
+      "videoId": "590-Oylhjvw",
+      "title": "Sonntagssession – Vollständige Kundalini Yoga Praxis",
+      "slug": "sonntagssession-vollstaendige-praxis",
+      "free": false
+    },
+    {
+      "videoId": "k7xc2s4qtGI",
+      "title": "Strahlung & innere Schönheit – Kriya für bezaubernde Ausstrahlung",
+      "slug": "kriya-innere-aeussere-schoenheit",
+      "free": false
+    },
+    {
+      "videoId": "OyxjI0evi7I",
+      "title": "Tiefes Vertrauen – Abschluss: Positive Projektion & Hingabe (Tag 11)",
+      "slug": "40-tage-abschluss-tiefes-vertrauen",
+      "free": false
+    },
+    {
+      "videoId": "cOZUzSqmnSI",
+      "title": "Tiefes Vertrauen – Ängste lösen (Tag 1)",
+      "slug": "40-tage-zyklus-tiefes-vertrauen",
+      "free": false
+    },
+    {
+      "videoId": "u8eUP6558BE",
+      "title": "Tiefes Vertrauen – Ängste lösen (Tag 2)",
+      "slug": "kriya-zukunftsangst-tiefes-vertrauen",
+      "free": false
+    },
+    {
+      "videoId": "PELEWivDLMg",
+      "title": "Tiefes Vertrauen – Ängste loslassen & Erdung finden (Tag 3)",
+      "slug": "kriya-sorgen-loesen-erden-verankern",
+      "free": false
+    },
+    {
+      "videoId": "EYZxuvrRup8",
+      "title": "Tiefes Vertrauen – Ängste transformieren (Tag 10)",
+      "slug": "40-tage-angst-in-vertrauen-wandeln",
+      "free": false
+    },
+    {
+      "videoId": "6LNHgBORhms",
+      "title": "Tiefes Vertrauen – Gehalten sein & Hingabe (Tag 7)",
+      "slug": "kriya-angst-vertrauen-sicherheit",
+      "free": false
+    },
+    {
+      "videoId": "qidV_I4AO_I",
+      "title": "Tiefes Vertrauen – Im Körper ankommen & Ängste ausfeuern (Tag 5)",
+      "slug": "kriya-angst-zukunftsvertrauen",
+      "free": false
+    },
+    {
+      "videoId": "yhhCfIYfOzI",
+      "title": "Tiefes Vertrauen – Sicherheit & Geborgenheit verkörpern (Tag 9)",
+      "slug": "kriya-angst-zukunft-loslassen",
+      "free": false
+    }
+  ],
+  "sat-nam": [
+    {
+      "videoId": "MsGF-5NFmE4",
+      "title": "30-Minuten-Kriya – Energie & Transformation",
+      "slug": "30-minuten-kriya-energie-transformation",
+      "free": false
+    },
+    {
+      "videoId": "4wk8uzPihBY",
+      "title": "30-Minuten-Kriya – Innere Stärke & Ausdauer",
+      "slug": "30-minuten-kriya-innere-staerke-ausdauer",
+      "free": false
+    },
+    {
+      "videoId": "7oJxV6tL7QU",
+      "title": "30-Minuten-Kriya – Vollständige Praxis für Körper & Geist",
+      "slug": "30-minuten-kriya-vollstaendige-praxis",
+      "free": false
+    },
+    {
+      "videoId": "CZmFJqH1Xpg",
+      "title": "Celestial Communication – Ardas Bhaee",
+      "slug": "celestial-communication-ardas-bhaee",
+      "free": false
+    },
+    {
+      "videoId": "hHBx0zIlaDg",
+      "title": "Celestial Communication – Chakkr Chattr Vartee",
+      "slug": "celestial-communication-chakkr-chattr-vartee",
+      "free": false
+    },
+    {
+      "videoId": "6QLA9hoXt4A",
+      "title": "Celestial Communication – Gobinday Mukunday",
+      "slug": "celestial-communication-gobinday-mukunday",
+      "free": false
+    },
+    {
+      "videoId": "Hsa4xX7BNjs",
+      "title": "Celestial Communication – Guru Ram Das",
+      "slug": "celestial-communication-guru-ram-das",
+      "free": false
+    },
+    {
+      "videoId": "eg2-0yiDgts",
+      "title": "Celestial Communication – Humee Hum Brahm Hum",
+      "slug": "celestial-communication-humee-hum-brahm-hum",
+      "free": false
+    },
+    {
+      "videoId": "lTqUUFgmOWw",
+      "title": "Celestial Communication – I Am What I Am",
+      "slug": "celestial-communication-i-am-what-i-am",
+      "free": false
+    },
+    {
+      "videoId": "jWz5fs7dTeY",
+      "title": "Celestial Communication – Ong So Hung",
+      "slug": "celestial-communication-ong-so-hung",
+      "free": true
+    },
+    {
+      "videoId": "T5chy6Z2CDE",
+      "title": "Celestial Communication – Pavan Pavan",
+      "slug": "celestial-communication-pavan-pavan",
+      "free": false
+    },
+    {
+      "videoId": "nldfzW3mYMA",
+      "title": "Celestial Communication – Ra Ma Da Sa",
+      "slug": "celestial-communication-ra-ma-da-sa",
+      "free": false
+    },
+    {
+      "videoId": "EkYO2vJ4T9Q",
+      "title": "Celestial Communication – Sa Re Sa Sa",
+      "slug": "celestial-communication-sa-re-sa-sa",
+      "free": false
+    },
+    {
+      "videoId": "PRYNp2hm5Qk",
+      "title": "Celestial Communication – Sat Narayan",
+      "slug": "celestial-communication-sat-narayan",
+      "free": false
+    },
+    {
+      "videoId": "SozSvZGSJso",
+      "title": "Dein emotionales Herz",
+      "slug": "dein-emotionales-herz",
+      "free": false
+    },
+    {
+      "videoId": "LQDxn2nuHzA",
+      "title": "Deine schöpferische Kraft",
+      "slug": "40-tage-abschluss-schoepferkraft",
+      "free": false
+    },
+    {
+      "videoId": "wwVJNgnzAMw",
+      "title": "Dezember-Abschluss – Waheguru Kriya (Trikuti Kriya) für Transformation",
+      "slug": "waheguru-kriya-trikuti-dezember",
+      "free": false
+    },
+    {
+      "videoId": "9pJoxWJ5Y0k",
+      "title": "Kriya – Verbundenheit & Kommunikation",
+      "slug": "kriya-verbundenheit-kommunikation",
+      "free": false
+    },
+    {
+      "videoId": "xA-sSZiSt4E",
+      "title": "Kriya & Meditation – Deine Schöpferische Kraft",
+      "slug": "kriya-meditation-deine-schoepferische-kraft",
+      "free": false
+    },
+    {
+      "videoId": "iOxUOcDe4PY",
+      "title": "Kriya & Meditation – Interverbundenheit & Heilung",
+      "slug": "kriya-meditation-interverbundenheit-heilung",
+      "free": false
+    },
+    {
+      "videoId": "yooyHIDCNfk",
+      "title": "Kundalini Yoga – Kriya für Selbstheilung & Innere Stille (Aufnahme 2)",
+      "slug": "herzmeditation-atemuebung-einstimmung",
+      "free": false
+    },
+    {
+      "videoId": "bZr2-MP-lqs",
+      "title": "Kundalini Yoga – Kriya für Selbstheilung & Meditation in Stille",
+      "slug": "herzmeditation-einstimmung-atem",
+      "free": false
+    },
+    {
+      "videoId": "SY924BoGtEc",
+      "title": "Kundalini Yoga – Kurze Morgenpraxis (30 Min.) mit Laya Yoga",
+      "slug": "kurze-kriya-herzmeditation",
+      "free": false
+    },
+    {
+      "videoId": "MobxlCVQHt0",
+      "title": "Kundalini Yoga – Vollständige Morgenkriya mit Laya Yoga",
+      "slug": "laya-yoga-kreativitaet-chakren",
+      "free": false
+    },
+    {
+      "videoId": "kSuZH5l2iok",
+      "title": "Meditation – Emotionen & Kreativität",
+      "slug": "meditation-emotionen-befreien-klarheit",
+      "free": true
+    },
+    {
+      "videoId": "jugwEwiiTlg",
+      "title": "Meditation: Spannungen Lösen",
+      "slug": "meditation-innere-stabilitaet-stille",
+      "free": false
+    },
+    {
+      "videoId": "AC3kDdVWF3E",
+      "title": "Morgenroutine – Befreie Dein Herz",
+      "slug": "morgenroutine-befreie-dein-herz",
+      "free": false
+    },
+    {
+      "videoId": "WzE5AV-75H8",
+      "title": "Morgenroutine – Befreie Dein Herz (Teil 1)",
+      "slug": "morgenroutine-befreie-dein-herz-teil-1",
+      "free": false
+    },
+    {
+      "videoId": "9GxoDl6eNcY",
+      "title": "Morgenroutine – Befreie Dein Herz (Teil 8)",
+      "slug": "morgenroutine-befreie-dein-herz-teil-8",
+      "free": false
+    },
+    {
+      "videoId": "apKp-Ef5pIs",
+      "title": "Morgenroutine – Kraftvolle Morgenpraxis für Klarheit & Fokus",
+      "slug": "morgenroutine-klarheit-fokus",
+      "free": false
+    },
+    {
+      "videoId": "WVa0v_rWan0",
+      "title": "Morgenroutine – Tiefe Morgenpraxis für Herzöffnung & Dankbarkeit",
+      "slug": "morgenroutine-herzoeffnung-dankbarkeit",
+      "free": false
+    },
+    {
+      "videoId": "5S4MD0NEE-o",
+      "title": "Morgenroutine – Vollständige Morgenpraxis für den neuen Tag",
+      "slug": "morgenroutine-vollstaendige-praxis-neuer-tag",
+      "free": false
+    },
+    {
+      "videoId": "ESboUIfqifU",
+      "title": "Pranakörper & Selbstvertrauen – Kriya für Self-Reliance und Atemkraft",
+      "slug": "kriya-pranakoerper-selbstvertrauen",
+      "free": false
+    },
+    {
+      "videoId": "ZMBaKEpepqY",
+      "title": "Sonntagsmeditation – Schöpferkraft & Energie",
+      "slug": "sonntagsmeditation-schoepferkraft-energie",
+      "free": false
+    },
+    {
+      "videoId": "BtZVBC9_ZL0",
+      "title": "Sonntagsmeditation – Tiefe Transformation",
+      "slug": "sonntagsmeditation-tiefe-transformation",
+      "free": false
+    },
+    {
+      "videoId": "590-Oylhjvw",
+      "title": "Sonntagssession – Vollständige Kundalini Yoga Praxis",
+      "slug": "sonntagssession-vollstaendige-praxis",
+      "free": false
+    },
+    {
+      "videoId": "MsxNcAxgaN0",
+      "title": "Stille Meditation – 5 Elemente: Äther",
+      "slug": "stille-meditation-5-elemente-aether",
+      "free": false
+    },
+    {
+      "videoId": "oc8JgM15aRc",
+      "title": "Stille Meditation – 5 Elemente: Erde",
+      "slug": "stille-meditation-5-elemente-erde",
+      "free": false
+    },
+    {
+      "videoId": "DH3oUgrhxQ8",
+      "title": "Stille Meditation – 5 Elemente: Feuer",
+      "slug": "stille-meditation-5-elemente-feuer",
+      "free": false
+    },
+    {
+      "videoId": "qKqG12ZGGsI",
+      "title": "Stille Meditation – 5 Elemente: Luft",
+      "slug": "stille-meditation-5-elemente-luft",
+      "free": false
+    },
+    {
+      "videoId": "CM3_2_P5mBQ",
+      "title": "Stille Meditation – 5 Elemente: Wasser",
+      "slug": "stille-meditation-5-elemente-wasser",
+      "free": false
+    },
+    {
+      "videoId": "vL4hGSxI66w",
+      "title": "Stille Meditation – Dankbarkeit & Fülle",
+      "slug": "stille-meditation-dankbarkeit-fuelle",
+      "free": false
+    },
+    {
+      "videoId": "uJATElNUjmY",
+      "title": "Stille Meditation – Dein Inneres Licht",
+      "slug": "stille-meditation-dein-inneres-licht",
+      "free": false
+    },
+    {
+      "videoId": "St4M8vNlOsQ",
+      "title": "Stille Meditation – Den Geist beruhigen",
+      "slug": "stille-meditation-den-geist-beruhigen",
+      "free": false
+    },
+    {
+      "videoId": "2cyfVlLHlug",
+      "title": "Stille Meditation – Der Atem als Anker",
+      "slug": "stille-meditation-atem-als-anker",
+      "free": false
+    },
+    {
+      "videoId": "7TWgB1OY1LU",
+      "title": "Stille Meditation – Der innere Beobachter",
+      "slug": "stille-meditation-der-innere-beobachter",
+      "free": false
+    },
+    {
+      "videoId": "t4kMYoTP9Uc",
+      "title": "Stille Meditation – Erdung & Zentrierung",
+      "slug": "stille-meditation-erdung-zentrierung",
+      "free": false
+    },
+    {
+      "videoId": "dzON8ppuTSg",
+      "title": "Stille Meditation – Frieden mit dem gegenwärtigen Moment",
+      "slug": "stille-meditation-frieden-gegenwart",
+      "free": false
+    },
+    {
+      "videoId": "GYbBtsB41XI",
+      "title": "Stille Meditation – Heilende Stille",
+      "slug": "stille-meditation-heilende-stille",
+      "free": false
+    },
+    {
+      "videoId": "39fE1e5PmZc",
+      "title": "Stille Meditation – Herzraum öffnen",
+      "slug": "stille-meditation-herzraum-oeffnen",
+      "free": false
+    },
+    {
+      "videoId": "6ZblNulmlLE",
+      "title": "Stille Meditation – Im Augenblick ruhen",
+      "slug": "stille-meditation-im-augenblick-ruhen",
+      "free": false
+    },
+    {
+      "videoId": "irmga1rIhcs",
+      "title": "Stille Meditation – In Die Verankert",
+      "slug": "stille-meditation-in-die-verankert",
+      "free": false
+    },
+    {
+      "videoId": "pcL2wyBEY4g",
+      "title": "Stille Meditation – Innere Stille finden",
+      "slug": "stille-meditation-innere-stille-finden",
+      "free": false
+    },
+    {
+      "videoId": "-BgTdDmi-rc",
+      "title": "Stille Meditation – Intuition & inneres Wissen",
+      "slug": "stille-meditation-intuition-inneres-wissen",
+      "free": false
+    },
+    {
+      "videoId": "FfymkQGJKmg",
+      "title": "Stille Meditation – Kurzpraxis: Im Körper landen",
+      "slug": "stille-meditation-im-koerper-landen",
+      "free": true
+    },
+    {
+      "videoId": "cnvxWgDZlv4",
+      "title": "Stille Meditation – Loslassen",
+      "slug": "stille-meditation-loslassen",
+      "free": false
+    },
+    {
+      "videoId": "oPynpzQigxE",
+      "title": "Stille Meditation – Offenheit & Empfangen",
+      "slug": "stille-meditation-offenheit-empfangen",
+      "free": false
+    },
+    {
+      "videoId": "pT4-DB0yAtU",
+      "title": "Stille Meditation – Reinigung & Neuanfang",
+      "slug": "stille-meditation-reinigung-neuanfang",
+      "free": false
+    },
+    {
+      "videoId": "eIbmeu6d8fQ",
+      "title": "Stille Meditation – Selbstmitgefühl kultivieren",
+      "slug": "stille-meditation-selbstmitgefuehl",
+      "free": false
+    },
+    {
+      "videoId": "qklVei1Az7k",
+      "title": "Stille Meditation – Tiefes Vertrauen",
+      "slug": "stille-meditation-tiefes-vertrauen",
+      "free": false
+    },
+    {
+      "videoId": "L8R6QaBoffs",
+      "title": "Stille Meditation – Wahrnehmung ohne Bewertung",
+      "slug": "stille-meditation-wahrnehmung-ohne-bewertung",
+      "free": false
+    },
+    {
+      "videoId": "OyxjI0evi7I",
+      "title": "Tiefes Vertrauen – Abschluss: Positive Projektion & Hingabe (Tag 11)",
+      "slug": "40-tage-abschluss-tiefes-vertrauen",
+      "free": false
+    },
+    {
+      "videoId": "cOZUzSqmnSI",
+      "title": "Tiefes Vertrauen – Ängste lösen (Tag 1)",
+      "slug": "40-tage-zyklus-tiefes-vertrauen",
+      "free": false
+    },
+    {
+      "videoId": "u8eUP6558BE",
+      "title": "Tiefes Vertrauen – Ängste lösen (Tag 2)",
+      "slug": "kriya-zukunftsangst-tiefes-vertrauen",
+      "free": false
+    },
+    {
+      "videoId": "PELEWivDLMg",
+      "title": "Tiefes Vertrauen – Ängste loslassen & Erdung finden (Tag 3)",
+      "slug": "kriya-sorgen-loesen-erden-verankern",
+      "free": false
+    },
+    {
+      "videoId": "6LNHgBORhms",
+      "title": "Tiefes Vertrauen – Gehalten sein & Hingabe (Tag 7)",
+      "slug": "kriya-angst-vertrauen-sicherheit",
+      "free": false
+    },
+    {
+      "videoId": "qidV_I4AO_I",
+      "title": "Tiefes Vertrauen – Im Körper ankommen & Ängste ausfeuern (Tag 5)",
+      "slug": "kriya-angst-zukunftsvertrauen",
+      "free": false
+    },
+    {
+      "videoId": "yhhCfIYfOzI",
+      "title": "Tiefes Vertrauen – Sicherheit & Geborgenheit verkörpern (Tag 9)",
+      "slug": "kriya-angst-zukunft-loslassen",
+      "free": false
+    }
+  ],
+  "wahe-guru": [
+    {
+      "videoId": "MsGF-5NFmE4",
+      "title": "30-Minuten-Kriya – Energie & Transformation",
+      "slug": "30-minuten-kriya-energie-transformation",
+      "free": false
+    },
+    {
+      "videoId": "4wk8uzPihBY",
+      "title": "30-Minuten-Kriya – Innere Stärke & Ausdauer",
+      "slug": "30-minuten-kriya-innere-staerke-ausdauer",
+      "free": false
+    },
+    {
+      "videoId": "7oJxV6tL7QU",
+      "title": "30-Minuten-Kriya – Vollständige Praxis für Körper & Geist",
+      "slug": "30-minuten-kriya-vollstaendige-praxis",
+      "free": false
+    },
+    {
+      "videoId": "6QLA9hoXt4A",
+      "title": "Celestial Communication – Gobinday Mukunday",
+      "slug": "celestial-communication-gobinday-mukunday",
+      "free": false
+    },
+    {
+      "videoId": "Hsa4xX7BNjs",
+      "title": "Celestial Communication – Guru Ram Das",
+      "slug": "celestial-communication-guru-ram-das",
+      "free": false
+    },
+    {
+      "videoId": "jWz5fs7dTeY",
+      "title": "Celestial Communication – Ong So Hung",
+      "slug": "celestial-communication-ong-so-hung",
+      "free": true
+    },
+    {
+      "videoId": "T5chy6Z2CDE",
+      "title": "Celestial Communication – Pavan Pavan",
+      "slug": "celestial-communication-pavan-pavan",
+      "free": false
+    },
+    {
+      "videoId": "EkYO2vJ4T9Q",
+      "title": "Celestial Communication – Sa Re Sa Sa",
+      "slug": "celestial-communication-sa-re-sa-sa",
+      "free": false
+    },
+    {
+      "videoId": "PRYNp2hm5Qk",
+      "title": "Celestial Communication – Sat Narayan",
+      "slug": "celestial-communication-sat-narayan",
+      "free": false
+    },
+    {
+      "videoId": "SozSvZGSJso",
+      "title": "Dein emotionales Herz",
+      "slug": "dein-emotionales-herz",
+      "free": false
+    },
+    {
+      "videoId": "wwVJNgnzAMw",
+      "title": "Dezember-Abschluss – Waheguru Kriya (Trikuti Kriya) für Transformation",
+      "slug": "waheguru-kriya-trikuti-dezember",
+      "free": false
+    },
+    {
+      "videoId": "iOxUOcDe4PY",
+      "title": "Kriya & Meditation – Interverbundenheit & Heilung",
+      "slug": "kriya-meditation-interverbundenheit-heilung",
+      "free": false
+    },
+    {
+      "videoId": "CHqif6kPI2U",
+      "title": "Kriya für Wohlstand & Fülle – die essentielle 40-Tage-Praxis",
+      "slug": "40-tage-essenziell-kriya-wirbelsaeule",
+      "free": false
+    },
+    {
+      "videoId": "apKp-Ef5pIs",
+      "title": "Morgenroutine – Kraftvolle Morgenpraxis für Klarheit & Fokus",
+      "slug": "morgenroutine-klarheit-fokus",
+      "free": false
+    },
+    {
+      "videoId": "WVa0v_rWan0",
+      "title": "Morgenroutine – Tiefe Morgenpraxis für Herzöffnung & Dankbarkeit",
+      "slug": "morgenroutine-herzoeffnung-dankbarkeit",
+      "free": false
+    },
+    {
+      "videoId": "590-Oylhjvw",
+      "title": "Sonntagssession – Vollständige Kundalini Yoga Praxis",
+      "slug": "sonntagssession-vollstaendige-praxis",
+      "free": false
+    },
+    {
+      "videoId": "GYbBtsB41XI",
+      "title": "Stille Meditation – Heilende Stille",
+      "slug": "stille-meditation-heilende-stille",
+      "free": false
+    },
+    {
+      "videoId": "6LNHgBORhms",
+      "title": "Tiefes Vertrauen – Gehalten sein & Hingabe (Tag 7)",
+      "slug": "kriya-angst-vertrauen-sicherheit",
+      "free": false
+    },
+    {
+      "videoId": "yhhCfIYfOzI",
+      "title": "Tiefes Vertrauen – Sicherheit & Geborgenheit verkörpern (Tag 9)",
+      "slug": "kriya-angst-zukunft-loslassen",
+      "free": false
+    }
+  ],
+  "sa-re-sa-sa": [
+    {
+      "videoId": "EkYO2vJ4T9Q",
+      "title": "Celestial Communication – Sa Re Sa Sa",
+      "slug": "celestial-communication-sa-re-sa-sa",
+      "free": false
+    }
+  ],
+  "sa-ta-na-ma": [
+    {
+      "videoId": "wwVJNgnzAMw",
+      "title": "Dezember-Abschluss – Waheguru Kriya (Trikuti Kriya) für Transformation",
+      "slug": "waheguru-kriya-trikuti-dezember",
+      "free": false
+    },
+    {
+      "videoId": "SY924BoGtEc",
+      "title": "Kundalini Yoga – Kurze Morgenpraxis (30 Min.) mit Laya Yoga",
+      "slug": "kurze-kriya-herzmeditation",
+      "free": false
+    },
+    {
+      "videoId": "MobxlCVQHt0",
+      "title": "Kundalini Yoga – Vollständige Morgenkriya mit Laya Yoga",
+      "slug": "laya-yoga-kreativitaet-chakren",
+      "free": false
+    },
+    {
+      "videoId": "9-5NqyG3QjY",
+      "title": "Kundalini Yoga zum Jahresanfang – Schöpferische Kraft & innere Ausrichtung",
+      "slug": "kriya-jahresanfang-kundalini-energie",
+      "free": false
+    },
+    {
+      "videoId": "kSuZH5l2iok",
+      "title": "Meditation – Emotionen & Kreativität",
+      "slug": "meditation-emotionen-befreien-klarheit",
+      "free": true
+    },
+    {
+      "videoId": "apKp-Ef5pIs",
+      "title": "Morgenroutine – Kraftvolle Morgenpraxis für Klarheit & Fokus",
+      "slug": "morgenroutine-klarheit-fokus",
+      "free": false
+    },
+    {
+      "videoId": "DTEMQIoY6I8",
+      "title": "Positiver Geist & Optimismus – Kriya für innere Freude und Ausdauer",
+      "slug": "kriya-positiver-geist-optimismus",
+      "free": false
+    },
+    {
+      "videoId": "IT85Ttg4wpg",
+      "title": "Vor den Weihnachtstagen – Lympathisches System & Segensmantra",
+      "slug": "kriya-lymphsystem-energie-staerken",
+      "free": false
+    }
+  ],
+  "sat-narayan-wahe-guru": [
+    {
+      "videoId": "PRYNp2hm5Qk",
+      "title": "Celestial Communication – Sat Narayan",
+      "slug": "celestial-communication-sat-narayan",
+      "free": false
+    },
+    {
+      "videoId": "590-Oylhjvw",
+      "title": "Sonntagssession – Vollständige Kundalini Yoga Praxis",
+      "slug": "sonntagssession-vollstaendige-praxis",
+      "free": false
+    },
+    {
+      "videoId": "qklVei1Az7k",
+      "title": "Stille Meditation – Tiefes Vertrauen",
+      "slug": "stille-meditation-tiefes-vertrauen",
+      "free": false
+    }
+  ],
+  "may-the-long-time-sun": [
+    {
+      "videoId": "3845fEtN3W8",
+      "title": "Kriya – Spannung & Negativität lösen",
+      "slug": "kriya-spannung-negativitaet-loesen",
+      "free": false
+    },
+    {
+      "videoId": "jugwEwiiTlg",
+      "title": "Meditation: Spannungen Lösen",
+      "slug": "meditation-innere-stabilitaet-stille",
+      "free": false
+    },
+    {
+      "videoId": "rHJA3iLFbgk",
+      "title": "Sonnenenergie wecken – Kriya für Feuer, Verdauung und innere Kraft",
+      "slug": "kriya-sonnenenergie-verdauung-feuer",
+      "free": false
+    },
+    {
+      "videoId": "k7xc2s4qtGI",
+      "title": "Strahlung & innere Schönheit – Kriya für bezaubernde Ausstrahlung",
+      "slug": "kriya-innere-aeussere-schoenheit",
+      "free": false
+    }
+  ],
+  "pavan-pavan": [
+    {
+      "videoId": "T5chy6Z2CDE",
+      "title": "Celestial Communication – Pavan Pavan",
+      "slug": "celestial-communication-pavan-pavan",
+      "free": false
+    }
+  ],
+  "ardas-bhaee": [
+    {
+      "videoId": "CZmFJqH1Xpg",
+      "title": "Celestial Communication – Ardas Bhaee",
+      "slug": "celestial-communication-ardas-bhaee",
+      "free": false
+    }
+  ],
+  "dhan-dhan-ram-das-guru": [
+    {
+      "videoId": "WVa0v_rWan0",
+      "title": "Morgenroutine – Tiefe Morgenpraxis für Herzöffnung & Dankbarkeit",
+      "slug": "morgenroutine-herzoeffnung-dankbarkeit",
+      "free": false
+    }
+  ],
+  "guru-guru-wahe-guru-guru-ram-das-guru": [
+    {
+      "videoId": "Hsa4xX7BNjs",
+      "title": "Celestial Communication – Guru Ram Das",
+      "slug": "celestial-communication-guru-ram-das",
+      "free": false
+    }
+  ],
+  "ra-ma-da-sa": [
+    {
+      "videoId": "nldfzW3mYMA",
+      "title": "Celestial Communication – Ra Ma Da Sa",
+      "slug": "celestial-communication-ra-ma-da-sa",
+      "free": false
+    }
+  ],
+  "ong-so-hung": [
+    {
+      "videoId": "jWz5fs7dTeY",
+      "title": "Celestial Communication – Ong So Hung",
+      "slug": "celestial-communication-ong-so-hung",
+      "free": true
+    }
+  ],
+  "gobinday-mukunday": [
+    {
+      "videoId": "6QLA9hoXt4A",
+      "title": "Celestial Communication – Gobinday Mukunday",
+      "slug": "celestial-communication-gobinday-mukunday",
+      "free": false
+    }
+  ],
+  "humee-hum-brahm-hum": [
+    {
+      "videoId": "eg2-0yiDgts",
+      "title": "Celestial Communication – Humee Hum Brahm Hum",
+      "slug": "celestial-communication-humee-hum-brahm-hum",
+      "free": false
+    }
+  ]
+}
