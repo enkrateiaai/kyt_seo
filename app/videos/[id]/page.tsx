@@ -94,13 +94,15 @@ export default async function VideoDetailPage({ params }: PageProps) {
     redirect(`/videos/${slug}`)
   }
 
-  const [user, video, transcript, customTitle, isFree] = await Promise.all([
+  const [user, video, transcript, customTitle, isFree, mantrasRaw] = await Promise.all([
     currentUser(),
     fetchVideoDetails(videoId),
     redis.get(`transcript:${videoId}`),
     redis.get(`title:${videoId}`),
     redis.get(`free:${videoId}`),
+    redis.get(`mantras:${videoId}`),
   ])
+  const videoMantras: { slug: string; name: string }[] = mantrasRaw ? JSON.parse(mantrasRaw as string) : []
 
   const email = user?.emailAddresses[0]?.emailAddress
   const isMember = user?.publicMetadata?.role === 'member'
@@ -329,6 +331,34 @@ export default async function VideoDetailPage({ params }: PageProps) {
           color: #9B8E7E;
           font-style: italic;
         }
+
+        .vd-mantras {
+          margin-top: 48px;
+        }
+        .vd-mantras__grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .vd-mantra-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          background: rgba(196,135,59,0.08);
+          border: 1px solid rgba(196,135,59,0.25);
+          border-radius: 20px;
+          color: #C4873B;
+          font-size: 0.88rem;
+          text-decoration: none;
+          transition: background 0.2s, border-color 0.2s;
+        }
+        .vd-mantra-pill:hover {
+          background: rgba(196,135,59,0.16);
+          border-color: rgba(196,135,59,0.5);
+        }
+        .vd-mantra-pill__icon { font-size: 0.95rem; }
 
         .vd-glossary {
           margin-top: 52px;
@@ -701,6 +731,21 @@ export default async function VideoDetailPage({ params }: PageProps) {
               synth.onvoiceschanged = function() {};
             })();
           ` }} />
+
+          {videoMantras.length > 0 && (
+            <div className="vd-mantras">
+              <p className="vd-section-kicker">Mantras</p>
+              <h2 className="vd-section-title">Mantras in diesem Video</h2>
+              <div className="vd-mantras__grid">
+                {videoMantras.map((m) => (
+                  <a key={m.slug} href={`https://kundaliniyogatribe.de/mantras/${m.slug}`} className="vd-mantra-pill">
+                    <span className="vd-mantra-pill__icon">🕉</span>
+                    {m.name}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="vd-glossary">
             <p className="vd-section-kicker">Begriffe</p>
