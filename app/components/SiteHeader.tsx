@@ -1,12 +1,10 @@
-import { SignOutButton } from '@clerk/nextjs'
+import { SignInButton, SignOutButton } from '@clerk/nextjs'
 import Image from 'next/image'
 
 interface SiteHeaderProps {
   isLoggedIn: boolean
   signOutRedirectUrl?: string
 }
-
-const MEMBERSHIP_URL = 'https://www.charan-amrit-kaur.de/yoga-tribe/'
 
 export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/' }: SiteHeaderProps) {
   return (
@@ -28,7 +26,9 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/' }: Sit
                 <button type="button" className="site-nav__auth-btn">Log out</button>
               </SignOutButton>
             ) : (
-              <a href={MEMBERSHIP_URL}>Mitglieder</a>
+              <SignInButton mode="redirect" forceRedirectUrl="/videos">
+                <button type="button" className="site-nav__auth-btn">Mitglieder</button>
+              </SignInButton>
             )}
           </nav>
         </div>
