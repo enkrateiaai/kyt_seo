@@ -604,6 +604,9 @@ export default async function VideoDetailPage({ params }: PageProps) {
           )}
 
           <h1 className="vd-title">{title}</h1>
+          <p style={{fontSize:'13px',color:'#9B8E7E',marginTop:'8px',marginBottom:'0'}}>
+            🔗 <a href={`https://www.kundaliniyogatribe.de/videos/${canonicalSlug}`} style={{color:'#C4873B',textDecoration:'underline',textDecorationColor:'rgba(196,135,59,0.4)',textUnderlineOffset:'2px'}}>{`kundaliniyogatribe.de/videos/${canonicalSlug}`}</a>
+          </p>
 
           {description && (
             <>
