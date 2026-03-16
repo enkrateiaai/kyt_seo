@@ -11,9 +11,9 @@ const NAV = `
         <li><a href="/artikel/was-ist-kundalini-yoga.html">Kundalini Yoga</a></li>
         <li><a href="/artikel/was-ist-sat-nam-rasayan.html">Sat Nam Rasayan</a></li>
         <li><a href="/artikel/sat-kriya-anleitung.html">Erste Kriya</a></li>
-        <li><a href="/blog.html">Blog</a></li>
-        <li><a href="/glossar.html">Glossar</a></li>
-        <li><a href="/mantras.html">Mantras</a></li>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/glossar">Glossar</a></li>
+        <li><a href="/mantras">Mantras</a></li>
         <li><a href="/videos">Videos</a></li>
         <li><a href="/live">Live</a></li>
       </ul>
@@ -36,15 +36,15 @@ const FOOTER = `
           <ul>
             <li><a href="/artikel/sat-kriya-anleitung.html">Sat Kriya</a></li>
             <li><a href="/artikel/was-ist-kundalini-yoga.html">Was ist Kundalini Yoga?</a></li>
-            <li><a href="/mantras.html">Mantra-Datenbank</a></li>
-            <li><a href="/glossar.html">Glossar</a></li>
+            <li><a href="/mantras">Mantra-Datenbank</a></li>
+            <li><a href="/glossar">Glossar</a></li>
           </ul>
         </div>
         <div>
           <h4>Inhalte</h4>
           <ul>
             <li><a href="/videos">Videos</a></li>
-            <li><a href="/blog.html">Blog</a></li>
+            <li><a href="/blog">Blog</a></li>
             <li><a href="/live">Live Sessions</a></li>
           </ul>
         </div>
@@ -85,6 +85,16 @@ const HEAD = (title, desc, canonical, extra = '') => `<!DOCTYPE html>
 <body>`;
 
 // ─── MANTRA DATA ────────────────────────────────────────────────────────────
+
+const CAT_ICONS = {
+  eroeffnung: '🙏',
+  bija: '🌱',
+  heilung: '💚',
+  namen: '✨',
+  meditation: '🧘',
+  schutz: '🛡️',
+  celestial: '🌊',
+};
 
 const CATEGORIES = {
   eroeffnung: 'Eröffnung & Abschluss',
@@ -868,11 +878,12 @@ const mantras = [
 
 function generateDetailPage(mantra) {
   const catLabel = CATEGORIES[mantra.kategorie] || mantra.kategorie;
+  const catIcon = CAT_ICONS[mantra.kategorie] || '';
   const relatedLinks = (mantra.verwandte || [])
     .map(s => {
       const m = mantras.find(x => x.slug === s);
       if (!m) return '';
-      return `<a href="/mantras/${s}.html" class="sidebar-card">${m.name}<span style="display:block;font-size:0.75rem;color:var(--c-text-muted);margin-top:2px;">${CATEGORIES[m.kategorie]}</span></a>`;
+      return `<a href="/mantras/${s}" class="sidebar-card">${m.name}<span style="display:block;font-size:0.75rem;color:var(--c-text-muted);margin-top:2px;">${CATEGORIES[m.kategorie]}</span></a>`;
     }).filter(Boolean).join('\n          ');
 
   const linesTable = mantra.lines.map(l =>
@@ -906,9 +917,9 @@ ${NAV}
 
   <header class="article-hero">
     <nav class="article-hero__breadcrumb" aria-label="Breadcrumb">
-      <a href="/">Start</a> › <a href="/mantras.html">Mantras</a> › ${mantra.name}
+      <a href="/">Start</a> › <a href="/mantras">Mantras</a> › ${mantra.name}
     </nav>
-    <span class="article-hero__tag">${catLabel}</span>
+    <span class="article-hero__tag">${catIcon} ${catLabel}</span>
     <h1>${mantra.name}<br><em>${mantra.subtitle}</em></h1>
   </header>
 
@@ -953,7 +964,7 @@ ${NAV}
 
     <div style="margin-top:var(--s-2xl);padding:var(--s-xl);background:var(--c-surface);border-radius:8px;text-align:center;">
       <p style="color:var(--c-text-muted);font-size:0.85rem;margin-bottom:var(--s-md);">Alle Mantras im Überblick</p>
-      <a href="/mantras.html" style="display:inline-block;padding:var(--s-sm) var(--s-xl);background:var(--c-accent);color:#fff;border-radius:4px;font-size:0.9rem;text-decoration:none;">← Zur Mantra-Datenbank</a>
+      <a href="/mantras" style="display:inline-block;padding:var(--s-sm) var(--s-xl);background:var(--c-accent);color:#fff;border-radius:4px;font-size:0.9rem;text-decoration:none;">← Zur Mantra-Datenbank</a>
     </div>
 
   </article>
@@ -971,13 +982,14 @@ function generateIndexPage() {
   }
 
   const catFilters = Object.entries(CATEGORIES).map(([key, label]) =>
-    `<button class="mantra-filter-btn" data-cat="${key}">${label} <span class="mantra-count">${grouped[key].length}</span></button>`
+    `<button class="mantra-filter-btn" data-cat="${key}">${CAT_ICONS[key] || ''} ${label} <span class="mantra-count">${grouped[key].length}</span></button>`
   ).join('\n      ');
 
   const cards = mantras.map(m => {
     const catLabel = CATEGORIES[m.kategorie] || m.kategorie;
-    return `<a href="/mantras/${m.slug}.html" class="mantra-card" data-cat="${m.kategorie}">
-        <span class="mantra-card__cat">${catLabel}</span>
+    const catIcon = CAT_ICONS[m.kategorie] || '';
+    return `<a href="/mantras/${m.slug}" class="mantra-card" data-cat="${m.kategorie}">
+        <span class="mantra-card__cat">${catIcon} ${catLabel}</span>
         <h3 class="mantra-card__name">${m.name}</h3>
         <p class="mantra-card__subtitle">${m.subtitle}</p>
         <p class="mantra-card__desc">${m.kurzbeschreibung}</p>
