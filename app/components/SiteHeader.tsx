@@ -33,17 +33,23 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/' }: Sit
           </nav>
         </div>
       </header>
+      <div className="site-nav__spacer" aria-hidden="true" />
 
       <style>{`
         .site-nav {
-          position: sticky;
+          position: fixed;
           top: 0;
           left: 0;
           right: 0;
           z-index: 120;
-          background: rgba(250, 247, 242, 0.92);
-          backdrop-filter: blur(18px);
-          border-bottom: 1px solid #EDE8E0;
+          background: rgba(250, 247, 242, 0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid transparent;
+          transition: border-color 0.35s ease, background 0.35s ease;
+        }
+        .site-nav__spacer {
+          height: 72px;
         }
         .site-nav__inner {
           max-width: 1100px;
@@ -125,6 +131,7 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/' }: Sit
         .site-nav__auth-btn:hover { color: #2C2416; }
 
         @media (max-width: 720px) {
+          .site-nav__spacer { height: 64px; }
           .site-nav__inner {
             padding: 0 16px;
             min-height: 64px;
