@@ -36,6 +36,8 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [activeVideo, setActiveVideo] = useState<Video | null>(null)
   const [activePlaylistId, setActivePlaylistId] = useState<number | null>(null)
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null)
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
   const [searchLoading, setSearchLoading] = useState(false)
@@ -43,8 +45,13 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [slugMap, setSlugMap] = useState<Record<string, string>>({})
   const [freeIds, setFreeIds] = useState<Set<string>>(new Set())
   const playerRef = useRef<HTMLDivElement>(null)
+  const filterRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
+  const selectedPlaylist = playlists.find(p => p.id === selectedPlaylistId) || null
+  const visiblePlaylists = selectedPlaylistId === null
+    ? playlists
+    : playlists.filter(p => p.id === selectedPlaylistId)
 
   const handleSearch = useCallback((value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -119,6 +126,23 @@ export default function YouTubeGallery({ isMember }: Props) {
     }
   }, [activeVideo])
 
+  useEffect(() => {
+    if (selectedPlaylistId !== null && !playlists.some(p => p.id === selectedPlaylistId)) {
+      setSelectedPlaylistId(null)
+    }
+  }, [playlists, selectedPlaylistId])
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!filterRef.current) return
+      if (!filterRef.current.contains(event.target as Node)) {
+        setFilterMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick)
+  }, [])
+
   const setPage = (playlistId: number, page: number) => {
     setPlaylists(prev => prev.map(p => p.id === playlistId ? { ...p, page } : p))
   }
@@ -131,6 +155,15 @@ export default function YouTubeGallery({ isMember }: Props) {
     }
     setActiveVideo(video)
     setActivePlaylistId(playlist.id)
+  }
+
+  const handleSelectPlaylist = (playlistId: number | null) => {
+    setSelectedPlaylistId(playlistId)
+    setFilterMenuOpen(false)
+    if (searchResults || playlistId === null) return
+    window.requestAnimationFrame(() => {
+      document.getElementById(`section-${playlistId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   return (
@@ -157,7 +190,7 @@ export default function YouTubeGallery({ isMember }: Props) {
           width: 100%;
           font-family: 'DM Sans', sans-serif;
           font-size: 15px;
-          padding: 14px 44px 14px 44px;
+          padding: 14px 180px 14px 44px;
           border: 1px solid #DDD5C8;
           border-radius: 100px;
           background: #fff;
@@ -173,7 +206,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         }
         .v-search__clear {
           position: absolute;
-          right: 14px;
+          right: 138px;
           top: 50%;
           transform: translateY(-50%);
           background: #EDE8E0;
@@ -192,7 +225,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         .v-search__clear:hover { background: #DDD5C8; }
         .v-search__spinner {
           position: absolute;
-          right: 14px;
+          right: 138px;
           top: 50%;
           transform: translateY(-50%);
           width: 18px; height: 18px;
@@ -200,6 +233,72 @@ export default function YouTubeGallery({ isMember }: Props) {
           border-top-color: #C4873B;
           border-radius: 50%;
           animation: spin 0.7s linear infinite;
+        }
+        .v-search__filter {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 2;
+        }
+        .v-search__filter-btn {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          color: #6B5D4F;
+          background: #F3EDE4;
+          border: 1px solid #DDD5C8;
+          border-radius: 100px;
+          height: 34px;
+          padding: 0 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          max-width: 160px;
+        }
+        .v-search__filter-label {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .v-search__filter-btn:hover {
+          border-color: #C4873B;
+          color: #C4873B;
+        }
+        .v-search__filter-menu {
+          position: absolute;
+          right: 0;
+          top: calc(100% + 8px);
+          width: min(280px, calc(100vw - 48px));
+          max-height: 280px;
+          overflow-y: auto;
+          background: #fff;
+          border: 1px solid #DDD5C8;
+          border-radius: 12px;
+          box-shadow: 0 10px 24px rgba(44,36,22,0.12);
+          padding: 6px;
+          z-index: 15;
+        }
+        .v-search__filter-item {
+          width: 100%;
+          text-align: left;
+          border: none;
+          background: transparent;
+          border-radius: 8px;
+          padding: 8px 10px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 13px;
+          color: #2C2416;
+          cursor: pointer;
+        }
+        .v-search__filter-item:hover {
+          background: #F3EDE4;
+        }
+        .v-search__filter-item--active {
+          background: #F3EDE4;
+          color: #C4873B;
+          font-weight: 500;
         }
 
         .v-results { animation: fadeIn 0.25s ease; }
@@ -287,6 +386,15 @@ export default function YouTubeGallery({ isMember }: Props) {
           color: #C4873B;
           font-weight: 500;
           margin-top: auto;
+        }
+        @media (max-width: 640px) {
+          .v-search__input { padding-right: 146px; }
+          .v-search__clear, .v-search__spinner { right: 106px; }
+          .v-search__filter-btn {
+            max-width: 120px;
+            padding: 0 10px;
+            gap: 6px;
+          }
         }
         @media (max-width: 480px) {
           .v-result__thumb { width: 100px; height: 56px; }
@@ -528,55 +636,6 @@ export default function YouTubeGallery({ isMember }: Props) {
         }
 
         /* TOC */
-        .v-toc {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-bottom: 36px;
-          padding-bottom: 28px;
-          border-bottom: 1px solid #EDE8E0;
-        }
-        .v-toc--header {
-          flex-wrap: nowrap;
-          overflow-x: auto;
-          margin-top: 18px;
-          margin-bottom: 0;
-          padding-bottom: 0;
-          border-bottom: none;
-          scrollbar-width: thin;
-        }
-        .v-toc__pill {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12px;
-          font-weight: 500;
-          color: #6B5D4F;
-          background: #F3EDE4;
-          border: 1px solid #DDD5C8;
-          border-radius: 100px;
-          padding: 6px 14px;
-          cursor: pointer;
-          transition: background 0.2s, border-color 0.2s, color 0.2s;
-          white-space: nowrap;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .v-toc__pill:hover {
-          background: #EDE8E0;
-          border-color: #C4873B;
-          color: #C4873B;
-        }
-        .v-toc__count {
-          font-size: 10px;
-          color: #9B8E7E;
-          background: #fff;
-          border-radius: 100px;
-          padding: 1px 7px;
-          border: 1px solid #EDE8E0;
-        }
-        .v-toc__pill:hover .v-toc__count { border-color: rgba(196,135,59,0.3); }
-
         .v-item { display: flex; flex-direction: column; }
         .v-item__meta {
           padding: 6px 2px 0;
@@ -595,7 +654,6 @@ export default function YouTubeGallery({ isMember }: Props) {
 
         @media (max-width: 640px) {
           .v-header { margin-bottom: 36px; padding-bottom: 24px; }
-          .v-toc--header { margin-top: 14px; }
         }
       `}</style>
 
@@ -620,26 +678,6 @@ export default function YouTubeGallery({ isMember }: Props) {
             </>
           )}
 
-          {playlists.length > 0 && !searchResults && (
-            <nav className="v-toc v-toc--header" aria-label="Video Typen">
-              {playlists.map(playlist => (
-                <a
-                  key={playlist.id}
-                  href={`#section-${playlist.id}`}
-                  className="v-toc__pill"
-                  onClick={e => {
-                    e.preventDefault()
-                    document.getElementById(`section-${playlist.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }}
-                >
-                  {playlist.title}
-                  {!playlist.loading && (playlist.videos?.length ?? 0) > 0 && (
-                    <span className="v-toc__count">{playlist.videos!.length}</span>
-                  )}
-                </a>
-              ))}
-            </nav>
-          )}
         </div>
 
         {/* Search */}
@@ -657,6 +695,41 @@ export default function YouTubeGallery({ isMember }: Props) {
             autoComplete="off"
             spellCheck={false}
           />
+          <div className="v-search__filter" ref={filterRef}>
+            <button
+              className="v-search__filter-btn"
+              onClick={() => setFilterMenuOpen(prev => !prev)}
+              aria-haspopup="menu"
+              aria-expanded={filterMenuOpen}
+              type="button"
+            >
+              <span className="v-search__filter-label">{selectedPlaylist?.title || 'Alle Typen'}</span>
+              <span>{filterMenuOpen ? '▴' : '▾'}</span>
+            </button>
+            {filterMenuOpen && (
+              <div className="v-search__filter-menu" role="menu" aria-label="Video Typen">
+                <button
+                  className={`v-search__filter-item${selectedPlaylistId === null ? ' v-search__filter-item--active' : ''}`}
+                  onClick={() => handleSelectPlaylist(null)}
+                  role="menuitem"
+                  type="button"
+                >
+                  Alle Typen
+                </button>
+                {playlists.map(playlist => (
+                  <button
+                    key={playlist.id}
+                    className={`v-search__filter-item${selectedPlaylistId === playlist.id ? ' v-search__filter-item--active' : ''}`}
+                    onClick={() => handleSelectPlaylist(playlist.id)}
+                    role="menuitem"
+                    type="button"
+                  >
+                    {playlist.title}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {searchLoading && <div className="v-search__spinner" />}
           {!searchLoading && query && (
             <button
@@ -730,7 +803,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         )}
 
         {/* Playlists */}
-        {!searchResults && playlists.map(playlist => {
+        {!searchResults && visiblePlaylists.map(playlist => {
           const page = playlist.page || 0
           // Pin free video to position 0 only for non-members
           const videos = [...(playlist.videos || [])].sort((a, b) => {
