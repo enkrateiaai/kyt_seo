@@ -59,7 +59,7 @@ const FOOTER = `
       <p style="margin-top:var(--s-xl);color:var(--c-text-muted);font-size:0.8rem;">© 2026 Kundalini Yoga Tribe</p>
     </div>
   </footer>
-  <script src="/js/nav.js"></script>`;
+  <script src="/js/main.js"></script>`;
 
 const HEAD = (title, desc, canonical, extra = '') => `<!DOCTYPE html>
 <html lang="de">
