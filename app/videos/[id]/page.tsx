@@ -616,7 +616,6 @@ export default async function VideoDetailPage({ params }: PageProps) {
           )}
 
           <div className="vd-transcript-section">
-            <p className="vd-section-kicker">Transkription</p>
             <h2 className="vd-section-title">Videoinhalt</h2>
 
             {transcript && (
