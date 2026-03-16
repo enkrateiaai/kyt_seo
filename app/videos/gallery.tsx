@@ -865,7 +865,7 @@ export default function YouTubeGallery({ isMember }: Props) {
                               className="v-item__link"
                               onClick={e => e.stopPropagation()}
                             >
-                              Zur Seite →
+                              Mehr zum Video →
                             </a>
                           </div>
                         )}
