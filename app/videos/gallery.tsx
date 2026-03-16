@@ -138,7 +138,6 @@ export default function YouTubeGallery({ isMember }: Props) {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .v-search {
           position: relative;
@@ -537,6 +536,15 @@ export default function YouTubeGallery({ isMember }: Props) {
           padding-bottom: 28px;
           border-bottom: 1px solid #EDE8E0;
         }
+        .v-toc--header {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          margin-top: 18px;
+          margin-bottom: 0;
+          padding-bottom: 0;
+          border-bottom: none;
+          scrollbar-width: thin;
+        }
         .v-toc__pill {
           font-family: 'DM Sans', sans-serif;
           font-size: 12px;
@@ -584,6 +592,11 @@ export default function YouTubeGallery({ isMember }: Props) {
           transition: opacity 0.2s;
         }
         .v-item__link:hover { opacity: 0.7; }
+
+        @media (max-width: 640px) {
+          .v-header { margin-bottom: 36px; padding-bottom: 24px; }
+          .v-toc--header { margin-top: 14px; }
+        }
       `}</style>
 
       <div className="v-container">
@@ -606,86 +619,28 @@ export default function YouTubeGallery({ isMember }: Props) {
               </div>
             </>
           )}
+
+          {playlists.length > 0 && !searchResults && (
+            <nav className="v-toc v-toc--header" aria-label="Video Typen">
+              {playlists.map(playlist => (
+                <a
+                  key={playlist.id}
+                  href={`#section-${playlist.id}`}
+                  className="v-toc__pill"
+                  onClick={e => {
+                    e.preventDefault()
+                    document.getElementById(`section-${playlist.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }}
+                >
+                  {playlist.title}
+                  {!playlist.loading && (playlist.videos?.length ?? 0) > 0 && (
+                    <span className="v-toc__count">{playlist.videos!.length}</span>
+                  )}
+                </a>
+              ))}
+            </nav>
+          )}
         </div>
-
-        {/* Live Banner */}
-        {isMember ? (
-          <a href="/live" style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: '#2C2416',
-            color: '#FAF7F2',
-            borderRadius: 12,
-            padding: '20px 28px',
-            marginBottom: 40,
-            textDecoration: 'none',
-            gap: 16,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: '#c00', color: '#fff', fontSize: 11, fontWeight: 700,
-                letterSpacing: '0.12em', padding: '4px 10px', borderRadius: 4,
-                textTransform: 'uppercase', flexShrink: 0,
-              }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block', animation: 'livePulse 1.5s infinite' }} />
-                Live
-              </span>
-              <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 400, letterSpacing: '0.04em' }}>
-                Tribe Live Exklusiv
-              </span>
-            </div>
-            <span style={{ fontSize: 13, color: '#D4A853', fontWeight: 500, whiteSpace: 'nowrap' }}>
-              Jetzt schauen →
-            </span>
-          </a>
-        ) : (
-          <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: '#F3EDE4',
-            border: '1px solid #DDD5C8',
-            borderRadius: 12,
-            padding: '16px 24px',
-            marginBottom: 40,
-            textDecoration: 'none',
-            gap: 16,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 16 }}>🔒</span>
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#6B5D4F' }}>
-                Tribe Live Exklusiv – nur für Mitglieder
-              </span>
-            </div>
-            <span style={{ fontSize: 13, color: '#C4873B', fontWeight: 500, whiteSpace: 'nowrap' }}>
-              Mitglied werden →
-            </span>
-          </a>
-        )}
-
-        {/* TOC — Section Jump Navigation */}
-        {playlists.length > 0 && !searchResults && (
-          <nav className="v-toc" aria-label="Abschnitte">
-            {playlists.map(playlist => (
-              <a
-                key={playlist.id}
-                href={`#section-${playlist.id}`}
-                className="v-toc__pill"
-                onClick={e => {
-                  e.preventDefault()
-                  document.getElementById(`section-${playlist.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                }}
-              >
-                {playlist.title}
-                {!playlist.loading && (playlist.videos?.length ?? 0) > 0 && (
-                  <span className="v-toc__count">{playlist.videos!.length}</span>
-                )}
-              </a>
-            ))}
-          </nav>
-        )}
 
         {/* Search */}
         <div className="v-search">
