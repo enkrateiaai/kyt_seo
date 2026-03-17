@@ -1,5 +1,7 @@
 import { serveSatnamHtml } from '@/lib/serveStaticHtml'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
-  return serveSatnamHtml('blog.html')
+  return await serveSatnamHtml('blog.html')
 }

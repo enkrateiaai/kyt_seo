@@ -4,8 +4,10 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(_req: Request, { params }: Props) {
   const { slug } = await params
   const filename = slug.endsWith('.html') ? slug : `${slug}.html`
-  return serveSatnamHtml(`mantras/${filename}`)
+  return await serveSatnamHtml(`mantras/${filename}`)
 }
