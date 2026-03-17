@@ -669,7 +669,7 @@ export default function YouTubeGallery({ isMember }: Props) {
             <>
               <p className="v-header__sub">Ein Schnuppervideo ist kostenlos zugänglich.</p>
               <div className="v-header__badge">
-                <span>◌</span>
+                <span>🔒</span>
                 <span>Mitgliedschaft für vollen Zugriff</span>
                 <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" style={{ color: '#D3BC76', fontWeight: 500 }}>
                   Mehr erfahren →
@@ -850,7 +850,7 @@ export default function YouTubeGallery({ isMember }: Props) {
 
                           {isLocked && (
                             <div className="v-card__lock">
-                              <div className="v-card__lock-icon">◌</div>
+                              <div className="v-card__lock-icon">🔒</div>
                             </div>
                           )}
                           {isActive && <span className="v-card__playing">▶ Läuft</span>}
