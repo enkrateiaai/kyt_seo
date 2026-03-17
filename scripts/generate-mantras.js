@@ -919,7 +919,7 @@ ${NAV}
     <nav class="article-hero__breadcrumb" aria-label="Breadcrumb">
       <a href="/">Start</a> › <a href="/mantras">Mantras</a> › ${mantra.name}
     </nav>
-    <span class="article-hero__tag">${catIcon} ${catLabel}</span>
+    <span class="article-hero__tag"><span class="tag-symbol">${catIcon}</span> ${catLabel}</span>
     <h1>${mantra.name}<br><em>${mantra.subtitle}</em></h1>
   </header>
 
@@ -1005,14 +1005,14 @@ function generateIndexPage() {
   }
 
   const catFilters = Object.entries(CATEGORIES).map(([key, label]) =>
-    `<button class="mantra-filter-btn" data-cat="${key}">${CAT_ICONS[key] || ''} ${label} <span class="mantra-count">${grouped[key].length}</span></button>`
+    `<button class="mantra-filter-btn" data-cat="${key}"><span class="tag-symbol">${CAT_ICONS[key] || ''}</span> ${label} <span class="mantra-count">${grouped[key].length}</span></button>`
   ).join('\n      ');
 
   const cards = mantras.map(m => {
     const catLabel = CATEGORIES[m.kategorie] || m.kategorie;
     const catIcon = CAT_ICONS[m.kategorie] || '';
     return `<a href="/mantras/${m.slug}" class="mantra-card" data-cat="${m.kategorie}">
-        <span class="mantra-card__cat">${catIcon} ${catLabel}</span>
+        <span class="mantra-card__cat"><span class="tag-symbol">${catIcon}</span> ${catLabel}</span>
         <h3 class="mantra-card__name">${m.name}</h3>
         <p class="mantra-card__subtitle">${m.subtitle}</p>
         <p class="mantra-card__desc">${m.kurzbeschreibung}</p>
@@ -1047,6 +1047,8 @@ function generateIndexPage() {
     .mantra-filter-btn { padding: 6px 14px; border-radius:20px; border:1px solid var(--c-border); background:transparent; color:var(--c-text-soft); font-size:0.82rem; cursor:pointer; transition:all 0.2s; font-family:inherit; }
     .mantra-filter-btn:hover, .mantra-filter-btn.active { background:var(--c-accent); border-color:var(--c-accent); color:#fff; }
     .mantra-filter-btn.active { font-weight:600; }
+    .tag-symbol { color: var(--c-accent); margin-right: 0.3rem; }
+    .mantra-filter-btn:hover .tag-symbol, .mantra-filter-btn.active .tag-symbol { color:#fff; }
     .mantra-count { opacity:0.7; font-size:0.75rem; margin-left:3px; }
     .mantra-search { display:flex; justify-content:center; padding:var(--s-lg) var(--s-xl) 0; max-width:500px; margin:0 auto; }
     .mantra-search input { width:100%; padding:10px 16px; border-radius:6px; border:1px solid var(--c-border); background:var(--c-surface); color:var(--c-text); font-size:0.95rem; font-family:inherit; outline:none; }
