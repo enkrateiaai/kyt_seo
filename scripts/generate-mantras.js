@@ -87,13 +87,13 @@ const HEAD = (title, desc, canonical, extra = '') => `<!DOCTYPE html>
 // ─── MANTRA DATA ────────────────────────────────────────────────────────────
 
 const CAT_ICONS = {
-  eroeffnung: '🙏',
-  bija: '🌱',
-  heilung: '💚',
-  namen: '✨',
-  meditation: '🧘',
-  schutz: '🛡️',
-  celestial: '🌊',
+  eroeffnung: '◌',
+  bija: '☽',
+  heilung: '✦',
+  namen: '☼',
+  meditation: 'ॐ',
+  schutz: '☉',
+  celestial: '☾',
 };
 
 const CATEGORIES = {

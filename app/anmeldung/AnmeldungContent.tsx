@@ -14,12 +14,12 @@ type Status = 'bestaetigt' | 'abgelaufen' | 'fehler' | 'abgemeldet' | null
 
 const messages: Record<NonNullable<Status>, { icon: string; title: string; body: string }> = {
   bestaetigt: {
-    icon: '🙏',
+    icon: '☽',
     title: 'Sat Nam – du bist dabei!',
     body: 'Deine Anmeldung wurde bestätigt. Du erhältst ab jetzt Kriyas, Meditationen und Impulse aus der Welt des Kundalini Yoga.',
   },
   abgelaufen: {
-    icon: '⏳',
+    icon: '◔',
     title: 'Link abgelaufen',
     body: 'Der Bestätigungslink ist nicht mehr gültig (24 Stunden). Melde dich erneut an – wir schicken dir einen neuen Link.',
   },
@@ -29,7 +29,7 @@ const messages: Record<NonNullable<Status>, { icon: string; title: string; body:
     body: 'Es gab einen technischen Fehler. Bitte versuche es erneut oder schreib uns an noreply@kundaliniyogatribe.de.',
   },
   abgemeldet: {
-    icon: '🌿',
+    icon: '☾',
     title: 'Du wurdest abgemeldet',
     body: 'Deine E-Mail-Adresse wurde aus unserem Newsletter entfernt. Du erhältst keine weiteren E-Mails von uns. Sat Nam.',
   },

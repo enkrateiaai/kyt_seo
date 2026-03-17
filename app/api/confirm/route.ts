@@ -69,11 +69,11 @@ export async function GET(req: NextRequest) {
         Messages: [{
           From: { Email: fromEmail, Name: 'Kundalini Yoga Tribe' },
           To: [{ Email: email }],
-          Subject: 'Willkommen im Kundalini Yoga Tribe 🙏',
+          Subject: 'Willkommen im Kundalini Yoga Tribe',
           HTMLPart: `
             <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #2C2416;">
               <p style="font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; color: #D3BC76; margin-bottom: 8px;">Kundalini Yoga Tribe</p>
-              <h1 style="font-size: 28px; font-weight: 300; margin: 0 0 20px; line-height: 1.25;">Sat Nam — du bist dabei 🙏</h1>
+              <h1 style="font-size: 28px; font-weight: 300; margin: 0 0 20px; line-height: 1.25;">Sat Nam — du bist dabei</h1>
               <p style="font-size: 16px; line-height: 1.8; color: #6B5D4F; margin-bottom: 24px;">
                 Schön, dass du dabei bist. Hier findest du deine ersten Schritte in die Welt des Kundalini Yoga:
               </p>

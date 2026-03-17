@@ -35,7 +35,7 @@ export default async function DashboardPage() {
             padding: '24px'
           }}>
             <p style={{ color: '#c8f064', marginBottom: '8px', fontSize: '11px', letterSpacing: '0.15em' }}>// STATUS</p>
-            <p>✅ Angemeldet als <strong>{email}</strong></p>
+            <p>◌ Angemeldet als <strong>{email}</strong></p>
           </div>
         )}
 

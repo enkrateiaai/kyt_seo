@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         Messages: [{
           From: { Email: fromEmail, Name: 'Kundalini Yoga Tribe' },
           To: [{ Email: email }],
-          Subject: 'Bitte bestätige deine Anmeldung 🙏',
+          Subject: 'Bitte bestätige deine Anmeldung',
           HTMLPart: `
             <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #2C2416;">
               <p style="font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; color: #D3BC76; margin-bottom: 8px;">Kundalini Yoga Tribe</p>

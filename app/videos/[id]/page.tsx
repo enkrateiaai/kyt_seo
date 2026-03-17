@@ -546,7 +546,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
 
           <h1 className="vd-title">{title}</h1>
           <p style={{fontSize:'13px',color:'#9B8E7E',marginTop:'8px',marginBottom:'0'}}>
-            🔗 <a href={`https://www.kundaliniyogatribe.de/videos/${canonicalSlug}`} style={{color:'#D3BC76',textDecoration:'underline',textDecorationColor:'rgba(211,188,118,0.4)',textUnderlineOffset:'2px'}}>{`kundaliniyogatribe.de/videos/${canonicalSlug}`}</a>
+            ◌ <a href={`https://www.kundaliniyogatribe.de/videos/${canonicalSlug}`} style={{color:'#D3BC76',textDecoration:'underline',textDecorationColor:'rgba(211,188,118,0.4)',textUnderlineOffset:'2px'}}>{`kundaliniyogatribe.de/videos/${canonicalSlug}`}</a>
           </p>
 
           {description && (
@@ -650,7 +650,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
               <div className="vd-mantras__grid">
                 {videoMantras.map((m) => (
                   <a key={m.slug} href={`https://kundaliniyogatribe.de/mantras/${m.slug}`} className="vd-mantra-pill">
-                    <span className="vd-mantra-pill__icon">🕉</span>
+                    <span className="vd-mantra-pill__icon">ॐ</span>
                     {m.name}
                   </a>
                 ))}
