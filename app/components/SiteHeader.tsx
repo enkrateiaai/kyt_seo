@@ -100,7 +100,7 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/' }: Sit
           bottom: -2px;
           width: 0;
           height: 1.5px;
-          background: #C4873B;
+          background: #D3BC76;
           transition: width 0.24s ease;
         }
         .site-nav__links a:hover::after { width: 100%; }
@@ -124,7 +124,7 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/' }: Sit
           bottom: -2px;
           width: 0;
           height: 1.5px;
-          background: #C4873B;
+          background: #D3BC76;
           transition: width 0.24s ease;
         }
         .site-nav__auth-btn:hover::after { width: 100%; }

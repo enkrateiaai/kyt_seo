@@ -49,11 +49,11 @@ export async function POST(req: NextRequest) {
           Subject: 'Bitte bestätige deine Anmeldung 🙏',
           HTMLPart: `
             <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #2C2416;">
-              <p style="font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; color: #C4873B; margin-bottom: 8px;">Kundalini Yoga Tribe</p>
+              <p style="font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; color: #D3BC76; margin-bottom: 8px;">Kundalini Yoga Tribe</p>
               <h1 style="font-size: 28px; font-weight: 300; margin: 0 0 24px;">Fast fertig — bestätige deine Anmeldung</h1>
               <p style="font-size: 16px; line-height: 1.7; color: #6B5D4F;">Du hast dich für unseren Newsletter angemeldet. Klicke auf den Button, um deine E-Mail-Adresse zu bestätigen und Kriyas, Meditationen und Impulse zu erhalten.</p>
               <div style="margin: 32px 0;">
-                <a href="${confirmUrl}" style="display: inline-block; background: #C4873B; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 100px; font-family: sans-serif; font-size: 15px; font-weight: 500;">
+                <a href="${confirmUrl}" style="display: inline-block; background: #D3BC76; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 100px; font-family: sans-serif; font-size: 15px; font-weight: 500;">
                   Ja, ich möchte dabei sein →
                 </a>
               </div>

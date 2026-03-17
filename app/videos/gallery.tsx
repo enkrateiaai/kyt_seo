@@ -201,8 +201,8 @@ export default function YouTubeGallery({ isMember }: Props) {
         }
         .v-search__input::placeholder { color: #B8AFA6; }
         .v-search__input:focus {
-          border-color: #C4873B;
-          box-shadow: 0 0 0 3px rgba(196,135,59,0.12), 0 2px 8px rgba(44,36,22,0.04);
+          border-color: #D3BC76;
+          box-shadow: 0 0 0 3px rgba(211,188,118,0.12), 0 2px 8px rgba(44,36,22,0.04);
         }
         .v-search__clear {
           position: absolute;
@@ -230,7 +230,7 @@ export default function YouTubeGallery({ isMember }: Props) {
           transform: translateY(-50%);
           width: 18px; height: 18px;
           border: 2px solid #EDE8E0;
-          border-top-color: #C4873B;
+          border-top-color: #D3BC76;
           border-radius: 50%;
           animation: spin 0.7s linear infinite;
         }
@@ -263,8 +263,8 @@ export default function YouTubeGallery({ isMember }: Props) {
           text-overflow: ellipsis;
         }
         .v-search__filter-btn:hover {
-          border-color: #C4873B;
-          color: #C4873B;
+          border-color: #D3BC76;
+          color: #D3BC76;
         }
         .v-search__filter-menu {
           position: absolute;
@@ -297,7 +297,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         }
         .v-search__filter-item--active {
           background: #F3EDE4;
-          color: #C4873B;
+          color: #D3BC76;
           font-weight: 500;
         }
 
@@ -331,7 +331,7 @@ export default function YouTubeGallery({ isMember }: Props) {
           animation: fadeIn 0.3s ease;
         }
         .v-result:hover {
-          border-color: #C4873B;
+          border-color: #D3BC76;
           box-shadow: 0 4px 16px rgba(44,36,22,0.08);
           transform: translateY(-1px);
         }
@@ -375,7 +375,7 @@ export default function YouTubeGallery({ isMember }: Props) {
           overflow: hidden;
         }
         .v-result__excerpt mark {
-          background: rgba(196,135,59,0.2);
+          background: rgba(211,188,118,0.2);
           color: #2C2416;
           border-radius: 2px;
           padding: 0 2px;
@@ -383,7 +383,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         }
         .v-result__cta {
           font-size: 12px;
-          color: #C4873B;
+          color: #D3BC76;
           font-weight: 500;
           margin-top: auto;
         }
@@ -409,7 +409,7 @@ export default function YouTubeGallery({ isMember }: Props) {
           font-weight: 500;
           letter-spacing: 0.15em;
           text-transform: uppercase;
-          color: #C4873B;
+          color: #D3BC76;
           margin-bottom: 10px;
         }
         .v-header__title {
@@ -467,7 +467,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         .v-player__dot {
           width: 8px; height: 8px;
           border-radius: 50%;
-          background: #C4873B;
+          background: #D3BC76;
           flex-shrink: 0;
         }
         .v-player__title-text {
@@ -491,7 +491,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         .v-spinner {
           width: 28px; height: 28px;
           border: 2px solid #EDE8E0;
-          border-top-color: #C4873B;
+          border-top-color: #D3BC76;
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
           flex-shrink: 0;
@@ -548,8 +548,8 @@ export default function YouTubeGallery({ isMember }: Props) {
           box-shadow: 0 6px 20px rgba(44,36,22,0.08);
         }
         .v-card--active {
-          border-color: #C4873B !important;
-          box-shadow: 0 0 0 3px rgba(196,135,59,0.15), 0 4px 16px rgba(44,36,22,0.1) !important;
+          border-color: #D3BC76 !important;
+          box-shadow: 0 0 0 3px rgba(211,188,118,0.15), 0 4px 16px rgba(44,36,22,0.1) !important;
         }
         .v-card img {
           width: 100%; height: 100%;
@@ -580,7 +580,7 @@ export default function YouTubeGallery({ isMember }: Props) {
           position: absolute;
           top: 7px; left: 7px;
           z-index: 10;
-          background: #C4873B;
+          background: #D3BC76;
           color: #fff;
           font-size: 8px;
           font-weight: 600;
@@ -623,8 +623,8 @@ export default function YouTubeGallery({ isMember }: Props) {
           color: #6B5D4F;
         }
         .v-pagination__btn:hover:not(:disabled) {
-          border-color: #C4873B;
-          color: #C4873B;
+          border-color: #D3BC76;
+          color: #D3BC76;
         }
         .v-pagination__btn:disabled {
           opacity: 0.35;
@@ -644,7 +644,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         }
         .v-item__link {
           font-size: 11px;
-          color: #C4873B;
+          color: #D3BC76;
           text-decoration: none;
           white-space: nowrap;
           font-weight: 500;
@@ -671,7 +671,7 @@ export default function YouTubeGallery({ isMember }: Props) {
               <div className="v-header__badge">
                 <span>🔒</span>
                 <span>Mitgliedschaft für vollen Zugriff</span>
-                <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" style={{ color: '#C4873B', fontWeight: 500 }}>
+                <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" style={{ color: '#D3BC76', fontWeight: 500 }}>
                   Mehr erfahren →
                 </a>
               </div>

@@ -15,7 +15,7 @@ const C = {
   text:        '#2C2416',
   textSoft:    '#6B5D4F',
   textMuted:   '#9B8E7E',
-  accent:      '#C4873B',
+  accent:      '#D3BC76',
   border:      '#DDD5C8',
 }
 

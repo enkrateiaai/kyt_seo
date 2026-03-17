@@ -14,10 +14,10 @@
   --c-text: #2C2416;
   --c-text-soft: #6B5D4F;
   --c-text-muted: #9B8E7E;
-  --c-accent: #C4873B;
-  --c-accent-hover: #A66E2B;
-  --c-accent-soft: #E8CFA3;
-  --c-gold: #D4A853;
+  --c-accent: #D3BC76;
+  --c-accent-hover: #D3BC76;
+  --c-accent-soft: #D3BC76;
+  --c-gold: #D3BC76;
   --c-sage: #7A8B6F;
   --c-sage-soft: #C5D1BC;
   --c-border: #DDD5C8;
@@ -202,9 +202,9 @@ h1, h2, h3, h4, h5 {
   position: absolute;
   inset: 0;
   background: 
-    radial-gradient(ellipse 80% 60% at 20% 40%, rgba(196, 135, 59, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 20% 40%, rgba(211, 188, 118, 0.08) 0%, transparent 60%),
     radial-gradient(ellipse 60% 80% at 80% 60%, rgba(122, 139, 111, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 100% 100% at 50% 0%, rgba(212, 168, 83, 0.05) 0%, transparent 50%);
+    radial-gradient(ellipse 100% 100% at 50% 0%, rgba(211, 188, 118, 0.05) 0%, transparent 50%);
 }
 
 .hero__grain {
@@ -334,7 +334,7 @@ h1, h2, h3, h4, h5 {
   background: var(--c-accent-hover);
   color: #fff;
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(196, 135, 59, 0.25);
+  box-shadow: 0 8px 24px rgba(211, 188, 118, 0.25);
 }
 
 .btn--ghost {
@@ -1016,7 +1016,7 @@ h1, h2, h3, h4, h5 {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-accent);
-  background: rgba(196,135,59,0.1);
+  background: rgba(211,188,118,0.1);
   padding: 4px 12px;
   border-radius: 100px;
   margin-bottom: var(--s-md);

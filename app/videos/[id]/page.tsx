@@ -159,7 +159,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
           transition: color 0.2s;
           font-family: 'DM Sans', sans-serif;
         }
-        .vd-back:hover { color: #C4873B; }
+        .vd-back:hover { color: #D3BC76; }
 
         .vd-embed {
           border-radius: 14px;
@@ -215,7 +215,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
           font-weight: 500;
           letter-spacing: 0.15em;
           text-transform: uppercase;
-          color: #C4873B;
+          color: #D3BC76;
           margin-bottom: 12px;
         }
 
@@ -249,13 +249,13 @@ export default async function VideoDetailPage({ params }: PageProps) {
         }
 
         .vd-transcript a {
-          color: #C4873B;
+          color: #D3BC76;
           text-decoration: underline;
-          text-decoration-color: rgba(196,135,59,0.4);
+          text-decoration-color: rgba(211,188,118,0.4);
           text-underline-offset: 2px;
           transition: color 0.2s;
         }
-        .vd-transcript a:hover { color: #A66E2B; }
+        .vd-transcript a:hover { color: #D3BC76; }
 
         .vd-transcript--placeholder {
           color: #9B8E7E;
@@ -276,17 +276,17 @@ export default async function VideoDetailPage({ params }: PageProps) {
           align-items: center;
           gap: 6px;
           padding: 8px 16px;
-          background: rgba(196,135,59,0.08);
-          border: 1px solid rgba(196,135,59,0.25);
+          background: rgba(211,188,118,0.08);
+          border: 1px solid rgba(211,188,118,0.25);
           border-radius: 20px;
-          color: #C4873B;
+          color: #D3BC76;
           font-size: 0.88rem;
           text-decoration: none;
           transition: background 0.2s, border-color 0.2s;
         }
         .vd-mantra-pill:hover {
-          background: rgba(196,135,59,0.16);
-          border-color: rgba(196,135,59,0.5);
+          background: rgba(211,188,118,0.16);
+          border-color: rgba(211,188,118,0.5);
         }
         .vd-mantra-pill__icon { font-size: 0.95rem; }
 
@@ -313,13 +313,13 @@ export default async function VideoDetailPage({ params }: PageProps) {
         .vd-glossary-icon {
           width: 38px;
           height: 38px;
-          background: rgba(196,135,59,0.1);
+          background: rgba(211,188,118,0.1);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           margin-bottom: 10px;
-          color: #C4873B;
+          color: #D3BC76;
         }
         .vd-glossary-icon svg {
           width: 18px;
@@ -339,7 +339,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
           font-weight: 500;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #C4873B;
+          color: #D3BC76;
           margin-bottom: 6px;
         }
 
@@ -350,12 +350,12 @@ export default async function VideoDetailPage({ params }: PageProps) {
         }
 
         .vd-glossary-def a {
-          color: #C4873B;
+          color: #D3BC76;
           text-decoration: underline;
-          text-decoration-color: rgba(196,135,59,0.35);
+          text-decoration-color: rgba(211,188,118,0.35);
           text-underline-offset: 2px;
         }
-        .vd-glossary-def a:hover { color: #A66E2B; }
+        .vd-glossary-def a:hover { color: #D3BC76; }
 
         .vd-tts {
           display: flex;
@@ -378,9 +378,9 @@ export default async function VideoDetailPage({ params }: PageProps) {
           gap: 6px;
           transition: all 0.2s;
         }
-        .vd-tts__btn:hover { border-color: #C4873B; color: #C4873B; }
-        .vd-tts__btn--active { background: #C4873B; border-color: #C4873B; color: #fff; }
-        .vd-tts__btn--active:hover { background: #A66E2B; border-color: #A66E2B; color: #fff; }
+        .vd-tts__btn:hover { border-color: #D3BC76; color: #D3BC76; }
+        .vd-tts__btn--active { background: #D3BC76; border-color: #D3BC76; color: #fff; }
+        .vd-tts__btn--active:hover { background: #D3BC76; border-color: #D3BC76; color: #fff; }
         .vd-tts__btn:disabled { opacity: 0.4; cursor: default; }
         .vd-tts__btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 
@@ -455,11 +455,11 @@ export default async function VideoDetailPage({ params }: PageProps) {
           transition: all 0.2s;
         }
         .vd-lock__btn--primary {
-          background: #C4873B;
-          border: 1px solid #C4873B;
+          background: #D3BC76;
+          border: 1px solid #D3BC76;
           color: #fff;
         }
-        .vd-lock__btn--primary:hover { background: #A66E2B; }
+        .vd-lock__btn--primary:hover { background: #D3BC76; }
         .vd-lock__btn--secondary {
           background: transparent;
           border: 1px solid rgba(255,255,255,0.3);
@@ -498,7 +498,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
           align-items: center;
           gap: 6px;
         }
-        .vd-content-lock__label svg { width: 14px; height: 14px; color: #C4873B; }
+        .vd-content-lock__label svg { width: 14px; height: 14px; color: #D3BC76; }
       `}</style>
 
       <script
@@ -546,7 +546,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
 
           <h1 className="vd-title">{title}</h1>
           <p style={{fontSize:'13px',color:'#9B8E7E',marginTop:'8px',marginBottom:'0'}}>
-            🔗 <a href={`https://www.kundaliniyogatribe.de/videos/${canonicalSlug}`} style={{color:'#C4873B',textDecoration:'underline',textDecorationColor:'rgba(196,135,59,0.4)',textUnderlineOffset:'2px'}}>{`kundaliniyogatribe.de/videos/${canonicalSlug}`}</a>
+            🔗 <a href={`https://www.kundaliniyogatribe.de/videos/${canonicalSlug}`} style={{color:'#D3BC76',textDecoration:'underline',textDecorationColor:'rgba(211,188,118,0.4)',textUnderlineOffset:'2px'}}>{`kundaliniyogatribe.de/videos/${canonicalSlug}`}</a>
           </p>
 
           {description && (

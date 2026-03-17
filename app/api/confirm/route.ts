@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
           Subject: 'Willkommen im Kundalini Yoga Tribe 🙏',
           HTMLPart: `
             <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 24px; color: #2C2416;">
-              <p style="font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; color: #C4873B; margin-bottom: 8px;">Kundalini Yoga Tribe</p>
+              <p style="font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase; color: #D3BC76; margin-bottom: 8px;">Kundalini Yoga Tribe</p>
               <h1 style="font-size: 28px; font-weight: 300; margin: 0 0 20px; line-height: 1.25;">Sat Nam — du bist dabei 🙏</h1>
               <p style="font-size: 16px; line-height: 1.8; color: #6B5D4F; margin-bottom: 24px;">
                 Schön, dass du dabei bist. Hier findest du deine ersten Schritte in die Welt des Kundalini Yoga:
@@ -82,36 +82,36 @@ export async function GET(req: NextRequest) {
               <table style="width: 100%; border-collapse: separate; border-spacing: 0 10px; margin-bottom: 28px;">
                 <tr>
                   <td style="background: #F3EDE4; border: 1px solid #EDE8E0; border-radius: 10px; padding: 16px 20px;">
-                    <p style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #C4873B; margin: 0 0 6px; font-family: sans-serif;">Einstieg</p>
+                    <p style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #D3BC76; margin: 0 0 6px; font-family: sans-serif;">Einstieg</p>
                     <p style="font-size: 16px; color: #2C2416; margin: 0 0 6px;">Was ist Kundalini Yoga?</p>
                     <p style="font-size: 13px; color: #9B8E7E; margin: 0 0 12px; line-height: 1.5;">Wirkung, Kriyas und wie du beginnst — eine vollständige Einführung.</p>
-                    <a href="${siteUrl}/artikel/was-ist-kundalini-yoga" style="font-family: sans-serif; font-size: 13px; font-weight: 500; color: #C4873B; text-decoration: none;">Artikel lesen →</a>
+                    <a href="${siteUrl}/artikel/was-ist-kundalini-yoga" style="font-family: sans-serif; font-size: 13px; font-weight: 500; color: #D3BC76; text-decoration: none;">Artikel lesen →</a>
                   </td>
                 </tr>
                 <tr>
                   <td style="background: #F3EDE4; border: 1px solid #EDE8E0; border-radius: 10px; padding: 16px 20px;">
-                    <p style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #C4873B; margin: 0 0 6px; font-family: sans-serif;">Erste Kriya</p>
+                    <p style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #D3BC76; margin: 0 0 6px; font-family: sans-serif;">Erste Kriya</p>
                     <p style="font-size: 16px; color: #2C2416; margin: 0 0 6px;">Sat Kriya — die wichtigste Übung</p>
                     <p style="font-size: 13px; color: #9B8E7E; margin: 0 0 12px; line-height: 1.5;">3 Minuten täglich, die alles verändern können. Mit Schritt-für-Schritt-Anleitung.</p>
-                    <a href="${siteUrl}/artikel/sat-kriya-anleitung" style="font-family: sans-serif; font-size: 13px; font-weight: 500; color: #C4873B; text-decoration: none;">Zur Anleitung →</a>
+                    <a href="${siteUrl}/artikel/sat-kriya-anleitung" style="font-family: sans-serif; font-size: 13px; font-weight: 500; color: #D3BC76; text-decoration: none;">Zur Anleitung →</a>
                   </td>
                 </tr>
                 <tr>
                   <td style="background: #F3EDE4; border: 1px solid #EDE8E0; border-radius: 10px; padding: 16px 20px;">
-                    <p style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #C4873B; margin: 0 0 6px; font-family: sans-serif;">Videos</p>
+                    <p style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #D3BC76; margin: 0 0 6px; font-family: sans-serif;">Videos</p>
                     <p style="font-size: 16px; color: #2C2416; margin: 0 0 6px;">Kriyas & Meditationen zum Mitmachen</p>
                     <p style="font-size: 13px; color: #9B8E7E; margin: 0 0 12px; line-height: 1.5;">Geführte Kriyas — das erste Video jeder Playlist ist kostenlos.</p>
-                    <a href="${siteUrl}/videos" style="font-family: sans-serif; font-size: 13px; font-weight: 500; color: #C4873B; text-decoration: none;">Zur Video-Bibliothek →</a>
+                    <a href="${siteUrl}/videos" style="font-family: sans-serif; font-size: 13px; font-weight: 500; color: #D3BC76; text-decoration: none;">Zur Video-Bibliothek →</a>
                   </td>
                 </tr>
               </table>
 
               <!-- Shop CTA -->
               <div style="background: #2C2416; border-radius: 12px; padding: 24px 28px; margin-bottom: 28px; text-align: center;">
-                <p style="font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #D4A853; margin: 0 0 8px; font-family: sans-serif;">Mitgliedschaft</p>
+                <p style="font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #D3BC76; margin: 0 0 8px; font-family: sans-serif;">Mitgliedschaft</p>
                 <p style="font-size: 20px; font-weight: 300; color: #FAF7F2; margin: 0 0 10px;">Unbegrenzter Zugang zu allen Kriyas</p>
                 <p style="font-size: 14px; color: #9B8E7E; margin: 0 0 20px; line-height: 1.6;">Als Mitglied hast du vollen Zugriff auf alle Videos, Live-Sessions und neue Inhalte.</p>
-                <a href="${shopUrl}" style="display: inline-block; background: #C4873B; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 100px; font-family: sans-serif; font-size: 14px; font-weight: 500;">
+                <a href="${shopUrl}" style="display: inline-block; background: #D3BC76; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 100px; font-family: sans-serif; font-size: 14px; font-weight: 500;">
                   Jetzt Mitglied werden →
                 </a>
               </div>
