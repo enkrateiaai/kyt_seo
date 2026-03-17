@@ -87,7 +87,7 @@ const HEAD = (title, desc, canonical, extra = '') => `<!DOCTYPE html>
 // ─── MANTRA DATA ────────────────────────────────────────────────────────────
 
 const CAT_ICONS = {
-  eroeffnung: '◌',
+  eroeffnung: '◐',
   bija: '☽',
   heilung: '✦',
   namen: '☼',
