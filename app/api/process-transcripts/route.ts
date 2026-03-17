@@ -102,22 +102,116 @@ async function fetchTranscript(videoId: string): Promise<string | null> {
     if (!captionRes.ok) return null
     
     const vtt = await captionRes.text()
-    return vttToText(vtt)
+    return vttToHtml(vtt)
   } catch {
     return null
   }
 }
 
-function vttToText(vtt: string): string {
-  const lines = vtt.split('\n')
-  const seen = new Set<string>()
-  const result: string[] = []
-  for (const line of lines) {
-    const clean = line.trim().replace(/<[^>]+>/g, '').replace(/&amp;/g, '&')
-    if (!clean || clean === 'WEBVTT' || clean.includes('-->') || /^\d+$/.test(clean)) continue
-    if (!seen.has(clean)) { seen.add(clean); result.push(clean) }
+type Cue = {
+  start: number
+  end: number
+  text: string
+}
+
+function vttToHtml(vtt: string): string {
+  const blocks = vtt
+    .replace(/\r/g, '')
+    .split('\n\n')
+    .map(block => block.trim())
+    .filter(Boolean)
+
+  const cues: Cue[] = []
+
+  for (const block of blocks) {
+    const lines = block
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+
+    if (!lines.length || lines[0] === 'WEBVTT') continue
+
+    const timeLineIndex = lines.findIndex(line => line.includes('-->'))
+    if (timeLineIndex === -1) continue
+
+    const [rawStart, rawEnd] = lines[timeLineIndex].split('-->').map(part => part.trim().split(' ')[0])
+    const start = parseVttTime(rawStart)
+    const end = parseVttTime(rawEnd)
+    const textLines = lines.slice(timeLineIndex + 1)
+    if (!textLines.length) continue
+
+    const text = normalizeCaptionText(textLines.join(' '))
+    if (!text) continue
+
+    const previous = cues[cues.length - 1]
+    if (previous && previous.text === text) continue
+
+    cues.push({ start, end, text })
   }
-  return result.join(' ')
+
+  if (!cues.length) return ''
+
+  const paragraphs: string[] = []
+  let current: string[] = []
+  let previousEnd = 0
+
+  for (const cue of cues) {
+    const gap = cue.start - previousEnd
+    const currentText = current.join(' ')
+    const shouldBreak =
+      !current.length
+        ? false
+        : gap > 1.8 ||
+          /[.!?…]$/.test(currentText) ||
+          currentText.length > 420
+
+    if (shouldBreak) {
+      paragraphs.push(`<p>${escapeHtml(current.join(' '))}</p>`)
+      current = []
+    }
+
+    current.push(cue.text)
+    previousEnd = cue.end
+  }
+
+  if (current.length) {
+    paragraphs.push(`<p>${escapeHtml(current.join(' '))}</p>`)
+  }
+
+  return paragraphs.join('')
+}
+
+function normalizeCaptionText(text: string): string {
+  return text
+    .replace(/<\d{2}:\d{2}:\d{2}\.\d{3}>/g, '')
+    .replace(/<\/?c>/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function parseVttTime(value: string): number {
+  const match = value.match(/(?:(\d+):)?(\d+):(\d+)\.(\d+)/)
+  if (!match) return 0
+  const [, hours = '0', minutes = '0', seconds = '0', millis = '0'] = match
+  return (
+    Number(hours) * 3600 +
+    Number(minutes) * 60 +
+    Number(seconds) +
+    Number(millis) / 1000
+  )
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
 }
 
 function slugify(text: string): string {
