@@ -232,22 +232,7 @@ const mantras = [
     wirkung: 'Stärkt das Nabelzentrum (drittes Chakra), fördert Willenskraft, Entschlossenheit und Wohlstand. Yogi Bhajan: „Har ist der Same, aus dem alles wächst."',
     praxis: 'Sehr häufig in Kriyas mit Arm-Pumpen oder Nabelübungen. Klassisch: „Har Har Wahe Guru" – kraftvoll und mit Nachdruck wiederholen. Auch: auf jeden Arm-Schwung einmal „Har" ausrufen.',
     aussprache: 'Ein kurzes, angeschlagenes „H" – dann „ar". Die Zunge tippt kurz hinter die oberen Zähne. Nicht lang ziehen.',
-    verwandte: ['hari', 'har-haray-haree', 'gobinday-mukunday'],
-  },
-  {
-    slug: 'hari',
-    name: 'Hari',
-    subtitle: 'Bija Mantra – Fluss der Lebensenergie',
-    kategorie: 'bija',
-    kurzbeschreibung: 'Das fließende, heilende Aspekt der göttlichen Kraft. Hari aktiviert das Herzchakra und bringt Heilung in Bewegung.',
-    lines: [
-      { text: 'Hari', trans: 'Die strömende, heilende, fließende Kraft Gottes' },
-    ],
-    bedeutung: 'Hari ist der mittlere Aspekt der drei Har-Formen (Har – Hari – Haree). Während Har die rohe Schöpferkraft ist und Haree die Vollendung, ist Hari der Fluss dazwischen – das Werden, die Heilung, das Leben das sich entfaltet. Es ist eng mit Wasser, Emotion und dem Herzchakra verbunden.',
-    wirkung: 'Aktiviert Mitgefühl und Heilung. Fördert emotionale Balance. Gut bei Herzkummer, Trauer und Blockaden im Herzbereich.',
-    praxis: 'Oft in Meditations-Kombinationen: „Hari Har Hari Har". Oder: „Hari Nam Sat Nam Hari Nam Har, Hari Nam Sat Nam Sat Nam Har." In Sitali Pranayama als begleitendes Mantra.',
-    aussprache: 'Ha-ree – das „r" ist ein leichtes indisches „r", kein deutsches Rollen. Kurzes „i" am Ende.',
-    verwandte: ['har', 'har-haray-haree', 'sat-narayan-wahe-guru'],
+    verwandte: ['har-haray-haree', 'gobinday-mukunday', 'wahe-guru'],
   },
   {
     slug: 'ong',
@@ -453,26 +438,7 @@ const mantras = [
     wirkung: 'Harmonisiert Beziehungen, stärkt das Wasserelement im Körper (Nieren, Blase). Bringt tiefe innere Ruhe und Stabilität. Gut bei Unruhe und emotionaler Instabilität.',
     praxis: 'Als Abendmeditation, 11 Minuten. Oder als Kirtan-Gesang. Schöne Praxis für Paare zusammen.',
     aussprache: 'Sat – Na-ra-yan (drei Silben, Betonung auf „ya") – Waa-hey – Guh-roo. Hari: Ha-ri.',
-    verwandte: ['hari', 'sat-nam', 'ang-sang-wahe-guru'],
-  },
-  {
-    slug: 'pavan-pavan',
-    name: 'Pavan Pavan Pavan Pavan Para Para Para Para',
-    subtitle: 'Prana Kriya Mantra – Atemmantra',
-    kategorie: 'namen',
-    kurzbeschreibung: 'Das Mantra des Prana (Lebensenergie). Aktiviert den Atem als heilige Verbindung zum Göttlichen.',
-    lines: [
-      { text: 'Pavan Pavan Pavan Pavan', trans: 'Atem, Atem, Atem, Atem' },
-      { text: 'Para Para Para Para', trans: 'Über alles, jenseits alles, transzendent' },
-      { text: 'Pavan Guru', trans: 'Der Atem ist der Lehrer / Gott' },
-      { text: 'Wahe Guru Wahe Guru', trans: 'Wow! Ekstase des Göttlichen' },
-      { text: 'Wahe Jio', trans: 'Wow! Der lebendige Atem, das lebendige Wesen' },
-    ],
-    bedeutung: 'Pavan bedeutet Atem, Wind, Prana. Dieses Mantra verehrt den Atem selbst als Lehrer und als göttliche Kraft. Yogi Bhajan lehrte: „Der Atem ist das Leben. Wer den Atem kontrolliert, kontrolliert das Leben." Dieses Mantra verbindet uns mit der Prana Kriya – der direkten Arbeit mit der Lebensenergie.',
-    wirkung: 'Reinigt die Atemwege und die Lungen, stärkt das Nervensystem. Verbindet mit Prana als Lebenskraft. Sehr beruhigend und zentrierend.',
-    praxis: 'Gesungen als Kirtan oder in der Meditation. Variante: beim Singen bewusst tief atmen und die Verbindung von Mantra und Atem spüren.',
-    aussprache: 'Pa-van (kurzes „a", Betonung auf „van") – Para (Pa-ra, kurzes „a"). Pavan Guru: fließend.',
-    verwandte: ['ong-namo-guru-dev-namo', 'pavan-guru', 'so-hung'],
+    verwandte: ['sat-nam', 'ang-sang-wahe-guru', 'har-haray-haree'],
   },
   {
     slug: 'ong-so-hung',
@@ -523,7 +489,7 @@ const mantras = [
     wirkung: 'Unterstützt Projekte und Pläne von der Idee bis zur Vollendung. Fördert Ausdauer und Geduld. Aktiviert alle drei Nabelaspekte.',
     praxis: 'Schnell und rhythmisch gesungen, oft mit Trommelbegleitung. 11 Minuten, kräftig und mit Nabelimpuls.',
     aussprache: 'Har (kurz) – Ha-ray (zwei Silben) – Ha-ree (zwei Silben) – Waa-hey Guh-roo.',
-    verwandte: ['har', 'hari', 'wahe-guru'],
+    verwandte: ['har', 'sat-nam', 'wahe-guru'],
   },
   {
     slug: 'sa-re-sa-sa',
@@ -557,7 +523,7 @@ const mantras = [
     wirkung: 'Vertieft die Atempraxis, verbindet Pranayama mit spiritueller Erfahrung. Öffnet die Herzchakra, fördert Dankbarkeit für das Leben.',
     praxis: 'Verbunden mit Pranayama-Übungen oder als eigenständiger Gesang. 11 Minuten.',
     aussprache: 'Pa-van – Guh-roo – Waa-hey – Guh-roo – Waa-hey – Jee-oh (Jio = zwei Silben).',
-    verwandte: ['pavan-pavan', 'wahe-guru', 'so-hung'],
+    verwandte: ['ong-namo-guru-dev-namo', 'wahe-guru', 'so-hung'],
   },
 
   // ── Meditation & Bewusstsein ──────────────────────────────────────────────
@@ -838,7 +804,7 @@ const mantras = [
     wirkung: 'Reinigt die Pranasheide (Pranamaya Kosha). Sehr ausgleichend bei Atemstörungen, Angst und Nervosität.',
     praxis: 'Wellenförmige Armbewegungen von unten nach oben (Einatmen) und von oben nach unten (Ausatmen). Sehr fließend, nie abgehackt. 11 Minuten.',
     aussprache: 'Wie bei Pavan Pavan – sanft und fließend.',
-    verwandte: ['pavan-pavan', 'pavan-guru', 'ong-so-hung-celestial'],
+    verwandte: ['pavan-guru', 'ong-so-hung-celestial', 'sa-re-sa-sa-celestial'],
   },
   {
     slug: 'sa-re-sa-sa-celestial',
