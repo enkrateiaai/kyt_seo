@@ -22,6 +22,7 @@ export async function serveSatnamHtml(filename: string): Promise<NextResponse> {
       headers: {
         'content-type': 'text/html; charset=utf-8',
         'cache-control': 'no-store, max-age=0',
+        'x-robots-tag': 'index, follow, max-image-preview:large',
       },
     })
   } catch {

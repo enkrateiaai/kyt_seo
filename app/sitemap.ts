@@ -21,6 +21,14 @@ const STATIC_PAGES: MetadataRoute.Sitemap = [
   { url: `${BASE}/datenschutz`,    lastModified: new Date(), changeFrequency: 'yearly',  priority: 0.2 },
 ]
 
+function readFileModifiedAt(filePath: string): Date {
+  try {
+    return fs.statSync(filePath).mtime
+  } catch {
+    return new Date()
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Mantra pages from filesystem
   let mantraEntries: MetadataRoute.Sitemap = []
@@ -31,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .filter(f => f.endsWith('.html'))
       .map(f => ({
         url: `${BASE}/mantras/${f.replace('.html', '')}`,
-        lastModified: new Date(),
+        lastModified: readFileModifiedAt(path.join(mantraDir, f)),
         changeFrequency: 'monthly' as const,
         priority: 0.7,
       }))
