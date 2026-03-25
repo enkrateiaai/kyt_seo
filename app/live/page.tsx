@@ -41,7 +41,7 @@ function Gate({ loggedIn }: { loggedIn: boolean }) {
       </p>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         {!loggedIn && (
-          <SignInButton>
+          <SignInButton mode="redirect" forceRedirectUrl="/live" fallbackRedirectUrl="/live">
             <button style={{
               padding: '13px 28px', background: 'transparent',
               border: `1px solid ${C.border}`, color: C.textSoft,

@@ -1,5 +1,6 @@
 import { SignInButton, SignOutButton } from '@clerk/nextjs'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 
 interface SiteHeaderProps {
   isLoggedIn: boolean
@@ -7,6 +8,8 @@ interface SiteHeaderProps {
 }
 
 export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/' }: SiteHeaderProps) {
+  const pathname = usePathname() || '/'
+
   return (
     <>
       <header className="site-nav">
@@ -26,7 +29,11 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/' }: Sit
                 <button type="button" className="site-nav__auth-btn">Log out</button>
               </SignOutButton>
             ) : (
-              <SignInButton mode="redirect" forceRedirectUrl="/videos">
+              <SignInButton
+                mode="redirect"
+                forceRedirectUrl={pathname}
+                fallbackRedirectUrl={pathname}
+              >
                 <button type="button" className="site-nav__auth-btn">Mitglieder</button>
               </SignInButton>
             )}

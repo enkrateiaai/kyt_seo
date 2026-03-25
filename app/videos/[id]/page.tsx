@@ -536,7 +536,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
                   <p className="vd-lock__sub">Dieses Video ist Teil der Mitgliedschaft. Melde dich an oder werde Mitglied, um vollen Zugang zu erhalten.</p>
                   <div className="vd-lock__actions">
                     <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" className="vd-lock__btn vd-lock__btn--primary">Mitglied werden →</a>
-                    {!user && <a href="/sign-in" className="vd-lock__btn vd-lock__btn--secondary">Anmelden</a>}
+                    {!user && <a href={`/sign-in?redirect_url=${encodeURIComponent(`/videos/${canonicalSlug}`)}`} className="vd-lock__btn vd-lock__btn--secondary">Anmelden</a>}
                   </div>
                 </div>
               </div>
