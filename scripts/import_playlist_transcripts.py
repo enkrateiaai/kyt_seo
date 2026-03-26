@@ -98,26 +98,39 @@ def main():
         return
 
     ready = []
+    failed = []
 
     for item in missing_videos:
         video_id = item["videoId"]
         title = item.get("title", "")
         print(f"Fetching transcript for {video_id} — {title}")
-        snippets = api.fetch(video_id, languages=["de", "en"])
-        transcript = build_transcript_html(snippets)
-        if transcript:
-            ready.append({
+        try:
+            snippets = api.fetch(video_id, languages=["de", "en"])
+            transcript = build_transcript_html(snippets)
+            if transcript:
+                ready.append({
+                    "videoId": video_id,
+                    "title": title,
+                    "transcript": transcript,
+                })
+        except Exception as exc:
+            failed.append({
                 "videoId": video_id,
                 "title": title,
-                "transcript": transcript,
+                "error": str(exc),
             })
+            print(f"Skipping {video_id}: {exc}")
 
     if not ready:
         print("No transcripts could be fetched")
+        if failed:
+            print({"failed": failed})
         return
 
     result = import_transcripts(ready)
     print(result)
+    if failed:
+        print({"failed": failed})
 
 
 if __name__ == "__main__":
