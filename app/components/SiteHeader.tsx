@@ -1,3 +1,5 @@
+'use client'
+
 import { SignInButton, SignOutButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
