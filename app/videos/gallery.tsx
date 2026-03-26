@@ -858,17 +858,15 @@ export default function YouTubeGallery({ isMember }: Props) {
                             <span className="v-card__free">Gratis</span>
                           )}
                         </div>
-                        {transcriptIds.has(video.id) && (
-                          <div className="v-item__meta">
-                            <a
-                              href={`/videos/${slugMap[video.id] ?? video.id}`}
-                              className="v-item__link"
-                              onClick={e => e.stopPropagation()}
-                            >
-                              Mehr zum Video →
-                            </a>
-                          </div>
-                        )}
+                        <div className="v-item__meta">
+                          <a
+                            href={`/videos/${slugMap[video.id] ?? video.id}`}
+                            className="v-item__link"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            Mehr zum Video →
+                          </a>
+                        </div>
                       </div>
                     )
                   })}
