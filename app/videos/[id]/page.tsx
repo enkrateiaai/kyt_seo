@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import redis from '@/lib/redis'
 import { Metadata } from 'next'
 import SiteHeader from '@/app/components/SiteHeader'
+import { isFreeVideo } from '@/lib/freeVideo'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -103,18 +104,17 @@ export default async function VideoDetailPage({ params }: PageProps) {
     redirect(`/videos/${slug}`)
   }
 
-  const [user, video, transcript, customTitle, isFree, mantrasRaw] = await Promise.all([
+  const [user, video, transcript, customTitle, mantrasRaw] = await Promise.all([
     currentUser(),
     fetchVideoDetails(videoId),
     redis.get(`transcript:${videoId}`),
     redis.get(`title:${videoId}`),
-    redis.get(`free:${videoId}`),
     redis.get(`mantras:${videoId}`),
   ])
   const videoMantras: { slug: string; name: string }[] = mantrasRaw ? JSON.parse(mantrasRaw as string) : []
 
   const isMember = user?.publicMetadata?.role === 'member'
-  const isLocked = !isFree && !isMember
+  const isLocked = !isFreeVideo(videoId) && !isMember
   const title = (customTitle as string | null) ?? video?.title ?? 'Kundalini Yoga Video'
   const description = video?.description ?? ''
   const publishedAt = video?.publishedAt ?? new Date().toISOString()

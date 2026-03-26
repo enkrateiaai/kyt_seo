@@ -46,11 +46,6 @@ export async function POST(req: NextRequest) {
         await redis.set(`slug:${slug}`, videoId)
       }
 
-      // Mark first video as free
-      if (i === 0 && !dryRun) {
-        await redis.set(`free:${videoId}`, '1')
-      }
-
       // Fetch transcript
       const transcript = await fetchTranscript(videoId)
       if (transcript && !dryRun) {
