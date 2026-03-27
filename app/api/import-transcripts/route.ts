@@ -10,7 +10,7 @@ type TranscriptItem = {
 }
 
 export async function POST(req: NextRequest) {
-  const { secret, items } = await req.json().catch(() => ({}))
+  const { secret, items, overwrite } = await req.json().catch(() => ({}))
 
   if (secret !== SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     const transcriptKey = `transcript:${videoId}`
-    if (await redis.exists(transcriptKey)) {
+    if (!overwrite && await redis.exists(transcriptKey)) {
       skipped.push({ videoId, reason: 'already-exists' })
       continue
     }
