@@ -1,20 +1,92 @@
-# KYT Transcript Cleanup — Instructions for Claude/Codex
+# KYT Transcript Pipeline — Instructions for Claude/Codex
 
-## What this is
+## Overview
 
-kundaliniyogatribe.de stores YouTube video transcripts in Redis. They are rendered
-as raw HTML on each video's detail page (`dangerouslySetInnerHTML`), so they need
-to be proper HTML with `<p>` tags — not plain text with newlines.
+When Catherine publishes a new YouTube video, it goes through two stages before the
+transcript appears correctly on kundaliniyogatribe.de:
 
-Transcripts come from `youtube-transcript-api` (auto-generated German captions) and
-are stored as raw concatenated text. They need:
-1. Spelling/grammar corrections (auto-transcription errors)
-2. Removal of speech disfluencies
-3. Logical paragraph breaks wrapped in `<p>` tags
+**Stage 1 — Extraction** (automated): fetch the raw auto-generated captions from
+YouTube and store them as plain text in Redis.
+
+**Stage 2 — Cleanup** (LLM session): fix spelling/grammar, remove disfluencies,
+and wrap in `<p>` tags so it renders correctly on the site.
 
 ---
 
-## How to find which transcripts need cleanup
+## Stage 1 — Extracting transcripts for new videos
+
+### What runs automatically (VPS nightly at 01:00 CET)
+
+The VPS script `~/kyt_seo/process_videos.py` calls the Vercel endpoint
+`/api/process-transcripts`. This endpoint:
+- Reads all playlists from Redis (`playlists` key)
+- Fetches video IDs from YouTube API for each playlist
+- For each new video: stores `title:{videoId}` and `vidslug:{videoId}` in Redis
+- Tries to fetch YouTube captions by scraping the video page
+
+**Limitation:** Vercel's server IPs are often blocked by YouTube for caption
+scraping, so the nightly job frequently fails to get the transcript text even
+though it registers the slug/title correctly.
+
+### What to run manually on Mac (when nightly fails or for immediate pickup)
+
+Run this from the repo root on Viktor's Mac — residential IPs are not blocked:
+
+```bash
+python3 scripts/fetch_transcripts.py
+```
+
+This script:
+1. Reads all playlists from `/api/playlists`
+2. Fetches all video IDs from YouTube API
+3. Checks which don't have `transcript:{videoId}` in Redis yet
+4. Uses `youtube-transcript-api` (prefers German, falls back to any language)
+5. Pushes raw transcript text to Redis via `POST /api/set-transcript`
+
+Output shows each video processed and how many chars were stored. Run any time
+after Catherine publishes a new video.
+
+**Single video:**
+```bash
+python3 scripts/fetch_transcripts.py VIDEO_ID
+```
+
+### How to check what's been picked up (slugs/titles registered but no transcript)
+
+```python
+import redis as redis_lib, requests
+
+r = redis_lib.from_url('redis://default:nkSTGw41uEWtb5vs0WDHPPJ779TDNdKa@redis-15054.crce198.eu-central-1-3.ec2.cloud.redislabs.com:15054')
+
+# All videos in playlists
+playlists = requests.get('https://kundaliniyogatribe.de/api/playlists').json()
+YOUTUBE_KEY = 'AIzaSyCt0hdTnbK6kgxBbg6G-B1KZmdhSQgb1pI'
+
+for pl in playlists:
+    url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId={pl['playlistId']}&maxResults=50&key={YOUTUBE_KEY}"
+    items = requests.get(url).json().get('items', [])
+    for item in items:
+        vid = item['snippet']['resourceId']['videoId']
+        title = item['snippet']['title']
+        has_transcript = r.exists(f'transcript:{vid}')
+        has_slug = r.exists(f'vidslug:{vid}')
+        if not has_transcript:
+            slug = r.get(f'vidslug:{vid}')
+            slug = slug.decode() if slug else '(no slug yet)'
+            print(f"MISSING: {vid} | {title!r} | slug={slug}")
+```
+
+---
+
+## Stage 2 — Cleanup (this is what you do after extraction)
+
+kundaliniyogatribe.de renders transcripts as raw HTML on each video's detail page
+(`dangerouslySetInnerHTML`), so plain text with newlines won't show paragraphs —
+it needs `<p>` tags. Raw auto-generated captions also have errors that need fixing.
+
+---
+
+## How to find which transcripts need cleanup (Stage 2)
 
 ```python
 import redis as redis_lib
@@ -156,8 +228,12 @@ deployment needed — Redis is the live store.
 
 ---
 
-## Remaining videos to clean (as of 2026-03-28)
+## Full workflow summary (for every new video Catherine publishes)
 
-Run the "find which need cleanup" script above to get the current list.
-Approximately 22 videos remain after the first two demos (KXH1Atna1EA, TpXu-tE2YWE).
-Most are long German morning Kriya sessions (10,000–20,000 chars).
+1. Catherine uploads video to YouTube, adds it to a playlist
+2. **VPS nightly job** (01:00 CET) registers slug + title in Redis automatically
+3. **Mac script** `python3 scripts/fetch_transcripts.py` — run this to pull the raw transcript (do it from Viktor's Mac, not VPS)
+4. **Claude/Codex cleanup session** — run the "find which need cleanup" script to see the new video, read the raw transcript, clean it, store HTML back
+5. Video page at `kundaliniyogatribe.de/videos/{slug}` is live immediately
+
+Run `python3 scripts/fetch_transcripts.py` any time to check for new videos and pull their transcripts in one go.
