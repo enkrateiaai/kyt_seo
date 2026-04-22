@@ -24,11 +24,11 @@ export default function JoinPage() {
       if (res.ok) {
         setState('success')
       } else {
-        setErrorMsg(data.error || 'Something went wrong.')
+        setErrorMsg(data.error || 'Ein Fehler ist aufgetreten.')
         setState('error')
       }
     } catch {
-      setErrorMsg('Connection error. Please try again.')
+      setErrorMsg('Verbindungsfehler. Bitte versuche es erneut.')
       setState('error')
     }
   }
@@ -54,7 +54,7 @@ export default function JoinPage() {
           color: '#2a2520',
           margin: '0 0 16px',
         }}>
-          Choose Your Path into the Tribe
+          Wähle deinen Weg ins Tribe
         </h1>
         <p style={{
           fontSize: '17px',
@@ -63,7 +63,7 @@ export default function JoinPage() {
           maxWidth: '480px',
           margin: '0 auto',
         }}>
-          A short Kundalini practice every day. Kriyas, meditations and insights for your life.
+          Jeden Tag eine kurze Kundalini-Praxis. Kriyas, Meditationen und Impulse für dein Leben.
         </p>
       </header>
 
@@ -103,17 +103,17 @@ export default function JoinPage() {
           </div>
           <div>
             <p style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#b89654', marginBottom: '8px' }}>
-              Join Instantly
+              Sofort dabei
             </p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '24px', fontWeight: 300, margin: '0 0 12px', color: '#2a2520' }}>
-              Telegram Community
+              Telegram-Community
             </h2>
             <p style={{ fontSize: '15px', lineHeight: 1.7, color: '#6b5d4f', margin: 0 }}>
-              Join our Telegram channel and receive daily Kriyas, short insights and community — straight to your phone.
+              Tritt unserem Telegram-Kanal bei und erhalte tägliche Kriyas, kurze Impulse und Gemeinschaft — direkt auf deinem Handy.
             </p>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {['Daily practice insights', 'Direct connection with the community', 'A real, living community'].map(item => (
+            {['Tägliche Praxis-Impulse', 'Direkter Kontakt zur Community', 'Eine echte, lebendige Gemeinschaft'].map(item => (
               <li key={item} style={{ fontSize: '14px', color: '#6b5d4f', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ color: '#b89654', fontSize: '16px' }}>✓</span> {item}
               </li>
@@ -137,7 +137,7 @@ export default function JoinPage() {
               marginTop: 'auto',
             }}
           >
-            Join now →
+            Jetzt beitreten →
           </a>
         </div>
 
@@ -169,7 +169,7 @@ export default function JoinPage() {
             borderRadius: '100px',
             whiteSpace: 'nowrap',
           }}>
-            Free Programme
+            Gratis Programm
           </div>
           <div style={{
             width: '48px',
@@ -185,17 +185,17 @@ export default function JoinPage() {
           </div>
           <div>
             <p style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#b89654', marginBottom: '8px' }}>
-              7-Day Kundalini Reset
+              7 Tage Kundalini Reset
             </p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '24px', fontWeight: 300, margin: '0 0 12px', color: '#2a2520' }}>
-              Your free 7-day programme
+              Dein kostenloses 7-Tage-Programm
             </h2>
             <p style={{ fontSize: '15px', lineHeight: 1.7, color: '#6b5d4f', margin: 0 }}>
-              A short Kundalini practice straight to your inbox every day — built so you can feel the shift.
+              Jeden Tag eine kurze Kundalini-Praxis direkt in dein Postfach — aufgebaut, damit du spürst, was sich verändert.
             </p>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {['7 guided Kriyas (~15 min each)', 'A new energy every day', 'Then: monthly newsletter'].map(item => (
+            {['7 geführte Kriyas (je ~15 Min.)', 'Täglich eine neue Energie', 'Danach: monatlicher Newsletter'].map(item => (
               <li key={item} style={{ fontSize: '14px', color: '#6b5d4f', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ color: '#b89654', fontSize: '16px' }}>✓</span> {item}
               </li>
@@ -214,7 +214,7 @@ export default function JoinPage() {
                 Sat Nam!
               </p>
               <p style={{ fontSize: '14px', color: '#6b5d4f', margin: 0 }}>
-                Check your inbox and confirm your sign-up.
+                Prüfe dein Postfach und bestätige deine Anmeldung.
               </p>
             </div>
           ) : (
@@ -224,7 +224,7 @@ export default function JoinPage() {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                placeholder="deine@email.de"
                 disabled={state === 'loading'}
                 style={{
                   width: '100%',
@@ -256,10 +256,10 @@ export default function JoinPage() {
                   letterSpacing: '0.02em',
                 }}
               >
-                {state === 'loading' ? 'Sending…' : 'Start Reset →'}
+                {state === 'loading' ? 'Wird gesendet…' : 'Reset starten →'}
               </button>
               <p style={{ fontSize: '11px', color: '#9b8e7e', textAlign: 'center', margin: 0 }}>
-                No spam. Unsubscribe anytime.
+                Kein Spam. Abmeldung jederzeit möglich.
               </p>
             </form>
           )}
