@@ -7,17 +7,19 @@ export async function GET(req: NextRequest) {
   const siteUrl = 'https://kundaliniyogatribe.de'
   const shopUrl = 'https://www.charan-amrit-kaur.de/yoga-tribe/'
 
+  const langFromUrl = req.nextUrl.searchParams.get('lang') === 'en' ? 'en' : 'de'
+
   if (!token) {
-    return NextResponse.redirect(`${siteUrl}/anmeldung?status=fehler`)
+    return NextResponse.redirect(`${siteUrl}/anmeldung?status=fehler&lang=${langFromUrl}`)
   }
 
   const email = await redis.get(`doi:${token}`)
 
   if (!email) {
-    return NextResponse.redirect(`${siteUrl}/anmeldung?status=abgelaufen`)
+    return NextResponse.redirect(`${siteUrl}/anmeldung?status=abgelaufen&lang=${langFromUrl}`)
   }
 
-  const lang = (await redis.get(`doi_lang:${token}`)) || 'de'
+  const lang = (await redis.get(`doi_lang:${token}`)) || langFromUrl
 
   const apiKey = process.env.MAILJET_API_KEY?.trim()
   const secretKey = process.env.MAILJET_SECRET_KEY?.trim()
@@ -25,7 +27,7 @@ export async function GET(req: NextRequest) {
   const fromEmail = process.env.MAILJET_FROM_EMAIL?.trim() || 'info@kundaliniyogatribe.de'
 
   if (!apiKey || !secretKey || !listId) {
-    return NextResponse.redirect(`${siteUrl}/anmeldung?status=fehler`)
+    return NextResponse.redirect(`${siteUrl}/anmeldung?status=fehler&lang=${lang}`)
   }
 
   try {
@@ -175,9 +177,9 @@ export async function GET(req: NextRequest) {
       }),
     }).catch(err => console.error('Welcome email error:', err))
 
-    return NextResponse.redirect(`${siteUrl}/anmeldung?status=bestaetigt`)
+    return NextResponse.redirect(`${siteUrl}/anmeldung?status=bestaetigt&lang=${lang}`)
   } catch (e) {
     console.error('Confirm error:', e)
-    return NextResponse.redirect(`${siteUrl}/anmeldung?status=fehler`)
+    return NextResponse.redirect(`${siteUrl}/anmeldung?status=fehler&lang=${lang}`)
   }
 }
