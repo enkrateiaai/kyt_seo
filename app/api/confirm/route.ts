@@ -97,14 +97,6 @@ export async function GET(req: NextRequest) {
             </td>
           </tr>
         </table>
-        <div style="background: #2C2416; border-radius: 12px; padding: 24px 28px; margin-bottom: 28px; text-align: center;">
-          <p style="font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #D3BC76; margin: 0 0 8px; font-family: sans-serif;">Membership</p>
-          <p style="font-size: 20px; font-weight: 300; color: #FAF7F2; margin: 0 0 10px;">Unlimited access to all Kriyas</p>
-          <p style="font-size: 14px; color: #9B8E7E; margin: 0 0 20px; line-height: 1.6;">As a member you get full access to all videos, live sessions and new content.</p>
-          <a href="${shopUrl}" style="display: inline-block; background: #D3BC76; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 100px; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-            Become a member →
-          </a>
-        </div>
         <hr style="border: none; border-top: 1px solid #EDE8E0; margin: 28px 0;">
         <p style="font-size: 12px; color: #9B8E7E;">kundaliniyogatribe.de · Sat Nam Rasayan & Kundalini Kriyas</p>
         <p style="font-size: 11px; color: #B0A090; margin-top: 8px;">
@@ -144,14 +136,6 @@ export async function GET(req: NextRequest) {
             </td>
           </tr>
         </table>
-        <div style="background: #2C2416; border-radius: 12px; padding: 24px 28px; margin-bottom: 28px; text-align: center;">
-          <p style="font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #D3BC76; margin: 0 0 8px; font-family: sans-serif;">Mitgliedschaft</p>
-          <p style="font-size: 20px; font-weight: 300; color: #FAF7F2; margin: 0 0 10px;">Unbegrenzter Zugang zu allen Kriyas</p>
-          <p style="font-size: 14px; color: #9B8E7E; margin: 0 0 20px; line-height: 1.6;">Als Mitglied hast du vollen Zugriff auf alle Videos, Live-Sessions und neue Inhalte.</p>
-          <a href="${shopUrl}" style="display: inline-block; background: #D3BC76; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 100px; font-family: sans-serif; font-size: 14px; font-weight: 500;">
-            Jetzt Mitglied werden →
-          </a>
-        </div>
         <hr style="border: none; border-top: 1px solid #EDE8E0; margin: 28px 0;">
         <p style="font-size: 12px; color: #9B8E7E;">kundaliniyogatribe.de · Sat Nam Rasayan & Kundalini Kriyas</p>
         <p style="font-size: 11px; color: #B0A090; margin-top: 8px;">
@@ -160,8 +144,8 @@ export async function GET(req: NextRequest) {
       </div>
     `
     const welcomeText = lang === 'en'
-      ? `Sat Nam — welcome to the Kundalini Yoga Tribe!\n\nYour starting points:\n\n1. What is Kundalini Yoga? → ${siteUrl}/artikel/was-ist-kundalini-yoga\n2. Sat Kriya guide → ${siteUrl}/artikel/sat-kriya-anleitung\n3. Video library → ${siteUrl}/videos\n\nMembership for full access: ${shopUrl}\n\nUnsubscribe: ${unsubUrl}`
-      : `Sat Nam — willkommen im Kundalini Yoga Tribe!\n\nDeine ersten Schritte:\n\n1. Was ist Kundalini Yoga? → ${siteUrl}/artikel/was-ist-kundalini-yoga\n2. Sat Kriya Anleitung → ${siteUrl}/artikel/sat-kriya-anleitung\n3. Video-Bibliothek → ${siteUrl}/videos\n\nMitgliedschaft für vollen Zugriff: ${shopUrl}\n\nAbmelden: ${unsubUrl}`
+      ? `Sat Nam — welcome to the Kundalini Yoga Tribe!\n\nYour starting points:\n\n1. What is Kundalini Yoga? → ${siteUrl}/artikel/was-ist-kundalini-yoga\n2. Sat Kriya guide → ${siteUrl}/artikel/sat-kriya-anleitung\n3. Video library → ${siteUrl}/videos\n\nUnsubscribe: ${unsubUrl}`
+      : `Sat Nam — willkommen im Kundalini Yoga Tribe!\n\nDeine ersten Schritte:\n\n1. Was ist Kundalini Yoga? → ${siteUrl}/artikel/was-ist-kundalini-yoga\n2. Sat Kriya Anleitung → ${siteUrl}/artikel/sat-kriya-anleitung\n3. Video-Bibliothek → ${siteUrl}/videos\n\nAbmelden: ${unsubUrl}`
 
     fetch('https://api.mailjet.com/v3.1/send', {
       method: 'POST',
