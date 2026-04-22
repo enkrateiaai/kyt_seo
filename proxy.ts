@@ -9,11 +9,5 @@ export default clerkMiddleware(async (auth, request) => {
 })
 
 export const config = {
-  matcher: [
-    '/admin(.*)',
-    '/dashboard(.*)',
-    '/videos(.*)',
-    '/live(.*)',
-    '/api/clerk(.*)',
-  ],
+  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 }
