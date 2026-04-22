@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const apiKey = process.env.MAILJET_API_KEY?.trim()
   const secretKey = process.env.MAILJET_SECRET_KEY?.trim()
   const listId = process.env.MAILJET_LIST_ID?.trim()
-  const fromEmail = process.env.MAILJET_FROM_EMAIL?.trim() || 'soulconnectclub@gmail.com'
+  const fromEmail = process.env.MAILJET_FROM_EMAIL?.trim() || 'info@kundaliniyogatribe.de'
 
   if (!apiKey || !secretKey || !listId) {
     return NextResponse.redirect(`${siteUrl}/anmeldung?status=fehler`)

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.MAILJET_API_KEY?.trim()
   const secretKey = process.env.MAILJET_SECRET_KEY?.trim()
-  const fromEmail = process.env.MAILJET_FROM_EMAIL?.trim() || 'noreply@kundaliniyogatribe.de'
+  const fromEmail = process.env.MAILJET_FROM_EMAIL?.trim() || 'info@kundaliniyogatribe.de'
   const siteUrl = 'https://kundaliniyogatribe.de'
 
   if (!apiKey || !secretKey) {
