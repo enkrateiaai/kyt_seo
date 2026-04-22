@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   await redis.setex(`doi_lang:${token}`, 86400, lang)
   await redis.setex(`unsub:${unsubToken}`, 31536000, email)
 
-  const confirmUrl = `${siteUrl}/api/confirm?token=${token}`
+  const confirmUrl = `${siteUrl}/api/confirm?token=${token}&lang=${lang}`
   const unsubUrl = `${siteUrl}/api/unsubscribe?token=${unsubToken}`
   const credentials = Buffer.from(`${apiKey}:${secretKey}`).toString('base64')
 

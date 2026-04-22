@@ -12,36 +12,68 @@ const C = {
 
 type Status = 'bestaetigt' | 'abgelaufen' | 'fehler' | 'abgemeldet' | null
 
-const messages: Record<NonNullable<Status>, { icon: string; title: string; body: string }> = {
-  bestaetigt: {
-    icon: '☽',
-    title: 'Sat Nam – du bist dabei!',
-    body: 'Deine Anmeldung wurde bestätigt. Du erhältst ab jetzt Kriyas, Meditationen und Impulse aus der Welt des Kundalini Yoga.',
+const messages = {
+  de: {
+    bestaetigt: {
+      icon: '☽',
+      title: 'Sat Nam – du bist dabei!',
+      body: 'Deine Anmeldung wurde bestätigt. Du erhältst ab jetzt Kriyas, Meditationen und Impulse aus der Welt des Kundalini Yoga.',
+    },
+    abgelaufen: {
+      icon: '◔',
+      title: 'Link abgelaufen',
+      body: 'Der Bestätigungslink ist nicht mehr gültig (24 Stunden). Melde dich erneut an – wir schicken dir einen neuen Link.',
+    },
+    fehler: {
+      icon: '✦',
+      title: 'Etwas ist schiefgelaufen',
+      body: 'Es gab einen technischen Fehler. Bitte versuche es erneut oder schreib uns an info@kundaliniyogatribe.de.',
+    },
+    abgemeldet: {
+      icon: '☾',
+      title: 'Du wurdest abgemeldet',
+      body: 'Deine E-Mail-Adresse wurde aus unserem Newsletter entfernt. Du erhältst keine weiteren E-Mails von uns. Sat Nam.',
+    },
   },
-  abgelaufen: {
-    icon: '◔',
-    title: 'Link abgelaufen',
-    body: 'Der Bestätigungslink ist nicht mehr gültig (24 Stunden). Melde dich erneut an – wir schicken dir einen neuen Link.',
-  },
-  fehler: {
-    icon: '✦',
-    title: 'Etwas ist schiefgelaufen',
-    body: 'Es gab einen technischen Fehler. Bitte versuche es erneut oder schreib uns an noreply@kundaliniyogatribe.de.',
-  },
-  abgemeldet: {
-    icon: '☾',
-    title: 'Du wurdest abgemeldet',
-    body: 'Deine E-Mail-Adresse wurde aus unserem Newsletter entfernt. Du erhältst keine weiteren E-Mails von uns. Sat Nam.',
+  en: {
+    bestaetigt: {
+      icon: '☽',
+      title: "Sat Nam – you're in!",
+      body: "Your subscription is confirmed. You'll now receive Kriyas, meditations and insights from the world of Kundalini Yoga.",
+    },
+    abgelaufen: {
+      icon: '◔',
+      title: 'Link expired',
+      body: "The confirmation link is no longer valid (24 hours). Sign up again and we'll send you a new one.",
+    },
+    fehler: {
+      icon: '✦',
+      title: 'Something went wrong',
+      body: 'There was a technical error. Please try again or write to us at info@kundaliniyogatribe.de.',
+    },
+    abgemeldet: {
+      icon: '☾',
+      title: "You've been unsubscribed",
+      body: "Your email address has been removed from our list. You won't receive any further emails from us. Sat Nam.",
+    },
   },
 }
 
 export default function AnmeldungContent() {
   const params = useSearchParams()
   const status = params.get('status') as Status
+  const lang = params.get('lang') === 'en' ? 'en' : 'de'
 
-  const msg = status && messages[status]
-    ? messages[status]
-    : { icon: '◯', title: 'Kundalini Yoga Tribe', body: 'Melde dich an um Kriyas, Meditationen und Impulse zu erhalten.' }
+  const set = messages[lang]
+  const msg = status && set[status]
+    ? set[status]
+    : {
+        icon: '◯',
+        title: 'Kundalini Yoga Tribe',
+        body: lang === 'en'
+          ? 'Sign up to receive Kriyas, meditations and insights.'
+          : 'Melde dich an um Kriyas, Meditationen und Impulse zu erhalten.',
+      }
 
   return (
     <main style={{
@@ -91,7 +123,7 @@ export default function AnmeldungContent() {
             fontFamily: "'DM Sans', sans-serif",
           }}
         >
-          ← Zurück zur Website
+          {lang === 'en' ? '← Back to website' : '← Zurück zur Website'}
         </a>
       </div>
     </main>
