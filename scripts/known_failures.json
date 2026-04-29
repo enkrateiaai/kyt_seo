@@ -1,25 +1,18 @@
 {
-  "failures": [
-    {
-      "videoId": "-Qqa6EdyqcA",
-      "slug": "1-23",
-      "reason": "TranscriptsDisabled",
-      "message": "YouTube has disabled transcripts on this video",
-      "acknowledged": "2026-04-12T20:19:34.681097"
-    },
-    {
-      "videoId": "SOlPqYSROG0",
-      "slug": "private-video",
-      "reason": "VideoUnplayable",
-      "message": "Video is private",
-      "acknowledged": "2026-04-12T20:19:34.681120"
-    },
-    {
-      "videoId": "bj8NMAiAx0o",
-      "slug": "1",
-      "reason": "VideoUnplayable",
-      "message": "Video is unplayable",
-      "acknowledged": "2026-04-12T20:19:34.681124"
-    }
-  ]
+    "failures": [
+        {
+            "videoId": "SOlPqYSROG0",
+            "slug": "private-video",
+            "reason": "VideoUnplayable",
+            "message": "Video is private - cannot transcribe",
+            "acknowledged": "2026-04-12T20:19:34.681120"
+        },
+        {
+            "videoId": "bj8NMAiAx0o",
+            "slug": "1",
+            "reason": "VideoUnplayable",
+            "message": "Video removed from YouTube",
+            "acknowledged": "2026-04-12T20:19:34.681124"
+        }
+    ]
 }
