@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import redis from '@/lib/redis'
 
+function normalize(p: any) {
+  return {
+    ...p,
+    visibleForCustomers: p.visibleForCustomers ?? true,
+    visibleForNonCustomers: p.visibleForNonCustomers ?? false,
+  }
+}
+
 export async function GET() {
   const data = await redis.get('playlists')
   const playlists = data ? JSON.parse(data as string) : []
-  return NextResponse.json(playlists)
+  return NextResponse.json(playlists.map(normalize))
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const data = await redis.get('playlists')
   const playlists = data ? JSON.parse(data as string) : []
-  playlists.push({ id: Date.now(), title: body.title, playlistId: body.playlistId })
+  playlists.push({
+    id: Date.now(),
+    title: body.title,
+    playlistId: body.playlistId,
+    visibleForCustomers: body.visibleForCustomers ?? true,
+    visibleForNonCustomers: body.visibleForNonCustomers ?? false,
+  })
   await redis.set('playlists', JSON.stringify(playlists))
   return NextResponse.json({ ok: true })
 }
@@ -21,7 +35,15 @@ export async function PUT(req: NextRequest) {
   const data = await redis.get('playlists')
   const playlists = data ? JSON.parse(data as string) : []
   const updated = playlists.map((p: any) =>
-    p.id === body.id ? { ...p, title: body.title, playlistId: body.playlistId } : p
+    p.id === body.id
+      ? {
+          ...p,
+          title: body.title,
+          playlistId: body.playlistId,
+          visibleForCustomers: body.visibleForCustomers ?? p.visibleForCustomers ?? true,
+          visibleForNonCustomers: body.visibleForNonCustomers ?? p.visibleForNonCustomers ?? false,
+        }
+      : p
   )
   await redis.set('playlists', JSON.stringify(updated))
   return NextResponse.json({ ok: true })

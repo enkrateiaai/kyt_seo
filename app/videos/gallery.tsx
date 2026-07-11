@@ -12,6 +12,8 @@ interface Playlist {
   id: number
   title: string
   playlistId: string
+  visibleForCustomers: boolean
+  visibleForNonCustomers: boolean
   videos?: Video[]
   loading?: boolean
   page?: number
@@ -43,15 +45,17 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [searchLoading, setSearchLoading] = useState(false)
   const [transcriptIds, setTranscriptIds] = useState<Set<string>>(new Set())
   const [slugMap, setSlugMap] = useState<Record<string, string>>({})
-  const [freeIds, setFreeIds] = useState<Set<string>>(new Set())
   const playerRef = useRef<HTMLDivElement>(null)
   const filterRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
-  const selectedPlaylist = playlists.find(p => p.id === selectedPlaylistId) || null
+  const accessiblePlaylists = playlists.filter(p =>
+    isMember ? p.visibleForCustomers : p.visibleForNonCustomers
+  )
+  const selectedPlaylist = accessiblePlaylists.find(p => p.id === selectedPlaylistId) || null
   const visiblePlaylists = selectedPlaylistId === null
-    ? playlists
-    : playlists.filter(p => p.id === selectedPlaylistId)
+    ? accessiblePlaylists
+    : accessiblePlaylists.filter(p => p.id === selectedPlaylistId)
 
   const handleSearch = useCallback((value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -76,13 +80,6 @@ export default function YouTubeGallery({ isMember }: Props) {
     fetch('/api/slugs')
       .then(r => r.json())
       .then((map: Record<string, string>) => setSlugMap(map))
-      .catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    fetch('/api/free-videos')
-      .then(r => r.json())
-      .then((ids: string[]) => setFreeIds(new Set<string>(ids)))
       .catch(() => {})
   }, [])
 
@@ -148,7 +145,7 @@ export default function YouTubeGallery({ isMember }: Props) {
   }
 
   const handleVideoClick = (video: Video, playlist: Playlist) => {
-    const isLocked = !isMember && !freeIds.has(video.id)
+    const isLocked = !isMember && !playlist.visibleForNonCustomers
     if (isLocked) {
       window.open('https://www.charan-amrit-kaur.de/yoga-tribe/', '_blank')
       return
@@ -716,7 +713,7 @@ export default function YouTubeGallery({ isMember }: Props) {
                 >
                   Alle Typen
                 </button>
-                {playlists.map(playlist => (
+                {accessiblePlaylists.map(playlist => (
                   <button
                     key={playlist.id}
                     className={`v-search__filter-item${selectedPlaylistId === playlist.id ? ' v-search__filter-item--active' : ''}`}
@@ -805,14 +802,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         {/* Playlists */}
         {!searchResults && visiblePlaylists.map(playlist => {
           const page = playlist.page || 0
-          // Pin free video to position 0 only for non-members
-          const videos = [...(playlist.videos || [])].sort((a, b) => {
-            if (!isMember) {
-              if (freeIds.has(a.id)) return -1
-              if (freeIds.has(b.id)) return 1
-            }
-            return 0
-          })
+          const videos = playlist.videos || []
           const totalPages = Math.ceil(videos.length / PAGE_SIZE)
           const pageVideos = videos.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
@@ -836,8 +826,7 @@ export default function YouTubeGallery({ isMember }: Props) {
               {!playlist.loading && pageVideos.length > 0 && (
                 <div className="v-grid">
                   {pageVideos.map(video => {
-                    const isFreeVideo = freeIds.has(video.id)
-                    const isLocked = !isMember && !isFreeVideo
+                    const isLocked = !isMember && !playlist.visibleForNonCustomers
                     const isActive = activeVideo?.id === video.id && activePlaylistId === playlist.id
 
                     return (
@@ -854,9 +843,6 @@ export default function YouTubeGallery({ isMember }: Props) {
                             </div>
                           )}
                           {isActive && <span className="v-card__playing">▶ Läuft</span>}
-                          {isFreeVideo && !isMember && (
-                            <span className="v-card__free">Gratis</span>
-                          )}
                         </div>
                         <div className="v-item__meta">
                           <a
