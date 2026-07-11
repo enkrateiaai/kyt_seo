@@ -17,7 +17,7 @@ interface YouTubeVideoDetails {
 }
 
 async function fetchVideoDetails(videoId: string): Promise<YouTubeVideoDetails | null> {
-  const apiKey = process.env.YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
+  const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
   if (!apiKey) return null
 
   try {
