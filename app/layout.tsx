@@ -17,8 +17,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 
 export const metadata = {
-  title: 'Tribe Live Exklusiv',
-  description: 'Exklusiver Mitgliederbereich',
+  title: 'Kundalini Yoga Tribe',
+  description: 'Kriyas, Meditationen und Kundalini Yoga im deutschsprachigen Raum.',
   verification: {
     google: 'WbKa8bl4XOf0YczramJ7IJt1KWWNcv5zWtlgILfYf-I',
   },

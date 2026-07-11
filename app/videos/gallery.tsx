@@ -48,7 +48,6 @@ export default function YouTubeGallery({ isMember }: Props) {
   const playerRef = useRef<HTMLDivElement>(null)
   const filterRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
   const accessiblePlaylists = playlists.filter(p =>
     isMember ? p.visibleForCustomers : p.visibleForNonCustomers
   )
@@ -97,7 +96,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         const withLoading = data.map(p => ({ ...p, videos: [], loading: true, page: 0 }))
         setPlaylists(withLoading)
         withLoading.forEach(p => {
-          fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=200&playlistId=${p.playlistId}&key=${apiKey}`)
+          fetch(`/api/playlist-items?playlistId=${encodeURIComponent(p.playlistId)}`)
             .then(r => r.json())
             .then(res => {
               const videos: Video[] = (res.items || []).map((item: any) => ({
