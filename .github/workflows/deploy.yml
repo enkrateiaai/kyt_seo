@@ -1,0 +1,88 @@
+name: Build and Deploy kyt-seo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/kyt-seo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push linux/arm64 image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.deploy
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Deploy to vrouwtje
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          SHA: ${{ github.sha }}
+        run: |
+          echo "$DEPLOY_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh -i /tmp/deploy_key \
+              -o StrictHostKeyChecking=no \
+              vik@vrouwtje \
+            "set -e
+             docker pull ${{ env.IMAGE }}:${SHA}
+             docker tag kyt-seo:stable kyt-seo:rollback 2>/dev/null || true
+             docker stop kyt-seo && docker rm kyt-seo
+             docker run -d \
+               --name kyt-seo \
+               --init \
+               --restart unless-stopped \
+               -p 3010:3000 \
+               --env-file /home/vik/docker/kyt-seo/.env.local \
+               ${{ env.IMAGE }}:${SHA}
+             docker tag ${{ env.IMAGE }}:${SHA} kyt-seo:stable"
+          rm /tmp/deploy_key
+
+      - name: Smoke test
+        run: |
+          sleep 20
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://kundaliniyogatribe.de/)
+          echo "HTTP $STATUS"
+          [ "$STATUS" = "200" ] || (echo "Smoke test failed: HTTP $STATUS" && exit 1)
