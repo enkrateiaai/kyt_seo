@@ -42,3 +42,4 @@ next-env.d.ts
 .env*.local
 Archive.zip
 .claude/
+kyt_seo/
