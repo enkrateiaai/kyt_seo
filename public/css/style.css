@@ -453,6 +453,7 @@ h1, h2, h3, h4, h5 {
   font-size: 0.8rem;
   color: var(--c-text-muted);
 }
+.kriyas-grid{display:flex;gap:var(--s-lg);overflow:hidden;flex-wrap:nowrap}.kriyas-grid .kriya-card{flex:0 0 300px;white-space:normal}.kriya-scroll-wrap{display:flex;gap:12px;justify-content:center;margin-top:var(--s-lg)}.kriya-scroll-btn{width:52px;height:52px;border-radius:50%;background:var(--c-accent);color:#fff;border:none;cursor:pointer;font-size:1.6rem;display:flex;align-items:center;justify-content:center;transition:opacity .3s,transform .2s;box-shadow:0 4px 16px rgba(211,188,118,.35)}.kriya-scroll-btn:hover{transform:scale(1.07)}.kriya-scroll-btn.inactive{opacity:0.3;cursor:default}
 
 /* --- Kriya Cards --- */
 .kriyas { background: var(--c-bg-warm); }

@@ -22,6 +22,8 @@
   --c-sage-soft: rgba(211, 188, 118, 0.22);
   --c-border: #DDD5C8;
   --c-border-light: #EDE8E0;
+  --deep-brown: #2C2416;
+  --marquee-color: #FAF7F2;
 
   /* Typography */
   --f-display: 'Cormorant Garamond', Georgia, serif;
@@ -311,6 +313,36 @@ h1, h2, h3, h4, h5 {
   100% { top: 150%; }
 }
 
+
+/* --- Marquee Strip --- */
+.marquee-strip {
+    background: var(--deep-brown);
+    padding: 16px 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.marquee-inner {
+    display: inline-flex;
+    animation: marquee 25s linear infinite;
+}
+.marquee-item {
+    font-family: var(--f-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--marquee-color);
+    padding: 0 2rem;
+}
+.marquee-dot {
+    color: var(--c-accent);
+    margin-left: 2rem;
+}
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
 /* --- Buttons --- */
 .btn {
   display: inline-flex;
@@ -453,6 +485,7 @@ h1, h2, h3, h4, h5 {
   font-size: 0.8rem;
   color: var(--c-text-muted);
 }
+.kriya-scroll-wrapper{position:relative}.kriya-scroll-track{display:flex;gap:var(--s-lg);overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:var(--s-md)}.kriya-scroll-track::-webkit-scrollbar{display:none}.kriya-scroll-track .kriya-card{flex:0 0 300px;scroll-snap-align:start}.kriya-scroll-btn{position:absolute;top:50%;transform:translateY(-50%);width:56px;height:56px;border-radius:50%;background:var(--c-accent);color:#fff;border:none;cursor:pointer;font-size:1.8rem;display:flex;align-items:center;justify-content:center;z-index:10;transition:opacity .3s,transform .3s;box-shadow:0 4px 20px rgba(211,188,118,.4)}.kriya-scroll-btn:hover{transform:translateY(-50%) scale(1.08)}.kriya-scroll-btn.prev{left:16px}.kriya-scroll-btn.next{right:16px}.kriya-scroll-btn.hidden{opacity:0;pointer-events:none}
 
 /* --- Kriya Cards --- */
 .kriyas { background: var(--c-bg-warm); }
@@ -951,11 +984,21 @@ h1, h2, h3, h4, h5 {
   .footer__grid { grid-template-columns: 1fr 1fr; gap: var(--s-xl); }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
+  .nav__inner {
+    height: 64px;
+    padding: 0 var(--s-md);
+    justify-content: flex-end;
+  }
+
+  .nav__logo {
+    display: none;
+  }
+
   .nav__links {
     display: none;
     position: absolute;
-    top: 72px;
+    top: 64px;
     left: 0;
     right: 0;
     flex-direction: column;
