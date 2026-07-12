@@ -39,6 +39,9 @@ jobs:
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
             CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
             REDIS_URL=${{ secrets.REDIS_URL }}
+            NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+            PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+            PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}
           tags: |
             ghcr.io/enkrateiaai/kyt-seo:staging-${{ github.sha }}
             ghcr.io/enkrateiaai/kyt-seo:staging-latest
