@@ -8,15 +8,28 @@ interface Video {
   thumbnail: string
 }
 
+interface YouTubePlaylistItem {
+  snippet?: {
+    title?: string
+    resourceId?: {
+      videoId?: string
+    }
+    thumbnails?: {
+      medium?: {
+        url?: string
+      }
+    }
+  }
+}
+
 interface Playlist {
   id: number
   title: string
   playlistId: string
-  visibleForCustomers: boolean
-  visibleForNonCustomers: boolean
   videos?: Video[]
   loading?: boolean
   page?: number
+  error?: string | null
 }
 
 interface SearchResult {
@@ -43,19 +56,46 @@ export default function YouTubeGallery({ isMember }: Props) {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
   const [searchLoading, setSearchLoading] = useState(false)
-  const [transcriptIds, setTranscriptIds] = useState<Set<string>>(new Set())
   const [slugMap, setSlugMap] = useState<Record<string, string>>({})
+  const [freeIds, setFreeIds] = useState<Set<string>>(new Set())
+  const [memberAccess, setMemberAccess] = useState(isMember)
   const playerRef = useRef<HTMLDivElement>(null)
   const filterRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
-  const accessiblePlaylists = playlists.filter(p =>
-    isMember ? p.visibleForCustomers : p.visibleForNonCustomers
-  )
-  const selectedPlaylist = accessiblePlaylists.find(p => p.id === selectedPlaylistId) || null
-  const visiblePlaylists = selectedPlaylistId === null
-    ? accessiblePlaylists
-    : accessiblePlaylists.filter(p => p.id === selectedPlaylistId)
+  const effectiveSelectedPlaylistId =
+    selectedPlaylistId !== null && playlists.some((playlist) => playlist.id === selectedPlaylistId)
+      ? selectedPlaylistId
+      : null
+  const selectedPlaylist = playlists.find(p => p.id === effectiveSelectedPlaylistId) || null
+  const visiblePlaylists = effectiveSelectedPlaylistId === null
+    ? playlists
+    : playlists.filter(p => p.id === effectiveSelectedPlaylistId)
+
+  useEffect(() => {
+    let cancelled = false
+
+    fetch('/api/member-access', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error('member_access_failed')
+        }
+        return response.json() as Promise<{ isMember?: boolean }>
+      })
+      .then((payload) => {
+        if (!cancelled) {
+          setMemberAccess(Boolean(payload.isMember))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMemberAccess(isMember)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isMember])
 
   const handleSearch = useCallback((value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -84,9 +124,9 @@ export default function YouTubeGallery({ isMember }: Props) {
   }, [])
 
   useEffect(() => {
-    fetch('/api/transcripts')
+    fetch('/api/free-videos')
       .then(r => r.json())
-      .then((ids: string[]) => setTranscriptIds(new Set(ids)))
+      .then((ids: string[]) => setFreeIds(new Set<string>(ids)))
       .catch(() => {})
   }, [])
 
@@ -94,25 +134,43 @@ export default function YouTubeGallery({ isMember }: Props) {
     fetch('/api/playlists')
       .then(r => r.json())
       .then((data: Playlist[]) => {
-        const withLoading = data.map(p => ({ ...p, videos: [], loading: true, page: 0 }))
+        const withLoading = data.map(p => ({
+          ...p,
+          videos: [],
+          loading: true,
+          page: 0,
+          error: null,
+        }))
         setPlaylists(withLoading)
         withLoading.forEach(p => {
-          fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=200&playlistId=${p.playlistId}&key=${apiKey}`)
-            .then(r => r.json())
-            .then(res => {
-              const videos: Video[] = (res.items || []).map((item: any) => ({
-                id: item.snippet.resourceId.videoId,
-                title: item.snippet.title,
-                thumbnail: item.snippet.thumbnails?.medium?.url ||
-                  `https://img.youtube.com/vi/${item.snippet.resourceId.videoId}/mqdefault.jpg`,
-              }))
+          fetch(`/api/playlist-items?playlistId=${encodeURIComponent(p.playlistId)}`)
+            .then(async r => {
+              const data = await r.json()
+              if (!r.ok) {
+                throw new Error(data?.error || 'Playlist konnte nicht geladen werden')
+              }
+              return Array.isArray(data?.items)
+                ? data.items
+                    .filter((item: YouTubePlaylistItem) => item?.snippet?.resourceId?.videoId)
+                    .map((item: YouTubePlaylistItem) => ({
+                      id: item.snippet?.resourceId?.videoId || '',
+                      title: item.snippet?.title || '',
+                      thumbnail:
+                        item.snippet?.thumbnails?.medium?.url ||
+                        `https://img.youtube.com/vi/${item.snippet?.resourceId?.videoId || ''}/mqdefault.jpg`,
+                    }))
+                : []
+            })
+            .then(videos => {
               setPlaylists(prev => prev.map(pl =>
-                pl.id === p.id ? { ...pl, videos, loading: false } : pl
+                pl.id === p.id ? { ...pl, videos, loading: false, error: null } : pl
               ))
             })
-            .catch(() => setPlaylists(prev => prev.map(pl =>
-              pl.id === p.id ? { ...pl, loading: false } : pl
-            )))
+            .catch((error: Error) =>
+              setPlaylists(prev => prev.map(pl =>
+                pl.id === p.id ? { ...pl, loading: false, error: error.message } : pl
+              ))
+            )
         })
       })
   }, [])
@@ -122,12 +180,6 @@ export default function YouTubeGallery({ isMember }: Props) {
       playerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [activeVideo])
-
-  useEffect(() => {
-    if (selectedPlaylistId !== null && !playlists.some(p => p.id === selectedPlaylistId)) {
-      setSelectedPlaylistId(null)
-    }
-  }, [playlists, selectedPlaylistId])
 
   useEffect(() => {
     const closeOnOutsideClick = (event: MouseEvent) => {
@@ -145,7 +197,7 @@ export default function YouTubeGallery({ isMember }: Props) {
   }
 
   const handleVideoClick = (video: Video, playlist: Playlist) => {
-    const isLocked = !isMember && !playlist.visibleForNonCustomers
+    const isLocked = !memberAccess && !freeIds.has(video.id)
     if (isLocked) {
       window.open('https://www.charan-amrit-kaur.de/yoga-tribe/', '_blank')
       return
@@ -385,16 +437,73 @@ export default function YouTubeGallery({ isMember }: Props) {
           margin-top: auto;
         }
         @media (max-width: 640px) {
-          .v-search__input { padding-right: 146px; }
-          .v-search__clear, .v-search__spinner { right: 106px; }
+          .v-search {
+            margin-bottom: 28px;
+          }
+          .v-search__icon {
+            left: 14px;
+          }
+          .v-search__input {
+            padding: 14px 44px 14px 40px;
+          }
+          .v-search__filter {
+            position: static;
+            transform: none;
+            margin-top: 10px;
+          }
           .v-search__filter-btn {
-            max-width: 120px;
-            padding: 0 10px;
-            gap: 6px;
+            width: 100%;
+            max-width: none;
+            justify-content: space-between;
+            padding: 0 12px;
+          }
+          .v-search__filter-menu {
+            left: 0;
+            right: 0;
+            width: 100%;
+          }
+          .v-search__clear, .v-search__spinner {
+            right: 14px;
+          }
+          .v-header__badge {
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+            text-align: center;
+            gap: 8px;
+          }
+          .v-player {
+            margin-bottom: 32px;
+          }
+          .v-pagination {
+            flex-wrap: wrap;
+          }
+          .v-section__header {
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 8px 14px;
           }
         }
         @media (max-width: 480px) {
-          .v-result__thumb { width: 100px; height: 56px; }
+          .v-container {
+            max-width: 100%;
+          }
+          .v-result {
+            flex-direction: column;
+            gap: 12px;
+            padding: 14px;
+          }
+          .v-result__thumb {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+          }
+          .v-result__title {
+            white-space: normal;
+          }
+          .v-grid {
+            grid-template-columns: 1fr;
+          }
         }
 
         .v-container { max-width: 1100px; margin: 0 auto; }
@@ -632,6 +741,16 @@ export default function YouTubeGallery({ isMember }: Props) {
           color: #9B8E7E;
         }
 
+        .v-section__message {
+          padding: 16px 18px;
+          background: #fff;
+          border: 1px solid #EDE8E0;
+          border-radius: 12px;
+          color: #6B5D4F;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
         /* TOC */
         .v-item { display: flex; flex-direction: column; }
         .v-item__meta {
@@ -660,7 +779,7 @@ export default function YouTubeGallery({ isMember }: Props) {
         <div className="v-header">
           <p className="v-header__kicker">Kundalini Yoga Tribe</p>
           <h1 className="v-header__title">Video Bibliothek</h1>
-          {isMember ? (
+          {memberAccess ? (
             <p className="v-header__sub">Vollständiger Zugriff auf alle Kriyas und Meditationen.</p>
           ) : (
             <>
@@ -713,7 +832,7 @@ export default function YouTubeGallery({ isMember }: Props) {
                 >
                   Alle Typen
                 </button>
-                {accessiblePlaylists.map(playlist => (
+                {playlists.map(playlist => (
                   <button
                     key={playlist.id}
                     className={`v-search__filter-item${selectedPlaylistId === playlist.id ? ' v-search__filter-item--active' : ''}`}
@@ -743,7 +862,7 @@ export default function YouTubeGallery({ isMember }: Props) {
             {searchResults.length > 0 ? (
               <>
                 <p className="v-results__meta">
-                  <strong>{searchResults.length} {searchResults.length === 1 ? 'Ergebnis' : 'Ergebnisse'}</strong> für „{query}"
+                  <strong>{searchResults.length} {searchResults.length === 1 ? 'Ergebnis' : 'Ergebnisse'}</strong> für „{query}&rdquo;
                 </p>
                 {searchResults.map(result => {
                   const before = result.excerpt.slice(0, result.matchStart)
@@ -768,7 +887,7 @@ export default function YouTubeGallery({ isMember }: Props) {
             ) : (
               <div className="v-results__empty">
                 <div className="v-results__empty-icon">⌕</div>
-                <p>Kein Treffer für „{query}"</p>
+                <p>Kein Treffer für „{query}&rdquo;</p>
               </div>
             )}
           </div>
@@ -802,7 +921,14 @@ export default function YouTubeGallery({ isMember }: Props) {
         {/* Playlists */}
         {!searchResults && visiblePlaylists.map(playlist => {
           const page = playlist.page || 0
-          const videos = playlist.videos || []
+          // Pin free video to position 0 only for non-members
+          const videos = [...(playlist.videos || [])].sort((a, b) => {
+            if (!memberAccess) {
+              if (freeIds.has(a.id)) return -1
+              if (freeIds.has(b.id)) return 1
+            }
+            return 0
+          })
           const totalPages = Math.ceil(videos.length / PAGE_SIZE)
           const pageVideos = videos.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
@@ -823,10 +949,17 @@ export default function YouTubeGallery({ isMember }: Props) {
                 </div>
               )}
 
-              {!playlist.loading && pageVideos.length > 0 && (
+              {!playlist.loading && playlist.error && (
+                <div className="v-section__message">
+                  {playlist.error}
+                </div>
+              )}
+
+              {!playlist.loading && !playlist.error && pageVideos.length > 0 && (
                 <div className="v-grid">
                   {pageVideos.map(video => {
-                    const isLocked = !isMember && !playlist.visibleForNonCustomers
+                    const isFreeVideo = freeIds.has(video.id)
+                    const isLocked = !memberAccess && !isFreeVideo
                     const isActive = activeVideo?.id === video.id && activePlaylistId === playlist.id
 
                     return (
@@ -843,6 +976,9 @@ export default function YouTubeGallery({ isMember }: Props) {
                             </div>
                           )}
                           {isActive && <span className="v-card__playing">▶ Läuft</span>}
+                          {isFreeVideo && !memberAccess && (
+                            <span className="v-card__free">Gratis</span>
+                          )}
                         </div>
                         <div className="v-item__meta">
                           <a
@@ -859,7 +995,13 @@ export default function YouTubeGallery({ isMember }: Props) {
                 </div>
               )}
 
-              {!playlist.loading && totalPages > 1 && (
+              {!playlist.loading && !playlist.error && pageVideos.length === 0 && (
+                <div className="v-section__message">
+                  Keine Videos in dieser Playlist gefunden.
+                </div>
+              )}
+
+              {!playlist.loading && !playlist.error && totalPages > 1 && (
                 <div className="v-pagination">
                   <button
                     className="v-pagination__btn"
