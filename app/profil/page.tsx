@@ -1,11 +1,14 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import ProfilContent from './ProfilContent'
 import SiteHeader from '@/app/components/SiteHeader'
+import ProfilContent from './ProfilContent'
+import { getUserDisplayName, getUserImageUrl, getViewerUser } from '@/lib/memberAccess'
 
 export default async function ProfilPage() {
   const { userId } = await auth()
   if (!userId) redirect('/anmeldung')
+
+  const user = await getViewerUser()
 
   return (
     <>
@@ -14,7 +17,13 @@ export default async function ProfilPage() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'DM Sans', sans-serif; background: #FAF7F2; color: #2C2416; }
       `}</style>
-      <SiteHeader isLoggedIn={true} signOutRedirectUrl="/" />
+      <SiteHeader
+        clerkEnabled
+        isLoggedIn
+        userId={userId}
+        userLabel={getUserDisplayName(user)}
+        userImageUrl={getUserImageUrl(user)}
+      />
       <ProfilContent />
     </>
   )

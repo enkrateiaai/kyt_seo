@@ -1,4 +1,4 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 
 type MembershipLike = {
   organization?: {
@@ -9,19 +9,44 @@ type MembershipLike = {
 }
 
 type ClerkUserLike = {
+  id?: string | null
+  firstName?: string | null
+  first_name?: string | null
+  fullName?: string | null
+  imageUrl?: string | null
+  image_url?: string | null
+  primaryEmailAddress?: { emailAddress?: string | null } | null
   publicMetadata?: Record<string, unknown> | null
   organizationMemberships?: MembershipLike[] | null
+  organization_memberships?: MembershipLike[] | null
+  emailAddresses?: Array<{ emailAddress?: string | null }> | null
+  email_addresses?: Array<{ email_address?: string | null }> | null
 } | null
 
-// "The Tribe (mit lives)" — videos + live access
-const TRIBE_MIT_LIVES_ORG_ID = 'org_3G4kskqF7oRoWNjsPuiQ0SjFz9D'
-// "The Tribe (ohne lives)" — videos only
-const TRIBE_OHNE_LIVES_ORG_ID = 'org_3G4kx68GR2OJo2LHQPyDaMu8yAK'
+type EntitlementTier = 'none' | 'video' | 'live'
 
-const VIDEO_ORG_IDS = new Set([TRIBE_MIT_LIVES_ORG_ID, TRIBE_OHNE_LIVES_ORG_ID])
-
-// Legacy keys for backward compat with publicMetadata group checks
-const MEMBERLIGHT_KEYS = new Set(['memberlight', 'member-light', TRIBE_MIT_LIVES_ORG_ID])
+const ORGANIZATION_ENTITLEMENTS: Array<{ tier: Exclude<EntitlementTier, 'none'>; keys: string[] }> = [
+  {
+    tier: 'live',
+    keys: [
+      'org_3g4kskqf7orownjspuiq0sjfz9d',
+      'the tribe (mit lives)',
+      'kundalini-yoga-tribe-1783238437326087264',
+      // Legacy live org id kept for backward compatibility with older Clerk setups.
+      'org_3fzppbwz4alcimln7kfhq29jahg',
+    ],
+  },
+  {
+    tier: 'video',
+    keys: [
+      'org_3g4kx68gr2ojo2lhqpydamu8yak',
+      'the tribe (ohne lives)',
+      'the-tribe-ohne-lives--1783238470999217436',
+      // Legacy video-only org id kept for backward compatibility with older Clerk setups.
+      'org_3anhshdzp4zjgntjjtnde1h5azh',
+    ],
+  },
+]
 
 function normalize(value: unknown): string | null {
   if (typeof value !== 'string') return null
@@ -29,89 +54,151 @@ function normalize(value: unknown): string | null {
   return trimmed || null
 }
 
-function readStringList(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.map(normalize).filter((entry): entry is string => Boolean(entry))
+function getOrganizationKeys(membership: MembershipLike | null | undefined): string[] {
+  const organization = membership?.organization
+  return [organization?.id, organization?.slug, organization?.name]
+    .map((value) => normalize(value))
+    .filter((value): value is string => Boolean(value))
+}
+
+function getMembershipTier(membership: MembershipLike | null | undefined): EntitlementTier {
+  const keys = new Set(getOrganizationKeys(membership))
+  for (const entry of ORGANIZATION_ENTITLEMENTS) {
+    if (entry.keys.some((key) => keys.has(key))) {
+      return entry.tier
+    }
+  }
+  return 'none'
+}
+
+function getMemberships(user: ClerkUserLike): MembershipLike[] {
+  if (!user) return []
+  return user.organizationMemberships || user.organization_memberships || []
+}
+
+function getPublicMetadata(user: ClerkUserLike): Record<string, unknown> {
+  if (!user?.publicMetadata || typeof user.publicMetadata !== 'object') {
+    return {}
+  }
+  return user.publicMetadata
+}
+
+function hasMemberRole(user: ClerkUserLike): boolean {
+  return normalize(getPublicMetadata(user).role) === 'member'
+}
+
+function getMetadataGroupKeys(user: ClerkUserLike): Set<string> {
+  const metadata = getPublicMetadata(user)
+  const rawGroups = [
+    metadata.claimTargetGroup,
+    ...(Array.isArray(metadata.memberGroups) ? metadata.memberGroups : []),
+  ]
+
+  return new Set(
+    rawGroups
+      .map((entry) => normalize(entry))
+      .filter((value): value is string => Boolean(value)),
+  )
+}
+
+function getMetadataTier(user: ClerkUserLike): EntitlementTier {
+  const groups = getMetadataGroupKeys(user)
+  for (const entry of ORGANIZATION_ENTITLEMENTS) {
+    if (entry.keys.some((key) => groups.has(key))) {
+      return entry.tier
+    }
+  }
+  return hasMemberRole(user) ? 'video' : 'none'
+}
+
+function getOrganizationTier(user: ClerkUserLike): EntitlementTier {
+  const memberships = getMemberships(user)
+  if (memberships.length === 0) return 'none'
+
+  let tier: EntitlementTier = 'none'
+  for (const membership of memberships) {
+    const currentTier = getMembershipTier(membership)
+    if (currentTier === 'live') return 'live'
+    if (currentTier === 'video') tier = 'video'
+  }
+  return tier
+}
+
+function getEntitlementTier(user: ClerkUserLike): EntitlementTier {
+  if (!user) return 'none'
+
+  // Clerk organizations are the source of truth whenever they exist.
+  const organizationTier = getOrganizationTier(user)
+  if (organizationTier !== 'none') {
+    return organizationTier
   }
 
-  const single = normalize(value)
-  return single ? [single] : []
+  return getMetadataTier(user)
 }
 
-function isMemberlightMarker(value: unknown): boolean {
-  return readStringList(value).some((entry) => MEMBERLIGHT_KEYS.has(entry))
+function getEmails(user: ClerkUserLike): string[] {
+  if (!user) return []
+
+  const camel = Array.isArray(user.emailAddresses)
+    ? user.emailAddresses.map((entry) => normalize(entry?.emailAddress)).filter((value): value is string => Boolean(value))
+    : []
+
+  const snake = Array.isArray(user.email_addresses)
+    ? user.email_addresses.map((entry) => normalize(entry?.email_address)).filter((value): value is string => Boolean(value))
+    : []
+
+  return Array.from(new Set([...camel, ...snake]))
 }
 
-function orgIdOf(membership: MembershipLike | null | undefined): string | null {
-  return normalize(membership?.organization?.id)
+export function getPrimaryEmail(user: ClerkUserLike): string | null {
+  if (!user) return null
+  return normalize(user.primaryEmailAddress?.emailAddress) || getEmails(user)[0] || null
+}
+
+export function getUserDisplayName(user: ClerkUserLike): string | null {
+  if (!user) return null
+  return (
+    user.firstName ||
+    user.first_name ||
+    user.fullName ||
+    getPrimaryEmail(user)?.split('@')[0] ||
+    user.id ||
+    null
+  )
+}
+
+export function getUserImageUrl(user: ClerkUserLike): string | null {
+  if (!user) return null
+  return user.imageUrl || user.image_url || null
 }
 
 export function hasVideoAccess(user: ClerkUserLike): boolean {
-  if (!user) return false
-
-  const metadata = user.publicMetadata || {}
-  const role = normalize(metadata.role)
-  if (role === 'member' || role === 'admin') return true
-
-  if (
-    isMemberlightMarker(metadata.group) ||
-    isMemberlightMarker(metadata.memberGroup) ||
-    isMemberlightMarker(metadata.claimTargetGroup) ||
-    isMemberlightMarker(metadata.memberGroups)
-  ) {
-    return true
-  }
-
-  const memberships = user.organizationMemberships || []
-  return memberships.some(m => { const id = orgIdOf(m); return id ? VIDEO_ORG_IDS.has(id) : false })
+  const tier = getEntitlementTier(user)
+  return tier === 'video' || tier === 'live'
 }
 
 export function hasLiveAccess(user: ClerkUserLike): boolean {
-  if (!user) return false
-  const metadata = user.publicMetadata || {}
-
-  // Legacy group-based exclusion
-  if (
-    isMemberlightMarker(metadata.group) ||
-    isMemberlightMarker(metadata.memberGroup) ||
-    isMemberlightMarker(metadata.claimTargetGroup) ||
-    isMemberlightMarker(metadata.memberGroups)
-  ) {
-    return false
-  }
-
-  const role = normalize(metadata.role)
-  if (role === 'member' || role === 'admin') return true
-
-  // "The Tribe (mit lives)" org members get live access
-  const memberships = user.organizationMemberships || []
-  return memberships.some(m => orgIdOf(m) === TRIBE_MIT_LIVES_ORG_ID)
-}
-
-export function getPrimaryEmail(user: ClerkUserLike & { emailAddresses?: Array<{ emailAddress: string }> | null } | null): string | null {
-  if (!user) return null
-  return (user as { emailAddresses?: Array<{ emailAddress: string }> | null }).emailAddresses?.[0]?.emailAddress ?? null
-}
-
-export function getUserDisplayName(user: ClerkUserLike & { firstName?: string | null; emailAddresses?: Array<{ emailAddress: string }> | null } | null): string | null {
-  if (!user) return null
-  const u = user as { firstName?: string | null; emailAddresses?: Array<{ emailAddress: string }> | null }
-  return u.firstName || u.emailAddresses?.[0]?.emailAddress?.split('@')[0] || null
-}
-
-export function getUserImageUrl(user: ClerkUserLike & { imageUrl?: string | null } | null): string | null {
-  if (!user) return null
-  return (user as { imageUrl?: string | null }).imageUrl ?? null
+  return getEntitlementTier(user) === 'live'
 }
 
 export async function getViewerUser() {
   const { userId } = await auth()
   if (!userId) return null
+  const secretKey = process.env.CLERK_SECRET_KEY
+  if (!secretKey) return null
 
-  const client = await clerkClient()
-  const [user, { data: orgMemberships }] = await Promise.all([
-    client.users.getUser(userId),
-    client.users.getOrganizationMembershipList({ userId }),
+  const headers = { Authorization: `Bearer ${secretKey}` }
+  const [userRes, membershipsRes] = await Promise.all([
+    fetch(`https://api.clerk.com/v1/users/${userId}`, { headers, cache: 'no-store' }),
+    fetch(`https://api.clerk.com/v1/users/${userId}/organization_memberships`, { headers, cache: 'no-store' }),
   ])
-  return { ...user, organizationMemberships: orgMemberships }
+
+  if (!userRes.ok) return null
+
+  const user = await userRes.json()
+  const membershipsPayload = membershipsRes.ok ? await membershipsRes.json() : { data: [] }
+  return {
+    ...user,
+    organizationMemberships: membershipsPayload.data || [],
+  }
 }

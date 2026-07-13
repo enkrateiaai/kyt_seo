@@ -1,10 +1,17 @@
-import { currentUser } from '@clerk/nextjs/server'
 import YouTubeGallery from './gallery'
 import SiteHeader from '@/app/components/SiteHeader'
+import { hasClerkClientConfig, hasClerkConfig } from '@/lib/authConfig'
+import { getUserDisplayName, getUserImageUrl, getViewerUser, hasLiveAccess, hasVideoAccess } from '@/lib/memberAccess'
+
+export const dynamic = 'force-dynamic'
 
 export default async function VideosPage() {
-  const user = await currentUser()
-  const isMember = user?.publicMetadata?.role === 'member'
+  const clerkEnabled = hasClerkClientConfig()
+  const user = hasClerkConfig() ? await getViewerUser() : null
+  const isMember = hasVideoAccess(user)
+  const canAccessLive = hasLiveAccess(user)
+  const userLabel = getUserDisplayName(user)
+  const userImageUrl = getUserImageUrl(user)
 
   return (
     <>
@@ -21,7 +28,7 @@ export default async function VideosPage() {
         }
       `}</style>
 
-      <SiteHeader isLoggedIn={!!user} signOutRedirectUrl="/videos" />
+      <SiteHeader clerkEnabled={clerkEnabled} isLoggedIn={!!user} userId={user?.id} userLabel={userLabel} userImageUrl={userImageUrl} canAccessLive={canAccessLive} />
 
       <YouTubeGallery isMember={isMember} />
     </>
