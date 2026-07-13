@@ -58,8 +58,45 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deployment note
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Deploy staging to vrouwtje
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          SHA: ${{ github.sha }}
         run: |
-          echo "Nightly staging image built from ${STAGING_REF}."
-          echo "Automatic staging deploy is not configured in GitHub yet."
-          echo "To deploy from Actions, add Tailscale secrets TS_OAUTH_CLIENT_ID and TS_OAUTH_SECRET."
+          echo "$DEPLOY_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh -i /tmp/deploy_key \
+              -o StrictHostKeyChecking=no \
+              vik@vrouwtje \
+            "set -e
+             docker pull ${{ env.IMAGE }}:${SHA}
+             docker stop kyt-seo-staging || true
+             docker rm kyt-seo-staging || true
+             docker run -d \
+               --name kyt-seo-staging \
+               --init \
+               --restart unless-stopped \
+               --no-healthcheck \
+               -p 3011:3000 \
+               --env-file /home/vik/docker/kyt-seo/.env.local \
+               ${{ env.IMAGE }}:${SHA}
+             docker tag ${{ env.IMAGE }}:${SHA} kyt-seo-staging:nightly"
+
+      - name: Smoke test staging
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          echo "$DEPLOY_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          sleep 20
+          STAGING_STATUS=$(ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no vik@vrouwtje "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3011/")
+          echo "Staging HTTP $STAGING_STATUS"
+          rm /tmp/deploy_key
+          [ "$STAGING_STATUS" = "200" ] || (echo "Staging smoke test failed: HTTP $STAGING_STATUS" && exit 1)
