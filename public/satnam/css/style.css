@@ -1249,12 +1249,7 @@ h1, h2, h3, h4, h5 {
 }
 
 .article-cta__button {
-  min-width: 220px;
-  justify-content: center;
-  padding: 1rem 2.4rem;
-  font-size: 0.95rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  padding: 0.875rem 2rem;
   box-shadow: 0 14px 32px rgba(211, 188, 118, 0.28);
 }
 
