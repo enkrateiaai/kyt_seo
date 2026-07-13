@@ -440,9 +440,34 @@
   }
 
   .kriyas-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-snap-type: x mandatory;
     gap: 2px;
+  }
+  .kriyas-grid::-webkit-scrollbar { display: none; }
+  .kriya-scroll-btn{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:44px;height:44px;border-radius:50%;
+    background:var(--terracotta);color:#fff;border:none;
+    cursor:pointer;font-size:1.3rem;display:flex;align-items:center;justify-content:center;
+    z-index:10;transition:all .25s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 6px 24px rgba(0,0,0,.18)
+  }
+  .kriya-scroll-btn:hover{
+    transform:translateY(-50%) scale(1.12);
+    background:var(--terracotta-light);box-shadow:0 8px 32px rgba(0,0,0,.22)
+  }
+  .kriya-scroll-btn.prev{left:16px}
+  .kriya-scroll-btn.next{right:16px}
+  .kriya-scroll-btn.inactive{opacity:.2;cursor:default;transform:translateY(-50%)}
+  .kriyas-grid .kriya-card {
+    flex: 0 0 calc((100% - 4px) / 3);
+    min-width: 0;
+    scroll-snap-align: start;
+    display: flex; flex-direction: column; flex: 0 0 calc((100% - 4px) / 3);
   }
 
   .kriya-card {
@@ -454,7 +479,7 @@
     transition: background 0.4s ease;
     text-decoration: none;
     color: inherit;
-    display: block;
+    display: flex; flex-direction: column; flex: 1;
   }
 
   .kriya-card::after {
@@ -829,7 +854,58 @@
   .reveal-delay-3 { transition-delay: 0.3s; }
   .reveal-delay-4 { transition-delay: 0.4s; }
 </style>
-</head>
+<style>
+    .nav-burger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:42px;height:42px;background:rgba(255,252,247,0.9);border:1px solid rgba(196,113,74,0.25);border-radius:50%;cursor:pointer;flex-shrink:0;margin-left:auto}
+    .nav-burger span{display:block;width:16px;height:1.5px;background:#7A725F;border-radius:2px;transition:transform .22s ease,opacity .22s ease}
+    nav.nav--open .nav-burger span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+    nav.nav--open .nav-burger span:nth-child(2){opacity:0}
+    nav.nav--open .nav-burger span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+    @media(max-width:720px){
+      nav{padding:14px 20px !important;flex-wrap:wrap;gap:10px}
+      .nav-logo{display:none !important}
+      .nav-burger{display:flex}
+      .nav-links{display:none !important;width:100%;flex-direction:column;gap:0;padding:8px 0;order:3}
+      nav.nav--open .nav-links{display:flex !important}
+      .nav-links li{width:100%}
+      .nav-links a{display:block;padding:13px 4px;border-bottom:1px solid rgba(196,113,74,0.1);font-size:13px}
+      .nav-links li:last-child a{border-bottom:none}
+      .nav-user-chip{font-size:0.75rem;padding:8px 0}
+
+      section{padding:60px 20px !important}
+
+      .hero{grid-template-columns:1fr !important;min-height:auto}
+      .hero-left{padding:100px 20px 48px !important;order:2}
+      .hero-right{min-height:260px;order:1}
+      .hero-mandala{width:220px !important;height:220px !important}
+      .hero-actions{flex-direction:column;align-items:flex-start;gap:12px}
+      .hero-decorative-text{display:none}
+
+      .intro{grid-template-columns:1fr !important;gap:36px !important;padding:60px 20px !important}
+      .intro-stat-row{gap:24px !important}
+      .intro-card{padding:28px 20px !important}
+      .intro-accent-line{display:none}
+
+      .kriyas{padding:60px 20px !important}
+      .kriyas-header{flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:32px !important}
+      .kriyas-grid{grid-template-columns:1fr !important}
+      .kriya-card{padding:32px 20px !important}
+
+      .snr{grid-template-columns:1fr !important}
+      .snr-left{padding:60px 20px !important}
+      .snr-right{padding:40px 20px !important;min-height:280px}
+      .snr-card-stack{width:100% !important;max-width:360px}
+
+      .mantras{padding:60px 20px !important}
+      .mantras-grid{grid-template-columns:repeat(2,1fr) !important;gap:12px !important}
+      .mantra-card{padding:24px 16px !important}
+
+      .cta-band{flex-direction:column !important;align-items:flex-start !important;padding:60px 20px !important;gap:24px !important}
+
+      footer{padding:60px 20px 32px !important}
+      .footer-top{grid-template-columns:1fr !important;gap:36px !important}
+      .footer-bottom{flex-direction:column !important;gap:10px !important;text-align:center}
+    }
+  </style></head>
 <body>
 
 <!-- NAV -->
@@ -844,11 +920,11 @@
     </svg>
     <span class="nav-logo-text">Kundalini Yoga Tribe</span>
   </a>
-  <ul class="nav-links">
+  <button class="nav-burger" aria-label="Navigation öffnen" onclick="this.closest('nav').classList.toggle('nav--open')"><span></span><span></span><span></span></button><ul class="nav-links">
     <li><a href="/blog">Blog</a></li>
     <li><a href="/mantras">Mantras</a></li>
     <li><a href="/videos">Videos</a></li>
-    <li><a href="/videos">Mitgliederbereich</a></li>
+    
     <li><a href="/live">Live</a></li>
     <li><a href="/sign-in?redirect_url=%2Fvideos" class="nav-cta">Anmelden</a></li>
   </ul>
@@ -928,23 +1004,19 @@
     <span class="marquee-item">Wahe Guru <span class="marquee-dot">✦</span></span>
     <span class="marquee-item">Ra Ma Da Sa <span class="marquee-dot">✦</span></span>
     <span class="marquee-item">Ong Namo <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Sat Kriya <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Heilung durch Stille <span class="marquee-dot">✦</span></span>
     <span class="marquee-item">Sat Nam <span class="marquee-dot">✦</span></span>
     <span class="marquee-item">Wahe Guru <span class="marquee-dot">✦</span></span>
     <span class="marquee-item">Ra Ma Da Sa <span class="marquee-dot">✦</span></span>
     <span class="marquee-item">Ong Namo <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Sat Kriya <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Heilung durch Stille <span class="marquee-dot">✦</span></span>
   </div>
 </div>
 
 <!-- INTRO -->
 <section class="intro reveal">
   <div class="intro-left">
-    <p class="section-label">Über uns</p>
-    <h2 class="section-title">Wissen für den<br><em>deutschsprachigen</em><br>Raum</h2>
-    <p class="intro-body">Der Tribe ist deine Quelle für eine kraftvolle Kundalini Yoga Praxis: die Kriyas und Meditationen haben eine transformierende Wirkung auf Körper, Geist und Seele- auch auf dein Nervensystem. Baue die Praxis in deinen Alltag ein. Im Tribe.</p>
+    <p class="section-label">Über den Tribe</p>
+    <h2 class="section-title">Der Tribe:<br><em>Deine spirituelle</em><br>Community</h2>
+    <p class="intro-body">Baue die Praxis in deinen Alltag ein — im Tribe.</p>
     <div class="intro-stat-row">
       <div class="intro-stat">
         <div class="intro-stat-num">40</div>
@@ -963,8 +1035,8 @@
   <div class="intro-right reveal reveal-delay-2">
     <div class="intro-accent-line"></div>
     <div class="intro-card">
-      <p class="intro-card-quote">„Sat Nam Rasayan bedeutet Heilen durch das Fließen der Seele — eine jahrtausendealte Tradition, die tief in jedem von uns wohnt."</p>
-      <p class="intro-card-attr">— Aus dem Pillar-Artikel</p>
+      <p class="intro-card-quote">„Kundalini Yoga ist schlicht das Entfalten deines Potentials, um deine Lebenskraft und deine Tugenden zu entdecken."</p>
+      <p class="intro-card-attr">— Yogi Bhajan</p>
     </div>
   </div>
 </section>
@@ -978,25 +1050,35 @@
     </div>
     <a href="/blog" class="btn-ghost">Alle Kriyas ansehen</a>
   </div>
-  <div class="kriyas-grid">
-    <a href="/artikel/sat-kriya-anleitung" class="kriya-card reveal reveal-delay-1">
-      <span class="kriya-num">01</span>
-      <h3 class="kriya-title">Sat Kriya</h3>
-      <p class="kriya-desc">Die grundlegendste Kriya in Kundalini Yoga. Stärkt das Nervensystem und weckt die kreative Energie.</p>
-      <span class="kriya-arrow">→</span>
-    </a>
-    <a href="/artikel/40-tage-kriya-challenge" class="kriya-card reveal reveal-delay-2">
-      <span class="kriya-num">02</span>
-      <h3 class="kriya-title">40-Tage-Challenge</h3>
-      <p class="kriya-desc">Vertiefe deine Praxis durch tägliche Wiederholung. Transformation geschieht durch Kontinuität.</p>
-      <span class="kriya-arrow">→</span>
-    </a>
-    <a href="/artikel/kriya-gegen-angst" class="kriya-card reveal reveal-delay-3">
-      <span class="kriya-num">03</span>
-      <h3 class="kriya-title">Kriya gegen Angst</h3>
-      <p class="kriya-desc">Spezifische Sequenzen um das Nervensystem zu beruhigen und innere Stabilität zu finden.</p>
-      <span class="kriya-arrow">→</span>
-    </a>
+  <div style=position:relative id=kriyaScrollContainer>
+    <div class=kriyas-grid id=kriyaGrid>
+      <a href=/artikel/sat-kriya-anleitung class=kriya-card>
+        <span class=kriya-num>01</span>
+        <h3 class=kriya-title>Sat Kriya</h3>
+        <p class=kriya-desc>Die grundlegendste Kriya in Kundalini Yoga. Stärkt das Nervensystem und weckt die kreative Energie.</p>
+        <span class=kriya-arrow>→</span>
+      </a>
+      <a href=/artikel/40-tage-kriya-challenge class=kriya-card>
+        <span class=kriya-num>02</span>
+        <h3 class=kriya-title>40-Tage-Challenge</h3>
+        <p class=kriya-desc>Vertiefe deine Praxis durch tägliche Wiederholung. Transformation geschieht durch Kontinuität.</p>
+        <span class=kriya-arrow>→</span>
+      </a>
+      <a href=/artikel/vitalitaet class=kriya-card>
+        <span class=kriya-num>03</span>
+        <h3 class=kriya-title>Kriya für Vitalität</h3>
+        <p class=kriya-desc>5 Übungen für körperliche und mentale Kraft — aus dem Teacher Training.</p>
+        <span class=kriya-arrow>→</span>
+      </a>
+      <a href=/artikel/werde-intuitiv class=kriya-card id=kriyaFourth>
+        <span class=kriya-num>04</span>
+        <h3 class=kriya-title>Werde intuitiv</h3>
+        <p class=kriya-desc>5 Atemmeditationen für die Hypophyse — aktivieren deine Energie und klären den Geist.</p>
+        <span class=kriya-arrow>→</span>
+      </a>
+    </div>
+    <button class=kriya-scroll-btn prev id=kriyaScrollPrev aria-label=Vorherige>&#8592;</button>
+    <button class=kriya-scroll-btn next id=kriyaScrollNext aria-label=Nächste>&#8594;</button>
   </div>
 </section>
 
@@ -1084,7 +1166,7 @@
       <ul class="footer-links">
         <li><a href="/artikel/sat-kriya-anleitung">Sat Kriya</a></li>
         <li><a href="/artikel/40-tage-kriya-challenge">40-Tage-Challenge</a></li>
-        <li><a href="/artikel/kriya-gegen-angst">Kriya gegen Angst</a></li>
+        <li><a href="/artikel/vitalitaet">Werde intuitiv</a></li>
         <li><a href="/blog">Alle Kriyas</a></li>
       </ul>
     </div>
@@ -1102,7 +1184,7 @@
       <ul class="footer-links">
         <li><a href="/blog">Blog</a></li>
         <li><a href="/videos">Videos</a></li>
-        <li><a href="/videos">Mitgliederbereich</a></li>
+        
         <li><a href="/live">Live</a></li>
         <li><a href="/impressum">Impressum</a></li>
         <li><a href="/datenschutz">Datenschutz</a></li>
@@ -1127,5 +1209,28 @@
 
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </script>
-</body>
-</html>
+
+<script>
+(function(){
+var g=document.getElementById('kriyaGrid');
+var prev=document.getElementById('kriyaScrollPrev');
+var next=document.getElementById('kriyaScrollNext');
+if(!g||!prev||!next)return;
+var hoverInterval;
+function startHover(dir){clearInterval(hoverInterval);hoverInterval=setInterval(function(){g.scrollBy({left:dir*5,behavior:'instant'});},20);}
+function stopHover(){clearInterval(hoverInterval);}
+prev.addEventListener('mouseenter',function(){startHover(-1);});
+next.addEventListener('mouseenter',function(){startHover(1);});
+prev.addEventListener('mouseleave',stopHover);
+next.addEventListener('mouseleave',stopHover);
+prev.addEventListener('click',function(){g.scrollBy({left:-336,behavior:'smooth'});});
+next.addEventListener('click',function(){g.scrollBy({left:336,behavior:'smooth'});});
+function upd(){
+  prev.className='kriya-scroll-btn '+(g.scrollLeft>5?'prev':'prev inactive');
+  next.className='kriya-scroll-btn '+(g.scrollLeft>=g.scrollWidth-g.clientWidth-5?'next inactive':'next');
+}
+g.addEventListener('scroll',upd,{passive:true});
+upd();
+})();
+</script>
+</body></html>
