@@ -26,6 +26,14 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ARG CLERK_SECRET_KEY=""
+ARG REDIS_URL=""
+ARG PAYPAL_CLIENT_ID=""
+ARG PAYPAL_CLIENT_SECRET=""
+ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
+ENV REDIS_URL=$REDIS_URL
+ENV PAYPAL_CLIENT_ID=$PAYPAL_CLIENT_ID
+ENV PAYPAL_CLIENT_SECRET=$PAYPAL_CLIENT_SECRET
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
