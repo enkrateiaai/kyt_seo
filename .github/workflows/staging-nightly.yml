@@ -1,0 +1,65 @@
+name: Nightly staging build
+
+on:
+  schedule:
+    # GitHub cron is UTC. 02:30 UTC = 03:30 CET / 04:30 CEST.
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/kyt-seo
+  STAGING_REF: staging/codex-prod-align
+
+jobs:
+  build-staging:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.STAGING_REF }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push staging image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.deploy
+          platforms: linux/arm64
+          push: true
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
+            REDIS_URL=${{ secrets.REDIS_URL }}
+            NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+            PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+            PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}
+          tags: |
+            ${{ env.IMAGE }}:staging-latest
+            ${{ env.IMAGE }}:staging-nightly
+            ${{ env.IMAGE }}:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deployment note
+        run: |
+          echo "Nightly staging image built from ${STAGING_REF}."
+          echo "Automatic staging deploy is not configured in GitHub yet."
+          echo "To deploy from Actions, add Tailscale secrets TS_OAUTH_CLIENT_ID and TS_OAUTH_SECRET."
