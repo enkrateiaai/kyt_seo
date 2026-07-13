@@ -1,8 +1,9 @@
-name: Build and Deploy kyt-seo
+name: Nightly production build
 
 on:
-  push:
-    branches: [main]
+  schedule:
+    # GitHub cron is UTC. 02:45 UTC = 03:45 CET / 04:45 CEST.
+    - cron: '45 2 * * *'
   workflow_dispatch:
 
 env:
@@ -33,7 +34,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push linux/arm64 image
+      - name: Build and push production image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -42,10 +43,15 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:prod-nightly
             ${{ env.IMAGE }}:${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
             CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
+            REDIS_URL=${{ secrets.REDIS_URL }}
+            NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+            PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+            PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
