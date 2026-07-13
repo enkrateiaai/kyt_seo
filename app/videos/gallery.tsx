@@ -62,14 +62,18 @@ export default function YouTubeGallery({ isMember }: Props) {
   const playerRef = useRef<HTMLDivElement>(null)
   const filterRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const publicPreviewPlaylistId = playlists[0]?.id ?? null
+  const filteredPlaylists = memberAccess && publicPreviewPlaylistId !== null
+    ? playlists.filter((playlist) => playlist.id !== publicPreviewPlaylistId)
+    : playlists
   const effectiveSelectedPlaylistId =
-    selectedPlaylistId !== null && playlists.some((playlist) => playlist.id === selectedPlaylistId)
+    selectedPlaylistId !== null && filteredPlaylists.some((playlist) => playlist.id === selectedPlaylistId)
       ? selectedPlaylistId
       : null
-  const selectedPlaylist = playlists.find(p => p.id === effectiveSelectedPlaylistId) || null
+  const selectedPlaylist = filteredPlaylists.find(p => p.id === effectiveSelectedPlaylistId) || null
   const visiblePlaylists = effectiveSelectedPlaylistId === null
-    ? playlists
-    : playlists.filter(p => p.id === effectiveSelectedPlaylistId)
+    ? filteredPlaylists
+    : filteredPlaylists.filter(p => p.id === effectiveSelectedPlaylistId)
 
   useEffect(() => {
     let cancelled = false
@@ -197,7 +201,8 @@ export default function YouTubeGallery({ isMember }: Props) {
   }
 
   const handleVideoClick = (video: Video, playlist: Playlist) => {
-    const isLocked = !memberAccess && !freeIds.has(video.id)
+    const isPublicPreviewPlaylist = playlist.id === publicPreviewPlaylistId
+    const isLocked = !isPublicPreviewPlaylist && !memberAccess && !freeIds.has(video.id)
     if (isLocked) {
       window.open('https://www.charan-amrit-kaur.de/yoga-tribe/', '_blank')
       return
@@ -832,7 +837,7 @@ export default function YouTubeGallery({ isMember }: Props) {
                 >
                   Alle Typen
                 </button>
-                {playlists.map(playlist => (
+                {filteredPlaylists.map(playlist => (
                   <button
                     key={playlist.id}
                     className={`v-search__filter-item${selectedPlaylistId === playlist.id ? ' v-search__filter-item--active' : ''}`}
@@ -958,8 +963,9 @@ export default function YouTubeGallery({ isMember }: Props) {
               {!playlist.loading && !playlist.error && pageVideos.length > 0 && (
                 <div className="v-grid">
                   {pageVideos.map(video => {
-                    const isFreeVideo = freeIds.has(video.id)
-                    const isLocked = !memberAccess && !isFreeVideo
+                    const isPublicPreviewPlaylist = playlist.id === publicPreviewPlaylistId
+                    const isFreeVideo = isPublicPreviewPlaylist || freeIds.has(video.id)
+                    const isLocked = !isPublicPreviewPlaylist && !memberAccess && !isFreeVideo
                     const isActive = activeVideo?.id === video.id && activePlaylistId === playlist.id
 
                     return (
