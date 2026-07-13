@@ -323,7 +323,37 @@
       <h3>Erlebe Sat Nam Rasayan live</h3>
       <p>Buche deine persönliche Heilsession für mehr Klarheit, Entspannung und innere Balance — vor Ort oder auf Distanz.</p>
       <div class="article-cta__links">
-        <a href="https://www.charan-amrit-kaur.de/satnamrasayan-2/" class="btn btn--primary article-cta__button">Termin buchen →</a>
+        <button type="button" class="btn btn--primary article-cta__button" data-booking-modal-open>Termin buchen →</button>
+      </div>
+    </div>
+
+    <div class="booking-modal" data-booking-modal hidden>
+      <div class="booking-modal__backdrop" data-booking-modal-close></div>
+      <div class="booking-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title">
+        <button type="button" class="booking-modal__close" aria-label="Popup schließen" data-booking-modal-close>×</button>
+        <p class="booking-modal__eyebrow">Sat Nam Rasayan</p>
+        <h3 id="booking-modal-title">Wähle dein Angebot</h3>
+        <p class="booking-modal__intro">Wähle die Session, die gerade am besten zu dir passt.</p>
+        <div class="booking-modal__options">
+          <article class="booking-option">
+            <p class="booking-option__meta">50 Minuten · Einzelsitzung</p>
+            <h4>Schnuppertermin</h4>
+            <p>Lerne Sat Nam Rasayan in einer persönlichen Sitzung kennen.</p>
+            <div class="booking-option__footer">
+              <span class="booking-option__price">70 €</span>
+              <a href="https://www.charan-amrit-kaur.de/produkt/schnuppertermin-50-min/" class="btn btn--primary">Auswählen →</a>
+            </div>
+          </article>
+          <article class="booking-option">
+            <p class="booking-option__meta">5 Sitzungen · Paket</p>
+            <h4>5er-Karte</h4>
+            <p>Für alle, die tiefer einsteigen und die Praxis regelmäßig erleben möchten.</p>
+            <div class="booking-option__footer">
+              <span class="booking-option__price">270 €</span>
+              <a href="https://www.charan-amrit-kaur.de/produkt/5er-karte/" class="btn btn--primary">Auswählen →</a>
+            </div>
+          </article>
+        </div>
       </div>
     </div>
 
@@ -428,5 +458,34 @@
   </footer>
 
   <script src="../js/main.js"></script>
+  <script>
+    (function () {
+      const modal = document.querySelector('[data-booking-modal]');
+      const openButton = document.querySelector('[data-booking-modal-open]');
+      if (!modal || !openButton) return;
+
+      const closeModal = function () {
+        modal.setAttribute('hidden', '');
+        document.body.classList.remove('booking-modal-open');
+      };
+
+      const openModal = function () {
+        modal.removeAttribute('hidden');
+        document.body.classList.add('booking-modal-open');
+      };
+
+      openButton.addEventListener('click', openModal);
+
+      modal.querySelectorAll('[data-booking-modal-close]').forEach(function (element) {
+        element.addEventListener('click', closeModal);
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !modal.hasAttribute('hidden')) {
+          closeModal();
+        }
+      });
+    }());
+  </script>
 </body>
 </html>
