@@ -2,8 +2,8 @@ name: Nightly production build
 
 on:
   schedule:
-    # GitHub cron is UTC. 02:45 UTC = 03:45 CET / 04:45 CEST.
-    - cron: '45 2 * * *'
+    # GitHub cron is UTC. 01:45 UTC = 02:45 CET / 03:45 CEST.
+    - cron: '45 1 * * *'
   workflow_dispatch:
 
 env:
