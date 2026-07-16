@@ -32,12 +32,12 @@ function Gate({ loggedIn }: { loggedIn: boolean }) {
         fontSize: 32, fontWeight: 400, letterSpacing: '0.06em',
         color: C.text, margin: '0 0 16px',
       }}>
-        Tribe Live Exklusiv
+        Kundalini Yoga Live
       </h1>
       <p style={{ color: C.textSoft, fontSize: 15, maxWidth: 380, lineHeight: 1.8, margin: '0 0 36px' }}>
         {loggedIn
-          ? 'Dieser Live-Stream ist nur für Tribe-Mitglieder zugänglich.'
-          : 'Bitte melde dich an oder werde Mitglied um den Live-Stream zu sehen.'}
+          ? 'Täglich Live-Yoga mit der Kundalini Yoga Tribe Gemeinschaft.'
+          : 'Werde Teil der Kundalini Yoga Tribe und schau täglich live.'}
       </p>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         {!loggedIn && (
@@ -96,7 +96,7 @@ export default async function LivePage() {
               Live
             </span>
             <h1 style={{ fontSize: 24, fontWeight: 400, letterSpacing: '0.06em', color: C.text, margin: 0, fontFamily: "'Cormorant Garamond', serif" }}>
-              Tribe Live Exklusiv
+              Kundalini Yoga Live
             </h1>
           </div>
           <div style={{ padding: '0 24px 24px' }}>
