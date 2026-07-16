@@ -5,8 +5,8 @@ import LivePlayer from './LivePlayer'
 import SiteHeader from '@/app/components/SiteHeader'
 
 export const metadata = {
-  title: 'Live Stream – Kundalini Yoga Tribe',
-  description: 'Exklusiver Live-Stream für Mitglieder',
+  title: 'Kundalini Yoga Live – Kundalini Yoga Tribe',
+  description: 'Tagliche Lives finden um 6:30 Uhr und 10 Uhr von Mo.-Fr. statt, am Wochenende um 7:00 Uhr und 10 Uhr. Sonntag Abend um 20:30 Uhr findet die Meditation statt.',
 }
 
 const C = {
@@ -18,6 +18,9 @@ const C = {
   accent:      '#D3BC76',
   border:      '#DDD5C8',
 }
+
+const LIVE_SCHEDULE_TEXT =
+  'Tagliche Lives finden um 6:30 Uhr und 10 Uhr von Mo.-Fr. statt und am Wochenende um 7:00 Uhr und 10 Uhr. Sonntag Abend um 20:30 Uhr findet die Meditation statt.'
 
 function Gate({ loggedIn }: { loggedIn: boolean }) {
   return (
@@ -34,10 +37,8 @@ function Gate({ loggedIn }: { loggedIn: boolean }) {
       }}>
         Kundalini Yoga Live
       </h1>
-      <p style={{ color: C.textSoft, fontSize: 15, maxWidth: 380, lineHeight: 1.8, margin: '0 0 36px' }}>
-        {loggedIn
-          ? 'Täglich Live-Yoga mit der Kundalini Yoga Tribe Gemeinschaft.'
-          : 'Werde Teil der Kundalini Yoga Tribe und schau täglich live.'}
+      <p style={{ color: C.textSoft, fontSize: 15, maxWidth: 520, lineHeight: 1.8, margin: '0 0 36px' }}>
+        {LIVE_SCHEDULE_TEXT}
       </p>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         {!loggedIn && (
@@ -98,6 +99,9 @@ export default async function LivePage() {
             <h1 style={{ fontSize: 24, fontWeight: 400, letterSpacing: '0.06em', color: C.text, margin: 0, fontFamily: "'Cormorant Garamond', serif" }}>
               Kundalini Yoga Live
             </h1>
+            <p style={{ color: C.textSoft, fontSize: 15, maxWidth: 640, lineHeight: 1.8, margin: '16px auto 0' }}>
+              {LIVE_SCHEDULE_TEXT}
+            </p>
           </div>
           <div style={{ padding: '0 24px 24px' }}>
             <LivePlayer />
