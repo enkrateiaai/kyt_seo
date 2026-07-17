@@ -2,8 +2,8 @@ name: Nightly staging build
 
 on:
   schedule:
-    # GitHub cron is UTC. 02:30 UTC = 03:30 CET / 04:30 CEST.
-    - cron: '30 2 * * *'
+    # Temporary scheduled test: 18:37 UTC on Friday, July 17, 2026.
+    - cron: '37 18 * * *'
   workflow_dispatch:
 
 env:
