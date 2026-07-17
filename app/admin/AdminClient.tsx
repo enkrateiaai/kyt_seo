@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from 'react'
 
+interface Invite {
+  id: string
+  email: string
+  role: string
+  type: 'clerk' | 'in-app'
+  status: 'pending' | 'accepted' | 'revoked'
+  invitedBy: string
+  createdAt: string
+  acceptedAt?: string
+}
+
 interface Playlist {
   id: number
   title: string
@@ -11,6 +22,52 @@ interface Playlist {
 }
 
 export default function AdminClient() {
+  // ── Invite state ──────────────────────────────────────────────────────────
+  const [invites, setInvites] = useState<Invite[]>([])
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
+  const [inviteState, setInviteState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [inviteMsg, setInviteMsg] = useState('')
+
+  const loadInvites = () =>
+    fetch('/api/admin/invites').then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setInvites(data)
+    })
+
+  useEffect(() => { loadInvites() }, [])
+
+  const sendInvite = async () => {
+    setInviteState('loading')
+    setInviteMsg('')
+    const res = await fetch('/api/admin/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setInviteState('ok')
+      setInviteMsg(data.flow === 'clerk'
+        ? `Einladung per Clerk gesendet (neuer Account) → ${data.email}`
+        : `Einladung per E-Mail gesendet (bestehender Account) → ${data.email}`)
+      setInviteEmail('')
+      loadInvites()
+    } else {
+      setInviteState('error')
+      setInviteMsg(data.error || 'Fehler')
+    }
+  }
+
+  const revokeInvite = async (id: string) => {
+    await fetch('/api/admin/invites', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    loadInvites()
+  }
+
+  // ── Playlist state ────────────────────────────────────────────────────────
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [title, setTitle] = useState('')
   const [playlistId, setPlaylistId] = useState('')
@@ -147,6 +204,9 @@ export default function AdminClient() {
     </label>
   )
 
+  const statusColor = (s: string) =>
+    s === 'accepted' ? '#c8f064' : s === 'revoked' ? '#555' : '#d29922'
+
   return (
     <div style={{ minHeight: '100vh', background: '#06060a', color: '#e0e0e0', fontFamily: 'monospace', padding: '40px 24px' }}>
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
@@ -154,8 +214,78 @@ export default function AdminClient() {
           // Admin
         </p>
         <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: 40 }}>
-          Playlisten verwalten
+          Admin
         </h1>
+
+        {/* ── Invite section ── */}
+        <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.2em', marginBottom: 16 }}>// Mitglieder einladen</p>
+        <div style={{ background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 12, padding: 24, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            <input
+              value={inviteEmail}
+              onChange={e => { setInviteEmail(e.target.value); setInviteState('idle') }}
+              placeholder="email@beispiel.de"
+              type="email"
+              style={{ flex: '1 1 220px', background: '#111', border: '1px solid #1a1a2e', borderRadius: 6, padding: '10px 14px', color: '#e0e0e0', fontSize: 13, fontFamily: 'monospace', outline: 'none' }}
+            />
+            <select
+              value={inviteRole}
+              onChange={e => setInviteRole(e.target.value as 'member' | 'admin')}
+              style={{ background: '#111', border: '1px solid #1a1a2e', borderRadius: 6, padding: '10px 12px', color: '#e0e0e0', fontSize: 13, fontFamily: 'monospace', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="member">Mitglied</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button
+              onClick={sendInvite}
+              disabled={inviteState === 'loading' || !inviteEmail}
+              style={{ background: inviteState === 'loading' ? '#555' : '#c8f064', color: '#000', border: 'none', borderRadius: 6, padding: '10px 18px', fontFamily: 'monospace', fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+            >
+              {inviteState === 'loading' ? '…' : 'Einladen'}
+            </button>
+          </div>
+          {inviteMsg && (
+            <p style={{ fontSize: 12, color: inviteState === 'error' ? '#ff6b6b' : '#c8f064', margin: 0 }}>
+              {inviteState === 'ok' ? '✓ ' : '✗ '}{inviteMsg}
+            </p>
+          )}
+        </div>
+
+        {/* Invite list */}
+        {invites.length > 0 && (
+          <div style={{ marginBottom: 40 }}>
+            <p style={{ fontSize: 11, color: '#444', letterSpacing: '0.1em', marginBottom: 10 }}>
+              {invites.length} Einladung{invites.length !== 1 ? 'en' : ''}
+            </p>
+            {invites.map(inv => (
+              <div key={inv.id} style={{
+                background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 8,
+                padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <p style={{ fontSize: 13, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {inv.email}
+                  </p>
+                  <p style={{ fontSize: 11, color: '#555', margin: 0 }}>
+                    {inv.role} · {inv.type === 'clerk' ? 'Clerk-Invite' : 'In-App-Link'} ·{' '}
+                    <span style={{ color: statusColor(inv.status) }}>{inv.status}</span>
+                  </p>
+                </div>
+                {inv.status === 'pending' && (
+                  <button
+                    onClick={() => revokeInvite(inv.id)}
+                    style={{ background: '#1a1a1a', color: '#ff6b6b', border: 'none', borderRadius: 6, padding: '6px 12px', fontFamily: 'monospace', fontSize: 11, cursor: 'pointer', flexShrink: 0 }}
+                  >
+                    Widerrufen
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Playlist section ── */}
+        <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.2em', marginBottom: 16 }}>// Playlisten verwalten</p>
 
         <div style={{ background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 12, padding: 24, marginBottom: 32 }}>
           <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.15em', marginBottom: 16 }}>// Neue Playlist</p>
