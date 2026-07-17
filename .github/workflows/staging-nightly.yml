@@ -9,6 +9,7 @@ on:
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/kyt-seo
   STAGING_REF: staging/codex-prod-align
+  DEPLOY_HOST: 100.90.161.78
 
 jobs:
   build-staging:
@@ -74,7 +75,7 @@ jobs:
           chmod 600 /tmp/deploy_key
           ssh -i /tmp/deploy_key \
               -o StrictHostKeyChecking=no \
-              vik@vrouwtje \
+              vik@${{ env.DEPLOY_HOST }} \
             "set -e
              docker pull ${{ env.IMAGE }}:${SHA}
              docker stop kyt-seo-staging || true
@@ -96,7 +97,7 @@ jobs:
           echo "$DEPLOY_KEY" > /tmp/deploy_key
           chmod 600 /tmp/deploy_key
           sleep 20
-          STAGING_STATUS=$(ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no vik@vrouwtje "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3011/")
+          STAGING_STATUS=$(ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no vik@${{ env.DEPLOY_HOST }} "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3011/")
           echo "Staging HTTP $STAGING_STATUS"
           rm /tmp/deploy_key
           [ "$STAGING_STATUS" = "200" ] || (echo "Staging smoke test failed: HTTP $STAGING_STATUS" && exit 1)

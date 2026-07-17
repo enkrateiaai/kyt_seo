@@ -1,13 +1,11 @@
 name: Nightly production build
 
 on:
-  schedule:
-    # GitHub cron is UTC. 01:45 UTC = 02:45 CET / 03:45 CEST.
-    - cron: '45 1 * * *'
   workflow_dispatch:
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/kyt-seo
+  DEPLOY_HOST: 100.90.161.78
 
 jobs:
   build-and-deploy:
@@ -71,7 +69,7 @@ jobs:
           chmod 600 /tmp/deploy_key
           ssh -i /tmp/deploy_key \
               -o StrictHostKeyChecking=no \
-              vik@vrouwtje \
+              vik@${{ env.DEPLOY_HOST }} \
             "set -e
              docker pull ${{ env.IMAGE }}:${SHA}
              docker tag kyt-seo:stable kyt-seo:rollback 2>/dev/null || true
