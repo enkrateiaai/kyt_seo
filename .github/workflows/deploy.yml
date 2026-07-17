@@ -2,7 +2,7 @@ name: Build and Deploy kyt-seo
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, kyt-staging]
   workflow_dispatch:
 
 env:
@@ -91,7 +91,7 @@ jobs:
 
   # ── Staging — triggers on staging branch ───────────────────────────────────
   build-and-deploy-staging:
-    if: github.ref == 'refs/heads/staging'
+    if: github.ref == 'refs/heads/kyt-staging'
     runs-on: ubuntu-latest
     permissions:
       contents: read
