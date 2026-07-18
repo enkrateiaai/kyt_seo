@@ -8,6 +8,7 @@ import { schema } from './sanity/schema'
 export default defineConfig({
   name: 'kundaliniyogatribe',
   title: 'Kundalini Yoga Tribe',
+  basePath: '/studio',
 
   projectId: 'tk7egxqt',
   dataset: 'production',
