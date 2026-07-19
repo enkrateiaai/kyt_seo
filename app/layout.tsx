@@ -1,6 +1,7 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import { deDE } from '@clerk/localizations'
 import { Analytics } from '@vercel/analytics/next'
+import { VisualEditing } from 'next-sanity/visual-editing'
 import './globals.css'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -9,6 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang="de">
         <body>
           {children}
+          <VisualEditing />
           <Analytics />
         </body>
       </html>
