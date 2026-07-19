@@ -6,7 +6,7 @@ import { visionTool } from '@sanity/vision'
 import { presentationTool } from 'sanity/presentation'
 import { schema } from './sanity/schema'
 
-const PREVIEW_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const PREVIEW_URL = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
 const PREVIEW_SECRET = process.env.NEXT_PUBLIC_SANITY_PREVIEW_SECRET || 'kyt-preview-secret'
 
 export default defineConfig({
