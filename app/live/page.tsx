@@ -72,9 +72,10 @@ function Gate({ loggedIn }: { loggedIn: boolean }) {
 export default async function LivePage() {
   const { userId } = await auth()
   const user = userId ? await currentUser() : null
+  const meta = user?.publicMetadata as any
   const isMember =
-    (user?.publicMetadata as any)?.role === 'member' ||
-    (user?.publicMetadata as any)?.role === 'admin'
+    meta?.role === 'admin' ||
+    (meta?.role === 'member' && meta?.group === 'mit-lives')
 
   return (
     <main style={{

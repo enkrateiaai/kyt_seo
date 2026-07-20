@@ -63,7 +63,7 @@ export default async function AcceptInvitePage({
     return <Result ok={false} message="Dieser Einladungslink ist abgelaufen oder ungültig." />
   }
 
-  const { inviteId, userId: invitedUserId, role } = JSON.parse(raw as string)
+  const { inviteId, userId: invitedUserId, role, group } = JSON.parse(raw as string)
 
   if (userId !== invitedUserId) {
     return <Result ok={false} message="Diese Einladung ist für einen anderen Account. Bitte melde dich mit der eingeladenen E-Mail-Adresse an." />
@@ -72,7 +72,7 @@ export default async function AcceptInvitePage({
   // Set role on Clerk user
   const client = await clerkClient()
   await client.users.updateUserMetadata(userId, {
-    publicMetadata: { role },
+    publicMetadata: { role, ...(group ? { group } : {}) },
   })
 
   // Mark invite accepted in Redis

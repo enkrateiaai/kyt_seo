@@ -26,6 +26,7 @@ export default function AdminClient() {
   const [invites, setInvites] = useState<Invite[]>([])
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
+  const [inviteGroup, setInviteGroup] = useState<'mit-lives' | 'ohne-lives'>('ohne-lives')
   const [inviteState, setInviteState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [inviteMsg, setInviteMsg] = useState('')
 
@@ -42,7 +43,7 @@ export default function AdminClient() {
     const res = await fetch('/api/admin/invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+      body: JSON.stringify({ email: inviteEmail, role: inviteRole, group: inviteGroup }),
     })
     const data = await res.json()
     if (res.ok) {
@@ -235,6 +236,14 @@ export default function AdminClient() {
             >
               <option value="member">Mitglied</option>
               <option value="admin">Admin</option>
+            </select>
+            <select
+              value={inviteGroup}
+              onChange={e => setInviteGroup(e.target.value as 'mit-lives' | 'ohne-lives')}
+              style={{ background: '#111', border: '1px solid #1a1a2e', borderRadius: 6, padding: '10px 12px', color: '#e0e0e0', fontSize: 13, fontFamily: 'monospace', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="ohne-lives">Ohne Lives</option>
+              <option value="mit-lives">Mit Lives</option>
             </select>
             <button
               onClick={sendInvite}

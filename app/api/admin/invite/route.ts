@@ -49,13 +49,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden — admin only' }, { status: 403 })
   }
 
-  let body: { email?: string; role?: string }
+  let body: { email?: string; role?: string; group?: string }
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
   const email = body.email?.trim().toLowerCase()
   const role = body.role === 'admin' ? 'admin' : 'member'
+  const group = body.group === 'mit-lives' ? 'mit-lives' : 'ohne-lives'
   if (!email) return NextResponse.json({ error: 'email required' }, { status: 400 })
 
   const inviteId = crypto.randomUUID()
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
   if (existingUser) {
     // Flow B: existing Clerk user — set role directly + send custom email with token
     const token = crypto.randomUUID()
-    await redis.set(`invite:token:${token}`, JSON.stringify({ inviteId, userId: existingUser.id, role }), 'EX', 60 * 60 * 24 * 7)
+    await redis.set(`invite:token:${token}`, JSON.stringify({ inviteId, userId: existingUser.id, role, group }), 'EX', 60 * 60 * 24 * 7)
 
     await sendInviteEmail(email, token)
 
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
       id: inviteId,
       email,
       role,
+      group,
       type: 'in-app',
       status: 'pending',
       invitedBy: userId,
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
     clerkInvitation = await client.invitations.createInvitation({
       emailAddress: email,
       redirectUrl: `${APP_URL}/accept-invite`,
-      publicMetadata: { role, inviteId },
+      publicMetadata: { role, group, inviteId },
     })
   } catch (err: any) {
     console.error('[invite] Clerk invitation error:', err)
@@ -112,6 +114,7 @@ export async function POST(req: NextRequest) {
     id: inviteId,
     email,
     role,
+    group,
     type: 'clerk',
     status: 'pending',
     invitedBy: userId,
