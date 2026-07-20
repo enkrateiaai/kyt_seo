@@ -12,10 +12,8 @@ export async function GET(req: NextRequest) {
   const slug = searchParams.get('slug')
   const type = searchParams.get('type') || 'article'
   ;(await draftMode()).enable()
-  // If no slug, just return OK — Presentation Tool handles navigation itself
-  if (!slug) {
-    return new Response('Draft mode enabled', { status: 200 })
-  }
-  const path = type === 'article' ? `/artikel/${slug}` : `/${slug}`
+  const path = slug
+    ? (type === 'article' ? `/artikel/${slug}` : `/${slug}`)
+    : '/'
   redirect(path)
 }
