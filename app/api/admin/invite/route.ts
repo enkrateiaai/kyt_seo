@@ -6,9 +6,9 @@ import crypto from 'crypto'
 import { Resend } from 'resend'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.kundaliniyogatribe.de'
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 async function sendInviteEmail(to: string, token: string) {
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const link = `${APP_URL}/accept-invite?token=${token}`
   await resend.emails.send({
     from: 'Kundalini Yoga Tribe <info@kundaliniyogatribe.de>',
