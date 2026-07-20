@@ -9,9 +9,13 @@ export async function GET(req: NextRequest) {
   if (searchParams.get('secret') !== SECRET) {
     return new Response('Invalid token', { status: 401 })
   }
-  const slug = searchParams.get('slug') || '/'
+  const slug = searchParams.get('slug')
   const type = searchParams.get('type') || 'article'
   ;(await draftMode()).enable()
+  // If no slug, just return OK — Presentation Tool handles navigation itself
+  if (!slug) {
+    return new Response('Draft mode enabled', { status: 200 })
+  }
   const path = type === 'article' ? `/artikel/${slug}` : `/${slug}`
   redirect(path)
 }
