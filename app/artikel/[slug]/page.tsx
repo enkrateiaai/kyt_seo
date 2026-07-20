@@ -2,6 +2,7 @@ import { draftMode } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { client } from '@/lib/sanity'
 import { PortableText } from '@portabletext/react'
+import { VisualEditing } from 'next-sanity/visual-editing'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -60,7 +61,7 @@ export default async function ArtikelPage({ params }: Props) {
           </div>
         )}
       </main>
-
+      <VisualEditing />
     </>
   )
 }
