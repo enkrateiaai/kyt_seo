@@ -7,7 +7,6 @@ import { presentationTool, defineLocations } from 'sanity/presentation'
 import { schema } from './sanity/schema'
 
 const PREVIEW_URL = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
-const PREVIEW_SECRET = process.env.NEXT_PUBLIC_SANITY_PREVIEW_SECRET || 'kyt-preview-secret'
 
 export default defineConfig({
   name: 'kundaliniyogatribe',
@@ -43,10 +42,6 @@ export default defineConfig({
       },
       previewUrl: {
         origin: PREVIEW_URL,
-        previewMode: {
-          enable: `/api/draft?secret=${PREVIEW_SECRET}`,
-          disable: '/api/disable-draft',
-        },
       },
     }),
   ],

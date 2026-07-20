@@ -61,7 +61,7 @@ export default async function ArtikelPage({ params }: Props) {
           </div>
         )}
       </main>
-      <VisualEditing />
+      {isEnabled && <VisualEditing />}
     </>
   )
 }
