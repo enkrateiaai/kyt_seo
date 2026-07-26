@@ -38,12 +38,12 @@ function Gate({ loggedIn }: { loggedIn: boolean }) {
           // Admin Protected
         </p>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 16 }}>
-          Zugriff nur für Mitglieder
+          Zugriff nur für Admins
         </h1>
         <p style={{ color: C.textSoft, fontSize: 14, lineHeight: 1.8, margin: '0 0 24px' }}>
           {loggedIn
-            ? 'Dieser Bereich ist nur für freigeschaltete Mitglieder oder Admins verfügbar.'
-            : 'Bitte melde dich mit einem Mitgliederkonto an, um den Admin-Bereich zu öffnen.'}
+            ? 'Dieser Bereich ist nur für Administratoren verfügbar.'
+            : 'Bitte melde dich mit einem Admin-Konto an, um den Admin-Bereich zu öffnen.'}
         </p>
         {!loggedIn && (
           <SignInButton mode="redirect" forceRedirectUrl="/admin" fallbackRedirectUrl="/admin">
@@ -71,9 +71,9 @@ export default async function AdminPage() {
   const { userId } = await auth()
   const user = userId ? await currentUser() : null
   const role = (user?.publicMetadata as any)?.role
-  const isMember = role === 'member' || role === 'admin'
+  const isAdmin = role === 'admin'
 
-  if (!isMember) {
+  if (!isAdmin) {
     return <Gate loggedIn={!!userId} />
   }
 
