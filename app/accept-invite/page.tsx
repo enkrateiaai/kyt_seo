@@ -43,12 +43,16 @@ function Result({ ok, message }: { ok: boolean; message: string }) {
 export default async function AcceptInvitePage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>
+  searchParams: Promise<{ token?: string; __clerk_ticket?: string }>
 }) {
   const { userId } = await auth()
-  const { token } = await searchParams
+  const { token, __clerk_ticket } = await searchParams
 
-  // Clerk app-level invite redirects here with the sign-up ticket — just send to sign-up
+  // Flow A: Clerk native invite for new users — forward ticket to sign-up
+  if (__clerk_ticket) {
+    redirect(`/sign-up?__clerk_ticket=${__clerk_ticket}`)
+  }
+
   if (!token) {
     redirect('/sign-in')
   }
