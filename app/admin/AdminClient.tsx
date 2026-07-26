@@ -13,6 +13,18 @@ interface Invite {
   acceptedAt?: string
 }
 
+interface ClerkUser {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  role: string | null
+  group: string | null
+  createdAt: number
+  lastSignInAt: number | null
+  banned: boolean
+}
+
 interface Playlist {
   id: number
   title: string
@@ -67,6 +79,70 @@ export default function AdminClient() {
     })
     loadInvites()
   }
+
+  // ── Users state ───────────────────────────────────────────────────────────
+  const [users, setUsers] = useState<ClerkUser[]>([])
+  const [usersLoading, setUsersLoading] = useState(true)
+  const [userRoleFilter, setUserRoleFilter] = useState<string>('all')
+  const [userGroupFilter, setUserGroupFilter] = useState<string>('all')
+  const [userEditId, setUserEditId] = useState<string | null>(null)
+  const [userEditRole, setUserEditRole] = useState('')
+  const [userEditGroup, setUserEditGroup] = useState('')
+  const [userSaving, setUserSaving] = useState(false)
+  const [userConfirmDelete, setUserConfirmDelete] = useState<string | null>(null)
+
+  const loadUsers = () => {
+    setUsersLoading(true)
+    fetch('/api/admin/users')
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setUsers(data) })
+      .finally(() => setUsersLoading(false))
+  }
+
+  useEffect(() => { loadUsers() }, [])
+
+  const startEditUser = (u: ClerkUser) => {
+    setUserEditId(u.id)
+    setUserEditRole(u.role ?? 'member')
+    setUserEditGroup(u.group ?? 'ohne-lives')
+  }
+
+  const saveUser = async (id: string) => {
+    setUserSaving(true)
+    await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId: id, role: userEditRole, group: userEditGroup }),
+    })
+    setUserEditId(null)
+    setUserSaving(false)
+    loadUsers()
+  }
+
+  const removeAccess = async (id: string) => {
+    await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId: id, role: null, group: null }),
+    })
+    loadUsers()
+  }
+
+  const deleteUser = async (id: string) => {
+    await fetch('/api/admin/users', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId: id }),
+    })
+    setUserConfirmDelete(null)
+    loadUsers()
+  }
+
+  const filteredUsers = users.filter(u => {
+    if (userRoleFilter !== 'all' && u.role !== userRoleFilter) return false
+    if (userGroupFilter !== 'all' && u.group !== userGroupFilter) return false
+    return true
+  })
 
   // ── Playlist state ────────────────────────────────────────────────────────
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -292,6 +368,132 @@ export default function AdminClient() {
             ))}
           </div>
         )}
+
+        {/* ── Users section ── */}
+        <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.2em', marginBottom: 16 }}>// Mitglieder verwalten</p>
+
+        {/* Filter bar */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          <select
+            value={userRoleFilter}
+            onChange={e => setUserRoleFilter(e.target.value)}
+            style={{ background: '#111', border: '1px solid #1a1a2e', borderRadius: 6, padding: '8px 12px', color: '#e0e0e0', fontSize: 12, fontFamily: 'monospace', outline: 'none', cursor: 'pointer' }}
+          >
+            <option value="all">Alle Rollen</option>
+            <option value="member">Mitglied</option>
+            <option value="admin">Admin</option>
+            <option value="none">Kein Zugriff</option>
+          </select>
+          <select
+            value={userGroupFilter}
+            onChange={e => setUserGroupFilter(e.target.value)}
+            style={{ background: '#111', border: '1px solid #1a1a2e', borderRadius: 6, padding: '8px 12px', color: '#e0e0e0', fontSize: 12, fontFamily: 'monospace', outline: 'none', cursor: 'pointer' }}
+          >
+            <option value="all">Alle Gruppen</option>
+            <option value="mit-lives">Mit Lives</option>
+            <option value="ohne-lives">Ohne Lives</option>
+            <option value="none">Keine Gruppe</option>
+          </select>
+          <button onClick={loadUsers} style={{ ...btnStyle('#1a1a2e', '#888'), padding: '8px 14px' }}>↻ Neu laden</button>
+          <span style={{ marginLeft: 'auto', fontSize: 11, color: '#444', alignSelf: 'center' }}>
+            {usersLoading ? 'Laden…' : `${filteredUsers.length} / ${users.length} Nutzer`}
+          </span>
+        </div>
+
+        {/* User list */}
+        <div style={{ marginBottom: 48 }}>
+          {usersLoading && (
+            <p style={{ fontSize: 12, color: '#444', textAlign: 'center', padding: 24 }}>Lade Nutzer…</p>
+          )}
+          {!usersLoading && filteredUsers.length === 0 && (
+            <p style={{ fontSize: 12, color: '#444', textAlign: 'center', padding: 24 }}>Keine Nutzer gefunden.</p>
+          )}
+          {!usersLoading && filteredUsers.map(u => (
+            <div key={u.id} style={{
+              background: '#0d0d14',
+              border: `1px solid ${userEditId === u.id ? '#c8f064' : '#1a1a2e'}`,
+              borderRadius: 8, padding: '12px 16px', marginBottom: 8,
+            }}>
+              {userEditId === u.id ? (
+                <div>
+                  <p style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>{u.email}</p>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                    <select
+                      value={userEditRole}
+                      onChange={e => setUserEditRole(e.target.value)}
+                      style={{ background: '#111', border: '1px solid #1a1a2e', borderRadius: 6, padding: '8px 12px', color: '#e0e0e0', fontSize: 13, fontFamily: 'monospace', outline: 'none' }}
+                    >
+                      <option value="member">Mitglied</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <select
+                      value={userEditGroup}
+                      onChange={e => setUserEditGroup(e.target.value)}
+                      style={{ background: '#111', border: '1px solid #1a1a2e', borderRadius: 6, padding: '8px 12px', color: '#e0e0e0', fontSize: 13, fontFamily: 'monospace', outline: 'none' }}
+                    >
+                      <option value="ohne-lives">Ohne Lives</option>
+                      <option value="mit-lives">Mit Lives</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => saveUser(u.id)} disabled={userSaving} style={{ ...btnStyle(), opacity: userSaving ? 0.5 : 1 }}>
+                      {userSaving ? '…' : 'Speichern'}
+                    </button>
+                    <button onClick={() => setUserEditId(null)} style={btnStyle('#1a1a2e', '#888')}>Abbrechen</button>
+                  </div>
+                </div>
+              ) : userConfirmDelete === u.id ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <p style={{ fontSize: 12, color: '#ff6b6b', flex: 1, margin: 0 }}>
+                    Nutzer unwiderruflich löschen: <strong>{u.email}</strong>?
+                  </p>
+                  <button onClick={() => deleteUser(u.id)} style={btnStyle('#ff6b6b', '#000')}>Ja, löschen</button>
+                  <button onClick={() => setUserConfirmDelete(null)} style={btnStyle('#1a1a2e', '#888')}>Abbrechen</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <p style={{ fontSize: 13, margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {u.firstName || u.lastName ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() + ' · ' : ''}{u.email}
+                    </p>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{
+                        fontSize: 10, padding: '2px 8px', borderRadius: 4,
+                        background: u.role === 'admin' ? '#1a1a2e' : u.role === 'member' ? '#1a2e1a' : '#1a1a1a',
+                        color: u.role === 'admin' ? '#c8f064' : u.role === 'member' ? '#7dba4a' : '#444',
+                        border: `1px solid ${u.role === 'admin' ? '#2a2e4a' : u.role === 'member' ? '#2a4a1a' : '#222'}`,
+                      }}>
+                        {u.role ?? '—'}
+                      </span>
+                      {u.group && (
+                        <span style={{
+                          fontSize: 10, padding: '2px 8px', borderRadius: 4,
+                          background: u.group === 'mit-lives' ? '#2e1a2e' : '#1a1a2e',
+                          color: u.group === 'mit-lives' ? '#d29922' : '#888',
+                          border: `1px solid ${u.group === 'mit-lives' ? '#4a2a1a' : '#222'}`,
+                        }}>
+                          {u.group}
+                        </span>
+                      )}
+                      {u.lastSignInAt && (
+                        <span style={{ fontSize: 10, color: '#444' }}>
+                          letzte Anmeldung: {new Date(u.lastSignInAt).toLocaleDateString('de-DE')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button onClick={() => startEditUser(u)} style={btnStyle('#1a1a2e', '#c8f064')}>Bearbeiten</button>
+                    {u.role && (
+                      <button onClick={() => removeAccess(u.id)} style={btnStyle('#1a1a1a', '#d29922')} title="Rolle und Gruppe entfernen">Zugang entziehen</button>
+                    )}
+                    <button onClick={() => setUserConfirmDelete(u.id)} style={btnStyle('#1a1a1a', '#ff6b6b')}>Löschen</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
 
         {/* ── Playlist section ── */}
         <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.2em', marginBottom: 16 }}>// Playlisten verwalten</p>
