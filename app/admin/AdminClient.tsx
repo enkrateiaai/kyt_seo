@@ -23,6 +23,8 @@ interface ClerkUser {
   createdAt: number
   lastSignInAt: number | null
   banned: boolean
+  loginCount: number | null
+  lastLoginAt: string | null
 }
 
 interface Playlist {
@@ -475,11 +477,16 @@ export default function AdminClient() {
                           {u.group}
                         </span>
                       )}
-                      {u.lastSignInAt && (
+                      {u.loginCount !== null ? (
                         <span style={{ fontSize: 10, color: '#444' }}>
-                          letzte Anmeldung: {new Date(u.lastSignInAt).toLocaleDateString('de-DE')}
+                          {u.loginCount}× eingeloggt
+                          {u.lastLoginAt ? ` · zuletzt ${new Date(u.lastLoginAt).toLocaleDateString('de-DE')}` : ''}
                         </span>
-                      )}
+                      ) : u.lastSignInAt ? (
+                        <span style={{ fontSize: 10, color: '#444' }}>
+                          zuletzt {new Date(u.lastSignInAt).toLocaleDateString('de-DE')}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>

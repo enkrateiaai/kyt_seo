@@ -6,8 +6,10 @@ type ClerkEvent = {
   type: string
   data: {
     id: string
-    email_addresses: { email_address: string }[]
-    public_metadata: { role?: string; inviteId?: string }
+    user_id?: string
+    email_addresses?: { email_address: string }[]
+    public_metadata?: { role?: string; inviteId?: string }
+    created_at?: number
   }
 }
 
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   if (evt.type === 'user.created') {
     const userId = evt.data.id
-    const email = evt.data.email_addresses[0]?.email_address
+    const email = evt.data.email_addresses?.[0]?.email_address
     const inviteId = evt.data.public_metadata?.inviteId
 
     console.log(`[webhook] user.created ${userId} ${email} inviteId=${inviteId}`)
@@ -50,8 +52,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (evt.type === 'session.created') {
+    const userId = evt.data.user_id
+    if (userId) {
+      const key = `user:stats:${userId}`
+      const raw = await redis.get(key)
+      const stats = raw ? JSON.parse(raw as string) : { loginCount: 0, firstLoginAt: null }
+      const now = new Date().toISOString()
+      await redis.set(key, JSON.stringify({
+        loginCount: stats.loginCount + 1,
+        firstLoginAt: stats.firstLoginAt ?? now,
+        lastLoginAt: now,
+      }))
+    }
+  }
+
   if (evt.type === 'user.deleted') {
-    console.log(`[webhook] user.deleted ${evt.data.id}`)
+    const userId = evt.data.id
+    console.log(`[webhook] user.deleted ${userId}`)
+    await redis.del(`user:stats:${userId}`)
   }
 
   return NextResponse.json({ received: true })

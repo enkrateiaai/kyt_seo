@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
+import redis from '@/lib/redis'
 
 export async function GET() {
   const { userId } = await auth()
@@ -12,6 +13,14 @@ export async function GET() {
   }
 
   const result = await client.users.getUserList({ limit: 500, orderBy: '-created_at' })
+
+  // Fetch login stats from Redis for all users in parallel
+  const statsKeys = result.data.map(u => `user:stats:${u.id}`)
+  const statsRaw = statsKeys.length > 0 ? await redis.mget(...statsKeys) : []
+  const statsMap = Object.fromEntries(
+    result.data.map((u, i) => [u.id, statsRaw[i] ? JSON.parse(statsRaw[i] as string) : null])
+  )
+
   const users = result.data.map(u => ({
     id: u.id,
     email: u.emailAddresses[0]?.emailAddress ?? '',
@@ -22,6 +31,8 @@ export async function GET() {
     createdAt: u.createdAt,
     lastSignInAt: u.lastSignInAt,
     banned: u.banned,
+    loginCount: statsMap[u.id]?.loginCount ?? null,
+    lastLoginAt: statsMap[u.id]?.lastLoginAt ?? null,
   }))
 
   return NextResponse.json(users)
