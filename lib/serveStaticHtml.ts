@@ -68,6 +68,18 @@ function injectLandingPageLinks(
     )
 }
 
+function injectStoryblokConfig(html: string): string {
+  const token = process.env.STORYBLOK_TOKEN?.trim()
+  const story = process.env.STORYBLOK_STORY?.trim()
+  if (!token || !story) return html
+
+  const version = process.env.STORYBLOK_VERSION?.trim() || 'published'
+  const enableBridge = process.env.STORYBLOK_ENABLE_BRIDGE === 'true'
+
+  const configScript = `<script>window.KYT_STORYBLOK_CONFIG=${JSON.stringify({ token, story, version, enableBridge })};</script>`
+  return html.replace('</head>', `${configScript}</head>`)
+}
+
 function injectMobileNav(html: string): string {
   const css = `<style>
     .nav-burger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:42px;height:42px;background:rgba(255,252,247,0.9);border:1px solid rgba(196,113,74,0.25);border-radius:50%;cursor:pointer;flex-shrink:0;margin-left:auto}
@@ -139,13 +151,13 @@ export async function serveSatnamHtml(filename: string): Promise<NextResponse> {
       user?.fullName ||
       user?.primaryEmailAddress?.emailAddress?.split('@')[0] ||
       undefined
-    const hydratedHtml = injectMobileNav(injectLandingPageLinks(
+    const hydratedHtml = injectStoryblokConfig(injectMobileNav(injectLandingPageLinks(
       html,
       !!userId,
       clerkEnabled,
       userLabel,
       hasLiveAccess(user),
-    ))
+    )))
 
     return new NextResponse(hydratedHtml, {
       headers: {
