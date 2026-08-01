@@ -122,7 +122,7 @@ function roleInfo(u: any, orgMap: Record<string, string>): { value: string; disp
 
 function fmtDate(iso: string | undefined): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+  return new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Berlin' })
 }
 
 export default async function AdminPage() {
