@@ -32,6 +32,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Compute snapshot date
+        id: date
+        run: echo "tag=snap-$(date -u +'%Y%m%d')" >> $GITHUB_OUTPUT
+
       - name: Build and push production image
         uses: docker/build-push-action@v6
         with:
@@ -43,6 +47,7 @@ jobs:
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:prod-nightly
             ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:${{ steps.date.outputs.tag }}
           build-args: |
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
             CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
