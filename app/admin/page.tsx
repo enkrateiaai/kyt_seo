@@ -84,13 +84,16 @@ async function fetchAllUsers(secretKey: string) {
   return res.json()
 }
 
-function roleLabel(u: any): string {
+function roleInfo(u: any): { value: string; display: string } {
   const role = u.public_metadata?.role || u.publicMetadata?.role
-  if (role) return role
+  if (role) return { value: role, display: role }
   const orgs: any[] = u.organization_memberships || u.organizationMemberships || []
-  if (orgs.some((o: any) => o.organization?.name?.toLowerCase().includes('mit lives'))) return 'mitlives'
-  if (orgs.some((o: any) => o.organization?.name?.toLowerCase().includes('ohne lives'))) return 'ohnelives'
-  return '—'
+  for (const o of orgs) {
+    const name: string = o.organization?.name || ''
+    if (name.toLowerCase().includes('mit lives')) return { value: 'mitlives', display: `mitlives (${name})` }
+    if (name.toLowerCase().includes('ohne lives')) return { value: 'ohnelives', display: `ohnelives (${name})` }
+  }
+  return { value: '—', display: '—' }
 }
 
 function fmtDate(iso: string | undefined): string {
@@ -112,13 +115,17 @@ export default async function AdminPage() {
   const secretKey = process.env.CLERK_SECRET_KEY
   const rawUsers = secretKey ? await fetchAllUsers(secretKey) : []
 
-  const userRows = rawUsers.map((u: any) => ({
-    id: u.id,
-    name: [u.first_name, u.last_name].filter(Boolean).join(' ') || '—',
-    email: u.email_addresses?.[0]?.email_address || '—',
-    role: roleLabel(u),
-    lastSeen: fmtDate(u.unsafe_metadata?.lastSeen),
-  }))
+  const userRows = rawUsers.map((u: any) => {
+    const { value, display } = roleInfo(u)
+    return {
+      id: u.id,
+      name: [u.first_name, u.last_name].filter(Boolean).join(' ') || '—',
+      email: u.email_addresses?.[0]?.email_address || '—',
+      role: value,
+      roleDisplay: display,
+      lastSeen: fmtDate(u.unsafe_metadata?.lastSeen),
+    }
+  })
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', color: C.text, fontFamily: 'monospace', padding: '32px 24px' }}>

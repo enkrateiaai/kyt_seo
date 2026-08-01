@@ -15,11 +15,17 @@ export async function POST(req: NextRequest) {
   const client = await clerkClient()
   const target = await client.users.getUser(targetUserId)
   const existing = target.publicMetadata && typeof target.publicMetadata === 'object'
-    ? target.publicMetadata
+    ? { ...target.publicMetadata }
     : {}
 
+  if (role === 'none') {
+    delete (existing as any).role
+  } else {
+    (existing as any).role = role
+  }
+
   await client.users.updateUserMetadata(targetUserId, {
-    publicMetadata: { ...existing, role },
+    publicMetadata: existing,
   })
 
   return NextResponse.json({ ok: true })

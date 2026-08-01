@@ -12,13 +12,14 @@ const C = {
   danger: '#ff6b6b',
 }
 
-type Role = 'ohnelives' | 'mitlives' | 'admin'
+type Role = 'ohnelives' | 'mitlives' | 'admin' | 'none'
 
 interface UserRow {
   id: string
   name: string
   email: string
   role: string
+  roleDisplay: string
   lastSeen: string
 }
 
@@ -71,7 +72,8 @@ export default function AdminUsers({ initialUsers }: { initialUsers: UserRow[] }
       })
       const d = await r.json()
       if (d.ok) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
+        const display = role === 'none' ? '—' : role
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: role === 'none' ? '—' : role, roleDisplay: display } : u))
       }
     } catch {}
     setChangingRole(null)
@@ -150,7 +152,7 @@ export default function AdminUsers({ initialUsers }: { initialUsers: UserRow[] }
             <tr key={u.id} style={{ borderBottom: `1px solid ${C.border}` }}>
               <td style={{ padding: '10px 12px' }}>{u.name}</td>
               <td style={{ padding: '10px 12px', color: C.textSoft }}>{u.email}</td>
-              <td style={{ padding: '10px 12px', color: C.accent }}>{ROLE_LABELS[u.role] ?? u.role}</td>
+              <td style={{ padding: '10px 12px', color: C.accent }}>{u.roleDisplay}</td>
               <td style={{ padding: '10px 12px' }}>
                 <select
                   defaultValue={u.role}
@@ -158,6 +160,7 @@ export default function AdminUsers({ initialUsers }: { initialUsers: UserRow[] }
                   onChange={e => handleRoleChange(u.id, e.target.value as Role)}
                   style={{ ...inputStyle, fontSize: 12, padding: '4px 8px', opacity: changingRole === u.id ? 0.5 : 1 }}
                 >
+                  <option value="none">Keine Rolle</option>
                   <option value="ohnelives">Ohne Lives</option>
                   <option value="mitlives">Mit Lives</option>
                   <option value="admin">Admin</option>
