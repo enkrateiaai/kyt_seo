@@ -1,0 +1,32 @@
+export const FALLBACK_VIDEO_SLUGS: Record<string, string> = {
+  '30-minuten-kriya-energie-transformation': 'MsGF-5NFmE4',
+  '30-minuten-kriya-innere-staerke-ausdauer': '4wk8uzPihBY',
+  '30-minuten-kriya-vollstaendige-praxis': '7oJxV6tL7QU',
+  'celestial-communication-ardas-bhaee': 'CZmFJqH1Xpg',
+  'celestial-communication-chakkr-chattr-vartee': 'hHBx0zIlaDg',
+  'celestial-communication-gobinday-mukunday': '6QLA9hoXt4A',
+  'celestial-communication-guru-ram-das': 'Hsa4xX7BNjs',
+  'celestial-communication-humee-hum-brahm-hum': 'eg2-0yiDgts',
+  'celestial-communication-ong-so-hung': 'jWz5fs7dTeY',
+  'celestial-communication-ra-ma-da-sa': 'nldfzW3mYMA',
+  'celestial-communication-sa-re-sa-sa': 'EkYO2vJ4T9Q',
+  'celestial-communication-sat-narayan': 'PRYNp2hm5Qk',
+  'kriya-atemuebungen-pranayama': 'HtRKvr5GL5E',
+  'kriya-innere-aeussere-schoenheit': 'k7xc2s4qtGI',
+  'kriya-jahresanfang-kundalini-energie': '9-5NqyG3QjY',
+  'kriya-sonnenenergie-verdauung-feuer': 'rHJA3iLFbgk',
+  'kriya-spannung-negativitaet-loesen': '3845fEtN3W8',
+  'kurze-kriya-herzmeditation': 'SY924BoGtEc',
+  'laya-yoga-kreativitaet-chakren': 'MobxlCVQHt0',
+  'meditation-emotionen-befreien-klarheit': 'kSuZH5l2iok',
+  'meditation-innere-stabilitaet-stille': 'jugwEwiiTlg',
+  'morgenroutine-herzoeffnung-dankbarkeit': 'WVa0v_rWan0',
+  'morgenroutine-klarheit-fokus': 'apKp-Ef5pIs',
+  'sonntagssession-vollstaendige-praxis': '590-Oylhjvw',
+  'stille-meditation-tiefes-vertrauen': 'qklVei1Az7k',
+  'waheguru-kriya-trikuti-dezember': 'wwVJNgnzAMw',
+}
+
+export const FALLBACK_VIDEO_IDS_TO_SLUGS = Object.fromEntries(
+  Object.entries(FALLBACK_VIDEO_SLUGS).map(([slug, videoId]) => [videoId, slug]),
+) as Record<string, string>
