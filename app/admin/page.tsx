@@ -1,7 +1,10 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 import { SignInButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import AdminClient from './AdminClient'
+import AdminUsers from './AdminUsers'
+import { hasClerkClientConfig, hasClerkServerConfig } from '@/lib/authConfig'
+import { getViewerUser, isAdminUser } from '@/lib/memberAccess'
 
 const C = {
   bg: '#06060a',
@@ -12,7 +15,7 @@ const C = {
   border: '#1a1a2e',
 }
 
-function Gate({ loggedIn }: { loggedIn: boolean }) {
+function Gate({ clerkEnabled, loggedIn }: { clerkEnabled: boolean; loggedIn: boolean }) {
   return (
     <div style={{
       minHeight: '100vh',
@@ -45,7 +48,7 @@ function Gate({ loggedIn }: { loggedIn: boolean }) {
             ? 'Dieser Bereich ist nur für freigeschaltete Mitglieder oder Admins verfügbar.'
             : 'Bitte melde dich mit einem Mitgliederkonto an, um den Admin-Bereich zu öffnen.'}
         </p>
-        {!loggedIn && (
+        {!loggedIn && clerkEnabled && (
           <SignInButton mode="redirect" forceRedirectUrl="/admin" fallbackRedirectUrl="/admin">
             <button style={{
               background: C.accent,
@@ -62,20 +65,65 @@ function Gate({ loggedIn }: { loggedIn: boolean }) {
             </button>
           </SignInButton>
         )}
+        {!loggedIn && !clerkEnabled && (
+          <p style={{ color: C.textSoft, fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+            Die lokale Testumgebung lauft ohne Clerk-Anbindung. Der Admin-Bereich bleibt hier deshalb deaktiviert.
+          </p>
+        )}
       </div>
     </div>
   )
 }
 
-export default async function AdminPage() {
-  const { userId } = await auth()
-  const user = userId ? await currentUser() : null
-  const role = (user?.publicMetadata as any)?.role
-  const isMember = role === 'member' || role === 'admin'
+async function fetchAllUsers(secretKey: string) {
+  const res = await fetch('https://api.clerk.com/v1/users?limit=100&order_by=-created_at', {
+    headers: { Authorization: `Bearer ${secretKey}` },
+    cache: 'no-store',
+  })
+  if (!res.ok) return []
+  return res.json()
+}
 
-  if (!isMember) {
-    return <Gate loggedIn={!!userId} />
+function roleLabel(u: any): string {
+  const role = u.public_metadata?.role || u.publicMetadata?.role
+  if (role) return role
+  const orgs: any[] = u.organization_memberships || u.organizationMemberships || []
+  if (orgs.some((o: any) => o.organization?.name?.toLowerCase().includes('mit lives'))) return 'mitlives'
+  if (orgs.some((o: any) => o.organization?.name?.toLowerCase().includes('ohne lives'))) return 'ohnelives'
+  return '—'
+}
+
+function fmtDate(iso: string | undefined): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+export default async function AdminPage() {
+  const clerkClientEnabled = hasClerkClientConfig()
+  const clerkServerEnabled = hasClerkServerConfig()
+  const { userId } = clerkServerEnabled ? await auth() : { userId: null }
+  const user = clerkServerEnabled && userId ? await getViewerUser() : null
+  const isAdmin = isAdminUser(user)
+
+  if (!isAdmin) {
+    return <Gate clerkEnabled={clerkClientEnabled} loggedIn={!!userId} />
   }
 
-  return <AdminClient />
+  const secretKey = process.env.CLERK_SECRET_KEY
+  const rawUsers = secretKey ? await fetchAllUsers(secretKey) : []
+
+  const userRows = rawUsers.map((u: any) => ({
+    id: u.id,
+    name: [u.first_name, u.last_name].filter(Boolean).join(' ') || '—',
+    email: u.email_addresses?.[0]?.email_address || '—',
+    role: roleLabel(u),
+    lastSeen: fmtDate(u.unsafe_metadata?.lastSeen),
+  }))
+
+  return (
+    <div style={{ background: C.bg, minHeight: '100vh', color: C.text, fontFamily: 'monospace', padding: '32px 24px' }}>
+      <AdminClient />
+      <AdminUsers initialUsers={userRows} />
+    </div>
+  )
 }
