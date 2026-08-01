@@ -131,9 +131,6 @@ function Tabs({ active }: { active: 'live' | 'live-local' }) {
       <a href="/live" style={tabStyle(active === 'live')}>
         Live
       </a>
-      <a href="/live-local" style={tabStyle(active === 'live-local')}>
-        Live Local
-      </a>
     </div>
   )
 }
