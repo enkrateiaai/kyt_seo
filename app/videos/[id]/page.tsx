@@ -1,9 +1,14 @@
-import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import redis from '@/lib/redis'
 import { Metadata } from 'next'
 import SiteHeader from '@/app/components/SiteHeader'
+import VideoPlayer from './VideoPlayer'
 import { isFreeVideo } from '@/lib/freeVideo'
+import { FALLBACK_VIDEO_IDS_TO_SLUGS, FALLBACK_VIDEO_SLUGS } from '@/lib/fallbackVideoSlugs'
+import { hasClerkClientConfig, hasClerkConfig } from '@/lib/authConfig'
+import { getUserDisplayName, getUserImageUrl, getViewerUser, hasLiveAccess, hasVideoAccess } from '@/lib/memberAccess'
+
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -17,7 +22,7 @@ interface YouTubeVideoDetails {
 }
 
 async function fetchVideoDetails(videoId: string): Promise<YouTubeVideoDetails | null> {
-  const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
   if (!apiKey) return null
 
   try {
@@ -46,12 +51,25 @@ async function fetchVideoDetails(videoId: string): Promise<YouTubeVideoDetails |
 
 // Resolve slug or videoId → always return the canonical videoId
 async function resolveVideoId(idOrSlug: string): Promise<{ videoId: string; slug: string | null }> {
-  // Check if it's a slug (has slug: mapping)
-  const fromSlug = await redis.get(`slug:${idOrSlug}`) as string | null
-  if (fromSlug) return { videoId: fromSlug, slug: idOrSlug }
-  // Otherwise treat as videoId, look up its slug
-  const slug = await redis.get(`vidslug:${idOrSlug}`) as string | null
-  return { videoId: idOrSlug, slug }
+  try {
+    const fromSlug = await redis.get(`slug:${idOrSlug}`) as string | null
+    if (fromSlug) return { videoId: fromSlug, slug: idOrSlug }
+
+    const slug = await redis.get(`vidslug:${idOrSlug}`) as string | null
+    if (slug) {
+      return { videoId: idOrSlug, slug }
+    }
+  } catch {
+    // Fall back to the built-in map below when Redis is unavailable.
+  }
+
+  const fallbackVideoId = FALLBACK_VIDEO_SLUGS[idOrSlug]
+  if (fallbackVideoId) {
+    return { videoId: fallbackVideoId, slug: idOrSlug }
+  }
+
+  const fallbackSlug = FALLBACK_VIDEO_IDS_TO_SLUGS[idOrSlug]
+  return { videoId: idOrSlug, slug: fallbackSlug ?? null }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -98,6 +116,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function VideoDetailPage({ params }: PageProps) {
   const { id } = await params
   const { videoId, slug } = await resolveVideoId(id)
+  const clerkEnabled = hasClerkClientConfig()
 
   // Redirect old /videos/[youtubeId] URLs to /videos/[slug]
   if (slug && id !== slug) {
@@ -105,7 +124,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
   }
 
   const [user, video, transcript, customTitle, mantrasRaw] = await Promise.all([
-    currentUser(),
+    hasClerkConfig() ? getViewerUser() : Promise.resolve(null),
     fetchVideoDetails(videoId),
     redis.get(`transcript:${videoId}`),
     redis.get(`title:${videoId}`),
@@ -113,7 +132,10 @@ export default async function VideoDetailPage({ params }: PageProps) {
   ])
   const videoMantras: { slug: string; name: string }[] = mantrasRaw ? JSON.parse(mantrasRaw as string) : []
 
-  const isMember = user?.publicMetadata?.role === 'member'
+  const isMember = hasVideoAccess(user)
+  const canAccessLive = hasLiveAccess(user)
+  const userLabel = getUserDisplayName(user)
+  const userImageUrl = getUserImageUrl(user)
   const isLocked = !isFreeVideo(videoId) && !isMember
   const title = (customTitle as string | null) ?? video?.title ?? 'Kundalini Yoga Video'
   const description = video?.description ?? ''
@@ -515,43 +537,21 @@ export default async function VideoDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <SiteHeader isLoggedIn={!!user} signOutRedirectUrl="/videos" />
+      <SiteHeader clerkEnabled={clerkEnabled} isLoggedIn={!!user} userId={user?.id} userLabel={userLabel} userImageUrl={userImageUrl} canAccessLive={canAccessLive} />
 
       <div className="vd-page">
         <div className="vd-container">
           <a href="/videos" className="vd-back">← Zurück zur Bibliothek</a>
 
-          {isLocked ? (
-            <div className="vd-lock">
-              <div className="vd-lock__ratio">
-                <img className="vd-lock__thumb" src={thumbnailUrl} alt={title} />
-                <div className="vd-lock__overlay">
-                  <div className="vd-lock__icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <path d="M7 11V7a5 5 0 0110 0v4"/>
-                    </svg>
-                  </div>
-                  <p className="vd-lock__text">Nur für Mitglieder</p>
-                  <p className="vd-lock__sub">Dieses Video ist Teil der Mitgliedschaft. Melde dich an oder werde Mitglied, um vollen Zugang zu erhalten.</p>
-                  <div className="vd-lock__actions">
-                    <a href="https://www.charan-amrit-kaur.de/yoga-tribe/" target="_blank" rel="noopener" className="vd-lock__btn vd-lock__btn--primary">Mitglied werden →</a>
-                    {!user && <a href={`/sign-in?redirect_url=${encodeURIComponent(`/videos/${canonicalSlug}`)}`} className="vd-lock__btn vd-lock__btn--secondary">Anmelden</a>}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="vd-embed">
-              <div className="vd-embed__ratio">
-                <iframe
-                  src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-          )}
+          <VideoPlayer
+            videoId={videoId}
+            initialLocked={isLocked}
+            thumbnailUrl={thumbnailUrl}
+            title={title}
+            canonicalSlug={canonicalSlug}
+            clerkEnabled={clerkEnabled}
+            isLoggedIn={!!user}
+          />
 
           <h1 className="vd-title">{title}</h1>
           <p style={{fontSize:'13px',color:'#9B8E7E',marginTop:'8px',marginBottom:'0'}}>
