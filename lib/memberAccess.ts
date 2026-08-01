@@ -83,8 +83,11 @@ function getPublicMetadata(user: ClerkUserLike): Record<string, unknown> {
   return user.publicMetadata
 }
 
-function hasMemberRole(user: ClerkUserLike): boolean {
-  return normalize(getPublicMetadata(user).role) === 'member'
+function getRoleTier(user: ClerkUserLike): EntitlementTier {
+  const role = normalize(getPublicMetadata(user).role)
+  if (role === 'admin' || role === 'mitlives') return 'live'
+  if (role === 'ohnelives' || role === 'member') return 'video'
+  return 'none'
 }
 
 function getMetadataGroupKeys(user: ClerkUserLike): Set<string> {
@@ -108,7 +111,7 @@ function getMetadataTier(user: ClerkUserLike): EntitlementTier {
       return entry.tier
     }
   }
-  return hasMemberRole(user) ? 'video' : 'none'
+  return getRoleTier(user)
 }
 
 function getOrganizationTier(user: ClerkUserLike): EntitlementTier {
