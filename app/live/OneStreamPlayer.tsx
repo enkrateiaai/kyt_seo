@@ -42,21 +42,13 @@ export default function OneStreamPlayer() {
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           gap: 18,
           alignItems: 'center',
           marginBottom: 18,
           flexWrap: 'wrap',
         }}
       >
-        <div>
-          <p style={{ margin: 0, color: '#9B8E7E', fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-            Livestream
-          </p>
-          <h2 style={{ margin: '6px 0 0', color: '#2C2416', fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 500 }}>
-            OneStream Ubertragung
-          </h2>
-        </div>
         <div
           style={{
             padding: '10px 14px',
