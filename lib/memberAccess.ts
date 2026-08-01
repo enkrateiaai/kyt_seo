@@ -77,10 +77,9 @@ function getMemberships(user: ClerkUserLike): MembershipLike[] {
 }
 
 function getPublicMetadata(user: ClerkUserLike): Record<string, unknown> {
-  if (!user?.publicMetadata || typeof user.publicMetadata !== 'object') {
-    return {}
-  }
-  return user.publicMetadata
+  const meta = user?.publicMetadata ?? (user as any)?.public_metadata
+  if (!meta || typeof meta !== 'object') return {}
+  return meta as Record<string, unknown>
 }
 
 function getRoleTier(user: ClerkUserLike): EntitlementTier {
@@ -182,6 +181,13 @@ export function hasVideoAccess(user: ClerkUserLike): boolean {
 
 export function hasLiveAccess(user: ClerkUserLike): boolean {
   return getEntitlementTier(user) === 'live'
+}
+
+export function isAdminUser(user: ClerkUserLike): boolean {
+  if (!user) return false
+  if (normalize(getPublicMetadata(user).role) === 'admin') return true
+  const memberships = getMemberships(user)
+  return memberships.some((m) => (m as any)?.role === 'org:admin')
 }
 
 export async function getViewerUser() {
