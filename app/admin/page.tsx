@@ -84,14 +84,38 @@ async function fetchAllUsers(secretKey: string) {
   return res.json()
 }
 
-function roleInfo(u: any): { value: string; display: string } {
+// Fetch members of each known legacy org and return userId -> orgName map
+async function fetchOrgMemberMap(secretKey: string): Promise<Record<string, string>> {
+  const ORG_IDS = [
+    'org_3g4kskqf7orownjspuiq0sjfz9d',
+    'org_3g4kx68gr2ojo2lhqpydamu8yak',
+    'org_3fzppbwz4alcimln7kfhq29jahg',
+    'org_3anhshdzp4zjgntjjtnde1h5azh',
+  ]
+  const headers = { Authorization: `Bearer ${secretKey}` }
+  const map: Record<string, string> = {}
+  await Promise.all(ORG_IDS.map(async (orgId) => {
+    try {
+      const res = await fetch(`https://api.clerk.com/v1/organizations/${orgId}/memberships?limit=100`, { headers, cache: 'no-store' })
+      if (!res.ok) return
+      const { data } = await res.json()
+      const orgName: string = data?.[0]?.organization?.name || orgId
+      for (const m of (data || [])) {
+        if (m.public_user_data?.user_id) map[m.public_user_data.user_id] = orgName
+      }
+    } catch {}
+  }))
+  return map
+}
+
+function roleInfo(u: any, orgMap: Record<string, string>): { value: string; display: string } {
   const role = u.public_metadata?.role || u.publicMetadata?.role
   if (role) return { value: role, display: role }
-  const orgs: any[] = u.organization_memberships || u.organizationMemberships || []
-  for (const o of orgs) {
-    const name: string = o.organization?.name || ''
-    if (name.toLowerCase().includes('mit lives')) return { value: 'mitlives', display: `mitlives (${name})` }
-    if (name.toLowerCase().includes('ohne lives')) return { value: 'ohnelives', display: `ohnelives (${name})` }
+  const orgName = orgMap[u.id]
+  if (orgName) {
+    const lower = orgName.toLowerCase()
+    if (lower.includes('mit lives')) return { value: 'mitlives', display: `mitlives (${orgName})` }
+    if (lower.includes('ohne lives')) return { value: 'ohnelives', display: `ohnelives (${orgName})` }
   }
   return { value: '—', display: '—' }
 }
@@ -113,10 +137,12 @@ export default async function AdminPage() {
   }
 
   const secretKey = process.env.CLERK_SECRET_KEY
-  const rawUsers = secretKey ? await fetchAllUsers(secretKey) : []
+  const [rawUsers, orgMap] = secretKey
+    ? await Promise.all([fetchAllUsers(secretKey), fetchOrgMemberMap(secretKey)])
+    : [[], {}]
 
   const userRows = rawUsers.map((u: any) => {
-    const { value, display } = roleInfo(u)
+    const { value, display } = roleInfo(u, orgMap)
     return {
       id: u.id,
       name: [u.first_name, u.last_name].filter(Boolean).join(' ') || '—',
