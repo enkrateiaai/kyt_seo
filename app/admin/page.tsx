@@ -87,10 +87,8 @@ async function fetchAllUsers(secretKey: string) {
 // Fetch members of each known legacy org and return userId -> orgName map
 async function fetchOrgMemberMap(secretKey: string): Promise<Record<string, string>> {
   const ORG_IDS = [
-    'org_3g4kskqf7orownjspuiq0sjfz9d',
-    'org_3g4kx68gr2ojo2lhqpydamu8yak',
-    'org_3fzppbwz4alcimln7kfhq29jahg',
-    'org_3anhshdzp4zjgntjjtnde1h5azh',
+    'org_3G4kskqF7oRoWNjsPuiQ0SjFz9D',
+    'org_3G4kx68GR2OJo2LHQPyDaMu8yAK',
   ]
   const headers = { Authorization: `Bearer ${secretKey}` }
   const map: Record<string, string> = {}
