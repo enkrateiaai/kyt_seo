@@ -118,9 +118,10 @@ function roleInfo(u: any, orgMap: Record<string, string>): { value: string; disp
   return { value: '—', display: '—' }
 }
 
-function fmtDate(iso: string | undefined): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Berlin' })
+function fmtDate(val: string | number | undefined | null): string {
+  if (!val) return '—'
+  const d = typeof val === 'number' ? new Date(val) : new Date(val)
+  return d.toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Berlin' })
 }
 
 export default async function AdminPage() {
@@ -147,7 +148,7 @@ export default async function AdminPage() {
       email: u.email_addresses?.[0]?.email_address || '—',
       role: value,
       roleDisplay: display,
-      lastSeen: fmtDate(u.unsafe_metadata?.lastSeen),
+      lastSeen: fmtDate(u.last_active_at ?? u.last_sign_in_at),
     }
   })
 
