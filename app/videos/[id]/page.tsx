@@ -49,6 +49,31 @@ async function fetchVideoDetails(videoId: string): Promise<YouTubeVideoDetails |
   }
 }
 
+async function isVideoInPublicPreviewPlaylist(videoId: string): Promise<boolean> {
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_API_KEY
+  if (!apiKey) return false
+  try {
+    const playlistsRaw = await redis.get('playlists')
+    const playlists: { id: number; title: string; playlistId: string }[] = playlistsRaw
+      ? JSON.parse(playlistsRaw as string)
+      : []
+    const publicPlaylistId = playlists[0]?.playlistId
+    if (!publicPlaylistId) return false
+    const res = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=200&playlistId=${encodeURIComponent(publicPlaylistId)}&key=${apiKey}`,
+      { next: { revalidate: 300 } }
+    )
+    if (!res.ok) return false
+    const data = await res.json()
+    return (data.items ?? []).some(
+      (item: { snippet?: { resourceId?: { videoId?: string } } }) =>
+        item.snippet?.resourceId?.videoId === videoId
+    )
+  } catch {
+    return false
+  }
+}
+
 // Resolve slug or videoId → always return the canonical videoId
 async function resolveVideoId(idOrSlug: string): Promise<{ videoId: string; slug: string | null }> {
   try {
@@ -123,12 +148,13 @@ export default async function VideoDetailPage({ params }: PageProps) {
     redirect(`/videos/${slug}`)
   }
 
-  const [user, video, transcript, customTitle, mantrasRaw] = await Promise.all([
+  const [user, video, transcript, customTitle, mantrasRaw, inPublicPreview] = await Promise.all([
     hasClerkConfig() ? getViewerUser() : Promise.resolve(null),
     fetchVideoDetails(videoId),
     redis.get(`transcript:${videoId}`),
     redis.get(`title:${videoId}`),
     redis.get(`mantras:${videoId}`),
+    isVideoInPublicPreviewPlaylist(videoId),
   ])
   const videoMantras: { slug: string; name: string }[] = mantrasRaw ? JSON.parse(mantrasRaw as string) : []
 
@@ -136,7 +162,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
   const canAccessLive = hasLiveAccess(user)
   const userLabel = getUserDisplayName(user)
   const userImageUrl = getUserImageUrl(user)
-  const isLocked = !isFreeVideo(videoId) && !isMember
+  const isLocked = !isFreeVideo(videoId) && !inPublicPreview && !isMember
   const title = (customTitle as string | null) ?? video?.title ?? 'Kundalini Yoga Video'
   const description = video?.description ?? ''
   const publishedAt = video?.publishedAt ?? new Date().toISOString()

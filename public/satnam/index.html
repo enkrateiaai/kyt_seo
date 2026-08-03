@@ -47,17 +47,6 @@
     overflow-x: hidden;
   }
 
-  /* ── NOISE TEXTURE OVERLAY ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0.4;
-  }
-
   /* ── NAV ── */
   nav {
     position: fixed;
@@ -166,8 +155,6 @@
     text-transform: uppercase;
     color: var(--terracotta);
     margin-bottom: 28px;
-    opacity: 0;
-    animation: fadeUp 0.8s ease 0.2s forwards;
   }
 
   .hero-title {
@@ -178,8 +165,6 @@
     letter-spacing: -0.01em;
     color: var(--deep-brown);
     margin-bottom: 32px;
-    opacity: 0;
-    animation: fadeUp 0.9s ease 0.4s forwards;
   }
 
   .hero-title em {
@@ -195,16 +180,12 @@
     color: var(--muted);
     max-width: 380px;
     margin-bottom: 48px;
-    opacity: 0;
-    animation: fadeUp 0.9s ease 0.6s forwards;
   }
 
   .hero-actions {
     display: flex;
     gap: 20px;
     align-items: center;
-    opacity: 0;
-    animation: fadeUp 0.9s ease 0.8s forwards;
   }
 
   .btn-primary {
@@ -260,12 +241,8 @@
     justify-content: center;
   }
 
-  /* Geometric mandala SVG */
   .hero-mandala {
-    width: 480px;
-    height: 480px;
-    opacity: 0;
-    animation: rotateFadeIn 1.5s ease 0.3s forwards;
+    display: none;
   }
 
   .hero-decorative-text {
@@ -278,37 +255,74 @@
     letter-spacing: 0.12em;
     color: var(--muted);
     writing-mode: vertical-rl;
-    opacity: 0;
-    animation: fadeUp 1s ease 1s forwards;
   }
 
-  /* ── MARQUEE ── */
-  .marquee-strip {
-    background: var(--deep-brown);
-    padding: 16px 0;
-    overflow: hidden;
-    white-space: nowrap;
+  .hero-visual-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 60px 64px;
+    height: 100%;
   }
 
-  .marquee-inner {
-    display: inline-flex;
-    animation: marquee 25s linear infinite;
-    gap: 0;
+  .hero-visual-label {
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 32px;
   }
 
-  .marquee-item {
+  .hero-visual-quote {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 15px;
+    font-size: clamp(28px, 3vw, 42px);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--warm-brown);
+    max-width: 360px;
+    border-left: 2px solid var(--gold);
+    padding-left: 28px;
+  }
+
+  .hero-visual-attr {
+    margin-top: 24px;
+    padding-left: 30px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── MANTRA STRIP ── */
+  .mantra-strip {
+    background: var(--deep-brown);
+    padding: 20px 60px;
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    overflow: hidden;
+  }
+
+  .mantra-strip-item {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
     font-style: italic;
     font-weight: 300;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.18em;
     color: var(--gold-light);
-    padding: 0 40px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  .marquee-dot {
-    color: var(--terracotta);
-    font-style: normal;
+  .mantra-strip-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    flex-shrink: 0;
   }
 
   /* ── SECTION BASE ── */
@@ -392,12 +406,7 @@
   }
 
   .intro-card::before {
-    content: '❧';
-    font-size: 32px;
-    color: var(--terracotta);
-    display: block;
-    margin-bottom: 24px;
-    opacity: 0.6;
+    display: none;
   }
 
   .intro-card-quote {
@@ -492,12 +501,12 @@
     transition: width 0.4s ease;
   }
 
-  .kriya-card:hover { background: var(--deep-brown); }
+  .kriya-card:hover { background: var(--cream); }
   .kriya-card:hover::after { width: 100%; }
   .kriya-card:hover .kriya-num { color: var(--terracotta); }
-  .kriya-card:hover .kriya-title { color: var(--warm-white); }
-  .kriya-card:hover .kriya-desc { color: rgba(250,247,242,0.6); }
-  .kriya-card:hover .kriya-arrow { color: var(--gold); }
+  .kriya-card:hover .kriya-title { color: var(--deep-brown); }
+  .kriya-card:hover .kriya-desc { color: var(--warm-brown); }
+  .kriya-card:hover .kriya-arrow { color: var(--terracotta); }
 
   .kriya-num {
     font-family: 'Cormorant Garamond', serif;
@@ -816,37 +825,9 @@
     color: rgba(250,247,242,0.35);
   }
 
-  /* ── ANIMATIONS ── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes rotateFadeIn {
-    from { opacity: 0; transform: rotate(-15deg) scale(0.85); }
-    to { opacity: 1; transform: rotate(0deg) scale(1); }
-  }
-
-  @keyframes marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-
-  @keyframes slowRotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  /* ── INTERSECTION OBSERVER REVEALS ── */
-  .reveal {
-    opacity: 0;
-    transform: translateY(32px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
-  }
-
-  .reveal.visible {
+  .reveal, .reveal.visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 
   .reveal-delay-1 { transition-delay: 0.1s; }
@@ -854,58 +835,7 @@
   .reveal-delay-3 { transition-delay: 0.3s; }
   .reveal-delay-4 { transition-delay: 0.4s; }
 </style>
-<style>
-    .nav-burger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:42px;height:42px;background:rgba(255,252,247,0.9);border:1px solid rgba(196,113,74,0.25);border-radius:50%;cursor:pointer;flex-shrink:0;margin-left:auto}
-    .nav-burger span{display:block;width:16px;height:1.5px;background:#7A725F;border-radius:2px;transition:transform .22s ease,opacity .22s ease}
-    nav.nav--open .nav-burger span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
-    nav.nav--open .nav-burger span:nth-child(2){opacity:0}
-    nav.nav--open .nav-burger span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
-    @media(max-width:720px){
-      nav{padding:14px 20px !important;flex-wrap:wrap;gap:10px}
-      .nav-logo{display:none !important}
-      .nav-burger{display:flex}
-      .nav-links{display:none !important;width:100%;flex-direction:column;gap:0;padding:8px 0;order:3}
-      nav.nav--open .nav-links{display:flex !important}
-      .nav-links li{width:100%}
-      .nav-links a{display:block;padding:13px 4px;border-bottom:1px solid rgba(196,113,74,0.1);font-size:13px}
-      .nav-links li:last-child a{border-bottom:none}
-      .nav-user-chip{font-size:0.75rem;padding:8px 0}
-
-      section{padding:60px 20px !important}
-
-      .hero{grid-template-columns:1fr !important;min-height:auto}
-      .hero-left{padding:100px 20px 48px !important;order:2}
-      .hero-right{min-height:260px;order:1}
-      .hero-mandala{width:220px !important;height:220px !important}
-      .hero-actions{flex-direction:column;align-items:flex-start;gap:12px}
-      .hero-decorative-text{display:none}
-
-      .intro{grid-template-columns:1fr !important;gap:36px !important;padding:60px 20px !important}
-      .intro-stat-row{gap:24px !important}
-      .intro-card{padding:28px 20px !important}
-      .intro-accent-line{display:none}
-
-      .kriyas{padding:60px 20px !important}
-      .kriyas-header{flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:32px !important}
-      .kriyas-grid{grid-template-columns:1fr !important}
-      .kriya-card{padding:32px 20px !important}
-
-      .snr{grid-template-columns:1fr !important}
-      .snr-left{padding:60px 20px !important}
-      .snr-right{padding:40px 20px !important;min-height:280px}
-      .snr-card-stack{width:100% !important;max-width:360px}
-
-      .mantras{padding:60px 20px !important}
-      .mantras-grid{grid-template-columns:repeat(2,1fr) !important;gap:12px !important}
-      .mantra-card{padding:24px 16px !important}
-
-      .cta-band{flex-direction:column !important;align-items:flex-start !important;padding:60px 20px !important;gap:24px !important}
-
-      footer{padding:60px 20px 32px !important}
-      .footer-top{grid-template-columns:1fr !important;gap:36px !important}
-      .footer-bottom{flex-direction:column !important;gap:10px !important;text-align:center}
-    }
-  </style></head>
+</head>
 <body>
 
 <!-- NAV -->
@@ -920,7 +850,7 @@
     </svg>
     <span class="nav-logo-text">Kundalini Yoga Tribe</span>
   </a>
-  <button class="nav-burger" aria-label="Navigation öffnen" onclick="this.closest('nav').classList.toggle('nav--open')"><span></span><span></span><span></span></button><ul class="nav-links">
+  <ul class="nav-links">
     <li><a href="/blog">Blog</a></li>
     <li><a href="/mantras">Mantras</a></li>
     <li><a href="/videos">Videos</a></li>
@@ -947,68 +877,27 @@
   </div>
   <div class="hero-right">
     <div class="hero-visual">
-      <!-- Mandala -->
-      <svg class="hero-mandala" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg">
-        <g transform="translate(240,240)">
-          <!-- Outer ring -->
-          <circle r="220" fill="none" stroke="#D3BC76" stroke-width="0.75" opacity="0.3"/>
-          <circle r="190" fill="none" stroke="#C9A96E" stroke-width="0.5" opacity="0.4"/>
-          <circle r="155" fill="none" stroke="#D3BC76" stroke-width="1" opacity="0.25"/>
-          <!-- Petals -->
-          <g opacity="0.2">
-            <ellipse cx="0" cy="-130" rx="18" ry="60" fill="#D3BC76"/>
-            <ellipse cx="0" cy="-130" rx="18" ry="60" fill="#D3BC76" transform="rotate(45)"/>
-            <ellipse cx="0" cy="-130" rx="18" ry="60" fill="#D3BC76" transform="rotate(90)"/>
-            <ellipse cx="0" cy="-130" rx="18" ry="60" fill="#D3BC76" transform="rotate(135)"/>
-            <ellipse cx="0" cy="-130" rx="18" ry="60" fill="#D3BC76" transform="rotate(180)"/>
-            <ellipse cx="0" cy="-130" rx="18" ry="60" fill="#D3BC76" transform="rotate(225)"/>
-            <ellipse cx="0" cy="-130" rx="18" ry="60" fill="#D3BC76" transform="rotate(270)"/>
-            <ellipse cx="0" cy="-130" rx="18" ry="60" fill="#D3BC76" transform="rotate(315)"/>
-          </g>
-          <!-- Inner geometric -->
-          <polygon points="0,-100 86.6,50 -86.6,50" fill="none" stroke="#C9A96E" stroke-width="1" opacity="0.5"/>
-          <polygon points="0,100 -86.6,-50 86.6,-50" fill="none" stroke="#C9A96E" stroke-width="1" opacity="0.5"/>
-          <circle r="80" fill="none" stroke="#D3BC76" stroke-width="0.75" stroke-dasharray="4 6" opacity="0.4"/>
-          <!-- Tick marks -->
-          <g stroke="#D3BC76" stroke-width="0.75" opacity="0.35">
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(0)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(30)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(60)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(90)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(120)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(150)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(180)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(210)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(240)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(270)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(300)"/>
-            <line x1="0" y1="-215" x2="0" y2="-200" transform="rotate(330)"/>
-          </g>
-          <!-- Center -->
-          <circle r="28" fill="#D3BC76" opacity="0.12"/>
-          <circle r="14" fill="none" stroke="#D3BC76" stroke-width="1.5" opacity="0.7"/>
-          <circle r="5" fill="#D3BC76" opacity="0.8"/>
-        </g>
-        <!-- Slow rotate animation on the outer ring group -->
-        <animateTransform attributeName="transform" type="rotate" from="0 240 240" to="360 240 240" dur="60s" repeatCount="indefinite"/>
-      </svg>
+      <div class="hero-visual-inner">
+        <p class="hero-visual-label">Yogi Bhajan</p>
+        <p class="hero-visual-quote">Kundalini Yoga ist schlicht das Entfalten deines Potentials, um deine Lebenskraft und deine Tugenden zu entdecken.</p>
+        <p class="hero-visual-attr">Sat Nam</p>
+      </div>
     </div>
     <span class="hero-decorative-text">Kundalini Yoga · Sat Nam Rasayan · Community</span>
   </div>
 </section>
 
-<!-- MARQUEE -->
-<div class="marquee-strip">
-  <div class="marquee-inner">
-    <span class="marquee-item">Sat Nam <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Wahe Guru <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Ra Ma Da Sa <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Ong Namo <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Sat Nam <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Wahe Guru <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Ra Ma Da Sa <span class="marquee-dot">✦</span></span>
-    <span class="marquee-item">Ong Namo <span class="marquee-dot">✦</span></span>
-  </div>
+<!-- MANTRA STRIP -->
+<div class="mantra-strip">
+  <span class="mantra-strip-item">Sat Nam</span>
+  <span class="mantra-strip-dot"></span>
+  <span class="mantra-strip-item">Wahe Guru</span>
+  <span class="mantra-strip-dot"></span>
+  <span class="mantra-strip-item">Ra Ma Da Sa</span>
+  <span class="mantra-strip-dot"></span>
+  <span class="mantra-strip-item">Ong Namo Guru Dev Namo</span>
+  <span class="mantra-strip-dot"></span>
+  <span class="mantra-strip-item">Sat Nam</span>
 </div>
 
 <!-- INTRO -->
@@ -1023,17 +912,16 @@
         <div class="intro-stat-label">Tage Challenge</div>
       </div>
       <div class="intro-stat">
-        <div class="intro-stat-num">∞</div>
-        <div class="intro-stat-label">Möglichkeiten</div>
+        <div class="intro-stat-num">4</div>
+        <div class="intro-stat-label">Kriyas</div>
       </div>
       <div class="intro-stat">
-        <div class="intro-stat-num">1</div>
-        <div class="intro-stat-label">Community</div>
+        <div class="intro-stat-num">10+</div>
+        <div class="intro-stat-label">SNR-Artikel</div>
       </div>
     </div>
   </div>
   <div class="intro-right reveal reveal-delay-2">
-    <div class="intro-accent-line"></div>
     <div class="intro-card">
       <p class="intro-card-quote">„Kundalini Yoga ist schlicht das Entfalten deines Potentials, um deine Lebenskraft und deine Tugenden zu entdecken."</p>
       <p class="intro-card-attr">— Yogi Bhajan</p>
@@ -1196,19 +1084,6 @@
     <span>Sat Nam ✦</span>
   </div>
 </footer>
-
-<script>
-  // Intersection Observer for reveal animations
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
-    });
-  }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
-
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-</script>
 
 <script>
 (function(){
