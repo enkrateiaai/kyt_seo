@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import redis from '@/lib/redis'
 import { Metadata } from 'next'
 import SiteHeader from '@/app/components/SiteHeader'
@@ -163,6 +163,7 @@ export default async function VideoDetailPage({ params }: PageProps) {
   const userLabel = getUserDisplayName(user)
   const userImageUrl = getUserImageUrl(user)
   const isLocked = !isFreeVideo(videoId) && !inPublicPreview && !isMember
+  if (!video && !customTitle) notFound()
   const title = (customTitle as string | null) ?? video?.title ?? 'Kundalini Yoga Video'
   const description = video?.description ?? ''
   const publishedAt = video?.publishedAt ?? new Date().toISOString()
