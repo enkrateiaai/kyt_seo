@@ -84,6 +84,7 @@ jobs:
                --restart unless-stopped \
                -p 3010:3000 \
                --env-file /home/vik/docker/kyt-seo/.env.local \
+               -v /home/vik/docker/kyt-seo/public/satnam:/app/public/satnam \
                ${{ env.IMAGE }}:${SHA}
              docker tag ${{ env.IMAGE }}:${SHA} kyt-seo:stable"
           rm /tmp/deploy_key

@@ -114,7 +114,7 @@ export default function AdminClient() {
           // Admin
         </p>
         <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: 40 }}>
-          Playlisten verwalten
+          Playlisten und Nutzer verwalten
         </h1>
 
         <div style={{ background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 12, padding: 24, marginBottom: 32 }}>
