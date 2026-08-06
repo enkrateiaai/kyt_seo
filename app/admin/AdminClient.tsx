@@ -8,6 +8,13 @@ interface Playlist {
   playlistId: string
 }
 
+interface PendingInvitation {
+  id: string
+  emailAddress: string
+  createdAt: number
+  role: string | null
+}
+
 export default function AdminClient() {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [title, setTitle] = useState('')
@@ -19,10 +26,38 @@ export default function AdminClient() {
   const [addSuccess, setAddSuccess] = useState(false)
   const [addError, setAddError] = useState('')
 
+  const [invitations, setInvitations] = useState<PendingInvitation[]>([])
+  const [invitationsLoading, setInvitationsLoading] = useState(false)
+  const [revokingId, setRevokingId] = useState<string | null>(null)
+
   const load = () =>
     fetch('/api/playlists').then(r => r.json()).then(setPlaylists)
 
-  useEffect(() => { load() }, [])
+  const loadInvitations = async () => {
+    setInvitationsLoading(true)
+    try {
+      const data = await fetch('/api/admin/invitations').then(r => r.json())
+      setInvitations(Array.isArray(data) ? data : [])
+    } finally {
+      setInvitationsLoading(false)
+    }
+  }
+
+  const revokeInvitation = async (id: string) => {
+    setRevokingId(id)
+    try {
+      await fetch('/api/admin/invitations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      setInvitations(prev => prev.filter(inv => inv.id !== id))
+    } finally {
+      setRevokingId(null)
+    }
+  }
+
+  useEffect(() => { load(); loadInvitations() }, [])
 
   const extractId = (v: string) => {
     const match = v.trim().match(/[?&]list=([A-Za-z0-9_-]+)/)
@@ -107,17 +142,40 @@ export default function AdminClient() {
     fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 as const
   })
 
+  const navItems = [
+    { label: 'Playlisten', href: '#playlisten' },
+    { label: 'Nutzer', href: '#nutzer' },
+    { label: 'Einladungen', href: '#einladungen' },
+  ]
+
   return (
     <div style={{ minHeight: '100vh', background: '#06060a', color: '#e0e0e0', fontFamily: 'monospace', padding: '40px 24px' }}>
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         <p style={{ fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#c8f064', marginBottom: 8 }}>
           // Admin
         </p>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: 40 }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: 24 }}>
           Playlisten und Nutzer verwalten
         </h1>
 
-        <div style={{ background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 12, padding: 24, marginBottom: 32 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 40, flexWrap: 'wrap' }}>
+          {navItems.map(item => (
+            <a
+              key={item.href}
+              href={item.href}
+              style={{
+                padding: '6px 16px', borderRadius: 6,
+                background: '#0d0d14', border: '1px solid #1a1a2e',
+                color: '#c8f064', fontSize: 12, fontFamily: 'monospace',
+                fontWeight: 700, textDecoration: 'none', letterSpacing: '0.05em',
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+
+        <div id="playlisten" style={{ background: '#0d0d14', border: '1px solid #1a1a2e', borderRadius: 12, padding: 24, marginBottom: 32 }}>
           <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.15em', marginBottom: 16 }}>// Neue Playlist</p>
 
           <input
@@ -186,6 +244,46 @@ export default function AdminClient() {
             )}
           </div>
         ))}
+        <div id="einladungen" style={{ marginTop: 48 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+            <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.15em', margin: 0 }}>// Ausstehende Einladungen</p>
+            <button
+              onClick={loadInvitations}
+              disabled={invitationsLoading}
+              style={{ ...btnStyle('#1a1a2e', '#888'), fontSize: 11, opacity: invitationsLoading ? 0.5 : 1 }}
+            >
+              {invitationsLoading ? '...' : '↻ Aktualisieren'}
+            </button>
+          </div>
+
+          {invitations.length === 0 && !invitationsLoading && (
+            <p style={{ fontSize: 12, color: '#444', marginBottom: 24 }}>Keine ausstehenden Einladungen.</p>
+          )}
+
+          {invitations.map(inv => (
+            <div key={inv.id} style={{
+              background: '#0d0d14', border: '1px solid #1a1a2e',
+              borderRadius: 10, padding: '14px 18px', marginBottom: 10,
+              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, color: '#e0e0e0', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {inv.emailAddress}
+                </p>
+                <p style={{ fontSize: 11, color: '#444', margin: 0 }}>
+                  {inv.role ?? '—'} · eingeladen {new Date(inv.createdAt).toLocaleDateString('de-DE')}
+                </p>
+              </div>
+              <button
+                onClick={() => revokeInvitation(inv.id)}
+                disabled={revokingId === inv.id}
+                style={{ ...btnStyle('#1a1a1a', '#ff6b6b'), opacity: revokingId === inv.id ? 0.5 : 1 }}
+              >
+                {revokingId === inv.id ? '...' : 'Widerrufen'}
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

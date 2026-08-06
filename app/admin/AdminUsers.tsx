@@ -90,7 +90,7 @@ export default function AdminUsers({ initialUsers }: { initialUsers: UserRow[] }
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '48px auto 0' }}>
+    <div id="nutzer" style={{ maxWidth: 900, margin: '48px auto 0' }}>
       <p style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.accent, marginBottom: 16 }}>
         // Einladung senden
       </p>
