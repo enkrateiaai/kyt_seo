@@ -68,7 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const keys = await redis.keys('vidslug:*')
     const slugs = await Promise.all(keys.map(k => redis.get(k)))
     videoEntries = slugs
-      .filter((s): s is string => Boolean(s) && !isJunkSlug(s))
+      .filter((s): s is string => typeof s === 'string' && !isJunkSlug(s))
       .map(slug => ({
         url: `${BASE}/videos/${slug}`,
         lastModified: new Date(),
