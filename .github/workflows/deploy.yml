@@ -8,7 +8,19 @@ env:
   DEPLOY_HOST: 100.90.161.78
 
 jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx tsc --noEmit
+
   build-and-deploy:
+    needs: typecheck
     runs-on: ubuntu-latest
     permissions:
       contents: read
