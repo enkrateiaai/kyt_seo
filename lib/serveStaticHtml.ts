@@ -81,6 +81,7 @@ function injectStoryblokConfig(html: string): string {
 }
 
 function injectMobileNav(html: string): string {
+  if (html.includes('class="nav-burger"')) return html
   const css = `<style>
     .nav-burger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:42px;height:42px;background:rgba(255,252,247,0.9);border:1px solid rgba(196,113,74,0.25);border-radius:50%;cursor:pointer;flex-shrink:0;margin-left:auto}
     .nav-burger span{display:block;width:16px;height:1.5px;background:#7A725F;border-radius:2px;transition:transform .22s ease,opacity .22s ease}
