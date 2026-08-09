@@ -102,9 +102,11 @@ export async function GET() {
   const streamSince = streamSinceMs(now)
   const inStream = streamSince !== null
 
-  const sinceMs = TEST_MODE
-    ? now.getTime() - 2 * 60 * 60 * 1000   // last 2 h for testing
-    : inStream ? streamSince! : null
+  // TEST_MODE: no time cutoff — show all users always (for QA)
+  // Prod: only during stream window
+  const sinceMs: number | null = TEST_MODE
+    ? null
+    : inStream ? streamSince : null
 
   if (!TEST_MODE && !inStream) {
     return NextResponse.json({ testMode: false, inStream: false, viewers: [] })
@@ -115,7 +117,7 @@ export async function GET() {
 
   const viewers = await Promise.all(
     result.data
-      .filter(u => (u.lastSignInAt ?? 0) >= sinceMs!)
+      .filter(u => sinceMs === null || (u.lastSignInAt ?? 0) >= sinceMs)
       .map(async u => {
         const email = u.emailAddresses?.[0]?.emailAddress ?? ''
         const name = await resolveDisplayName(email, u.firstName, u.lastName)
