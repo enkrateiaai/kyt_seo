@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
-import { getViewerUser, isAdminUser } from '@/lib/memberAccess'
+import { hasLiveAccess, getViewerUser } from '@/lib/memberAccess'
 
 // TEST_MODE = true → skip time gate, show last 2h of logins always
 const TEST_MODE = true
@@ -96,7 +96,7 @@ export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const user = await getViewerUser()
-  if (!isAdminUser(user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!hasLiveAccess(user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const now = new Date()
   const streamSince = streamSinceMs(now)

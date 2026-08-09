@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { SignInButton } from '@clerk/nextjs'
 import Image from 'next/image'
 import SiteHeader from '@/app/components/SiteHeader'
+import LiveViewersPanel from '@/app/components/LiveViewersPanel'
 import ExternalWindowLink from '@/app/components/ExternalWindowLink'
 import { hasClerkClientConfig, hasClerkServerConfig } from '@/lib/authConfig'
 import { getUserDisplayName, getUserImageUrl, getViewerUser, hasLiveAccess } from '@/lib/memberAccess'
@@ -222,6 +223,8 @@ export default async function LiveExperience({
           </div>
 
           <div style={{ width: '100%', maxWidth: 1160, margin: '0 auto', padding: '0 24px 28px' }}>{player}</div>
+
+          <LiveViewersPanel />
 
           <p style={{ textAlign: 'center', color: C.textMuted, fontSize: 12, padding: '0 24px 34px', marginTop: 'auto' }}>
             {footer}
