@@ -15,6 +15,18 @@ interface PendingInvitation {
   role: string | null
 }
 
+interface LiveViewer {
+  name: string
+  email: string
+  lastSignInAt: number | null
+}
+
+interface LiveViewersData {
+  testMode: boolean
+  inStream: boolean
+  viewers: LiveViewer[]
+}
+
 export default function AdminClient() {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [title, setTitle] = useState('')
@@ -30,6 +42,9 @@ export default function AdminClient() {
   const [invitationsLoading, setInvitationsLoading] = useState(false)
   const [revokingId, setRevokingId] = useState<string | null>(null)
 
+  const [liveViewers, setLiveViewers] = useState<LiveViewersData | null>(null)
+  const [liveLoading, setLiveLoading] = useState(false)
+
   const load = () =>
     fetch('/api/playlists').then(r => r.json()).then(setPlaylists)
 
@@ -40,6 +55,16 @@ export default function AdminClient() {
       setInvitations(Array.isArray(data) ? data : [])
     } finally {
       setInvitationsLoading(false)
+    }
+  }
+
+  const loadLiveViewers = async () => {
+    setLiveLoading(true)
+    try {
+      const data = await fetch('/api/admin/live-viewers').then(r => r.json())
+      setLiveViewers(data)
+    } catch { /* ignore */ } finally {
+      setLiveLoading(false)
     }
   }
 
@@ -57,7 +82,13 @@ export default function AdminClient() {
     }
   }
 
-  useEffect(() => { load(); loadInvitations() }, [])
+  useEffect(() => {
+    load()
+    loadInvitations()
+    loadLiveViewers()
+    const interval = setInterval(loadLiveViewers, 60_000)
+    return () => clearInterval(interval)
+  }, [])
 
   const extractId = (v: string) => {
     const match = v.trim().match(/[?&]list=([A-Za-z0-9_-]+)/)
@@ -146,6 +177,7 @@ export default function AdminClient() {
     { label: 'Playlisten', href: '#playlisten' },
     { label: 'Nutzer', href: '#nutzer' },
     { label: 'Einladungen', href: '#einladungen' },
+    { label: '🔴 Live', href: '#live' },
   ]
 
   return (
@@ -244,6 +276,67 @@ export default function AdminClient() {
             )}
           </div>
         ))}
+        {/* ── Live Zuschauer ─────────────────────────────────────── */}
+        <div id="live" style={{ marginTop: 48, marginBottom: 48 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
+            <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.15em', margin: 0 }}>
+              // Live Zuschauer
+            </p>
+            {liveViewers?.testMode && (
+              <span style={{ fontSize: 10, background: '#1a1a00', color: '#cc8800', border: '1px solid #cc8800', borderRadius: 4, padding: '2px 8px', letterSpacing: '0.1em' }}>
+                TEST MODE — zeigt letzte 2h
+              </span>
+            )}
+            <button
+              onClick={loadLiveViewers}
+              disabled={liveLoading}
+              style={{ ...btnStyle('#1a1a2e', '#888'), fontSize: 11, opacity: liveLoading ? 0.5 : 1 }}
+            >
+              {liveLoading ? '...' : '↻ Aktualisieren'}
+            </button>
+          </div>
+
+          {!liveViewers && liveLoading && (
+            <p style={{ fontSize: 12, color: '#444' }}>Wird geladen...</p>
+          )}
+
+          {liveViewers && !liveViewers.inStream && !liveViewers.testMode && (
+            <p style={{ fontSize: 12, color: '#444' }}>
+              Kein Live Stream gerade aktiv.<br />
+              <span style={{ color: '#333' }}>Werktags 06:30–07:30 · Wochenende 07:00–08:00 MESZ</span>
+            </p>
+          )}
+
+          {liveViewers && liveViewers.viewers.length === 0 && (
+            <p style={{ fontSize: 12, color: '#444' }}>Niemand eingeloggt im Zeitfenster.</p>
+          )}
+
+          {liveViewers && liveViewers.viewers.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>
+                {liveViewers.viewers.length} Zuschauer
+              </p>
+              {liveViewers.viewers.map((v, i) => (
+                <div key={i} style={{
+                  background: '#0d0d14', border: '1px solid #1a1a2e',
+                  borderRadius: 10, padding: '12px 18px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                }}>
+                  <div>
+                    <p style={{ fontSize: 14, color: '#e0e0e0', margin: 0, fontWeight: 700 }}>{v.name}</p>
+                    <p style={{ fontSize: 11, color: '#444', margin: '3px 0 0' }}>{v.email}</p>
+                  </div>
+                  <p style={{ fontSize: 11, color: '#555', margin: 0, flexShrink: 0 }}>
+                    ⏱ {v.lastSignInAt
+                      ? new Date(v.lastSignInAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+                      : '—'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div id="einladungen" style={{ marginTop: 48 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
             <p style={{ fontSize: 11, color: '#c8f064', letterSpacing: '0.15em', margin: 0 }}>// Ausstehende Einladungen</p>
