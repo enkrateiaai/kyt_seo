@@ -284,7 +284,7 @@ export default function AdminClient() {
             </p>
             {liveViewers?.testMode && (
               <span style={{ fontSize: 10, background: '#1a1a00', color: '#cc8800', border: '1px solid #cc8800', borderRadius: 4, padding: '2px 8px', letterSpacing: '0.1em' }}>
-                TEST MODE — zeigt letzte 2h
+                TEST MODE — letzte 30 min
               </span>
             )}
             <button

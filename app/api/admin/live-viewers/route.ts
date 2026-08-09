@@ -102,10 +102,10 @@ export async function GET() {
   const streamSince = streamSinceMs(now)
   const inStream = streamSince !== null
 
-  // TEST_MODE: no time cutoff — show all users always (for QA)
-  // Prod: only during stream window
+  // TEST_MODE: rolling 30-min window so only recent logins appear
+  // Prod: from stream start time
   const sinceMs: number | null = TEST_MODE
-    ? null
+    ? now.getTime() - 30 * 60 * 1000
     : inStream ? streamSince : null
 
   if (!TEST_MODE && !inStream) {
