@@ -115,6 +115,9 @@ export default function StudioClient() {
     const f = e.dataTransfer.files[0]; if (f) upload(f)
   }
 
+  const btn = (color: string): React.CSSProperties => ({ padding: '8px 16px', borderRadius: 6, border: 'none', background: color, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 500, width: '100%', marginBottom: 8 })
+  const fileItem = (sel: boolean): React.CSSProperties => ({ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: sel ? 'rgba(99,102,241,.08)' : C.bg, borderRadius: 6, fontSize: 13, border: `1px solid ${sel ? C.accent : 'transparent'}`, cursor: 'pointer', marginBottom: 4 })
+
   const s: Record<string, React.CSSProperties> = {
     page: { minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
     header: { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 10 },
@@ -124,8 +127,6 @@ export default function StudioClient() {
     panel: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 },
     title: { fontSize: 11, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 1, color: C.muted, marginBottom: 14 },
     dropZone: { border: `2px dashed ${drag ? C.accent : C.border}`, borderRadius: 8, padding: '28px 20px', textAlign: 'center' as const, cursor: 'pointer', background: drag ? 'rgba(99,102,241,.05)' : 'transparent' },
-    btn: (color: string) => ({ padding: '8px 16px', borderRadius: 6, border: 'none', background: color, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 500, width: '100%', marginBottom: 8 }),
-    fileItem: (sel: boolean) => ({ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: sel ? 'rgba(99,102,241,.08)' : C.bg, borderRadius: 6, fontSize: 13, border: `1px solid ${sel ? C.accent : 'transparent'}`, cursor: 'pointer', marginBottom: 4 }),
   }
 
   return (
@@ -161,7 +162,7 @@ export default function StudioClient() {
           <div style={{ marginTop: 12 }}>
             {files.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>Keine Dateien</p>}
             {files.map((f) => (
-              <div key={f.name} style={s.fileItem(selected === f.name)} onClick={() => setSelected(f.name)}>
+              <div key={f.name} style={fileItem(selected === f.name)} onClick={() => setSelected(f.name)}>
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
                 <span style={{ color: C.muted, fontSize: 11 }}>{fmt(f.size)}</span>
                 <button onClick={(e) => { e.stopPropagation(); deleteFile(f.name) }} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 13, padding: '2px 4px' }}>✕</button>
@@ -181,10 +182,10 @@ export default function StudioClient() {
                 Live: {status.file}<br />
                 <span style={{ color: C.muted, fontSize: 11 }}>seit {status.started_at ? new Date(status.started_at).toLocaleTimeString('de-DE') : '–'}</span>
               </div>
-              <button style={s.btn(C.red)} onClick={stopStream}>Stream stoppen</button>
+              <button style={btn(C.red)} onClick={stopStream}>Stream stoppen</button>
             </>
           ) : (
-            <button style={s.btn(C.green)} onClick={startStream} disabled={!selected}>Stream starten</button>
+            <button style={btn(C.green)} onClick={startStream} disabled={!selected}>Stream starten</button>
           )}
 
           <div style={{ marginTop: 24 }}>
@@ -195,7 +196,7 @@ export default function StudioClient() {
               onChange={(e) => setScheduleAt(e.target.value)}
               style={{ width: '100%', padding: '8px 10px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 13, marginBottom: 8 }}
             />
-            <button style={s.btn(C.accent)} onClick={addSchedule} disabled={!selected || !scheduleAt}>Einplanen</button>
+            <button style={btn(C.accent)} onClick={addSchedule} disabled={!selected || !scheduleAt}>Einplanen</button>
 
             {schedule.length > 0 && (
               <div style={{ marginTop: 12 }}>
