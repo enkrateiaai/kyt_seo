@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const REMOTE_BASE = 'http://100.117.19.15:8080/'
+const PROXY_PREFIX = '/api/live-local-proxy'
+
+function rewriteM3u8(text: string, segmentBase: string): string {
+  return text
+    .split('\n')
+    .map((line) => {
+      const t = line.trim()
+      if (!t || t.startsWith('#')) return line
+      // absolute path like /live/live.m3u8?hls_ctx=...
+      if (t.startsWith('/live/')) return PROXY_PREFIX + t
+      // relative segment like live-13.ts?hls_ctx=...
+      return PROXY_PREFIX + '/' + segmentBase + '/' + t
+    })
+    .join('\n')
+}
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params
@@ -25,6 +40,15 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
 
     const responseHeaders = new Headers(upstream.headers)
     responseHeaders.set('cache-control', 'no-store, max-age=0')
+
+    const ct = upstream.headers.get('content-type') ?? ''
+    if (ct.includes('mpegurl') || joinedPath.endsWith('.m3u8')) {
+      const text = await upstream.text()
+      // segmentBase is the directory part, e.g. "live" from "live/live.m3u8"
+      const segmentBase = joinedPath.includes('/') ? joinedPath.split('/').slice(0, -1).join('/') : joinedPath
+      const rewritten = rewriteM3u8(text, segmentBase)
+      return new NextResponse(rewritten, { status: upstream.status, headers: responseHeaders })
+    }
 
     return new NextResponse(upstream.body, {
       status: upstream.status,
