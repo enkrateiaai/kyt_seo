@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const REMOTE_STATUS_URL = 'http://72.61.94.93:9999/api/streams'
+const REMOTE_STATUS_URL = 'http://100.117.19.15:1985/api/v1/streams/'
 
 type RemoteStream = {
   app?: string
@@ -26,8 +26,8 @@ export async function GET() {
     const streams = Array.isArray(payload.streams) ? payload.streams : []
     const live = streams.some((stream) => {
       const appMatches = stream.app === 'live'
-      const nameMatches = stream.name === 'stream' || stream.name === 'stream.m3u8'
-      const urlMatches = stream.url === '/live/stream'
+      const nameMatches = stream.name === 'live' || stream.name === 'stream' || stream.name === 'stream.m3u8'
+      const urlMatches = stream.url === '/live/live' || stream.url === '/live/stream'
       return appMatches && (nameMatches || urlMatches) && Boolean(stream.publish?.active)
     })
 

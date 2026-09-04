@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const REMOTE_BASE = 'http://72.61.94.93:9999/'
+const REMOTE_BASE = 'http://100.117.19.15:8080/'
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params
