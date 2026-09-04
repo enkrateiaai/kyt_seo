@@ -222,12 +222,9 @@ export default async function LiveExperience({
             <p style={{ margin: '12px auto 0', maxWidth: 620, color: C.textSoft, fontSize: 15, lineHeight: 1.8 }}>
               {description}
             </p>
-            <Tabs active={activeTab} />
           </div>
 
           <div style={{ width: '100%', maxWidth: 1160, margin: '0 auto', padding: '0 24px 28px' }}>{player}</div>
-
-          <LiveViewersPanel />
 
           <p style={{ textAlign: 'center', color: C.textMuted, fontSize: 12, padding: '0 24px 34px', marginTop: 'auto' }}>
             {footer}
