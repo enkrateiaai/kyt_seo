@@ -44,10 +44,16 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     const ct = upstream.headers.get('content-type') ?? ''
     if (ct.includes('mpegurl') || joinedPath.endsWith('.m3u8')) {
       const text = await upstream.text()
-      // segmentBase is the directory part, e.g. "live" from "live/live.m3u8"
       const segmentBase = joinedPath.includes('/') ? joinedPath.split('/').slice(0, -1).join('/') : joinedPath
       const rewritten = rewriteM3u8(text, segmentBase)
-      return new NextResponse(rewritten, { status: upstream.status, headers: responseHeaders })
+      return new NextResponse(rewritten, {
+        status: upstream.status,
+        headers: {
+          'content-type': ct || 'application/vnd.apple.mpegurl',
+          'cache-control': 'no-store, max-age=0',
+          'access-control-allow-origin': '*',
+        },
+      })
     }
 
     return new NextResponse(upstream.body, {
