@@ -25,7 +25,19 @@ const C = {
 type FileEntry = { name: string; size: number; mtime: number; duration?: number }
 type StreamStatus = { running: boolean; info?: { filename?: string; started?: string; seekSeconds?: number }; progress?: string; progressSecs?: number; resumeAt?: number; lastInfo?: { filename?: string; seekSeconds?: number }; scheduled: ScheduledJob[] }
 type ScheduledJob = { id: string; filename: string; streamKey: string; datetime: string }
-type SrsStream = { app?: string; name?: string; publish?: { active?: boolean }; clients?: number }
+type SrsStream = { app?: string; name?: string; publish?: { active?: boolean }; clients?: number; video?: { width?: number; height?: number }; recv_bytes?: number; kbps?: { recv_30s?: number; send_30s?: number } }
+type SrsClient = {
+  id?: string
+  ip?: string
+  type?: string          // 'hls-play', 'fmle-publish', etc.
+  stream?: string
+  url?: string
+  tcUrl?: string
+  pageUrl?: string
+  alive?: number         // seconds connected
+  send_kbps?: number
+  recv_kbps?: number
+}
 type SlotDef = { date: string; label: string; slot: 1 | 2 }
 
 function fmt(bytes: number) {
@@ -119,6 +131,7 @@ export default function StudioClient() {
   const [statusError, setStatusError] = useState(false)
   const [streamLog, setStreamLog] = useState<string[]>([])
   const [srsStreams, setSrsStreams] = useState<SrsStream[]>([])
+  const [srsClients, setSrsClients] = useState<SrsClient[]>([])
   const [showDiag, setShowDiag] = useState(false)
   const [resetting, setResetting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -152,6 +165,7 @@ export default function StudioClient() {
     if (srsR.status === 'fulfilled' && srsR.value.ok) {
       const d = await srsR.value.json()
       setSrsStreams(d.streams ?? [])
+      setSrsClients(d.clients ?? [])
     }
   }, [])
 
@@ -632,11 +646,46 @@ export default function StudioClient() {
               <span style={{ ...label, marginBottom: 8 }}>SRS Streams</span>
               {srsStreams.length === 0
                 ? <div style={{ fontSize: 12, color: C.faint, marginBottom: 12 }}>Keine Streams / SRS nicht erreichbar</div>
-                : srsStreams.map((s, i) => (
-                    <div key={i} style={{ fontSize: 12, fontFamily: 'monospace', padding: '4px 8px', background: C.bg, borderRadius: 4, marginBottom: 4, color: s.publish?.active ? C.green : C.muted }}>
-                      {s.app}/{s.name} — publisher: {s.publish?.active ? 'AKTIV' : 'inaktiv'} — clients: {s.clients ?? 0}
-                    </div>
-                  ))
+                : srsStreams.map((s, i) => {
+                    const w = s.video?.width, h = s.video?.height
+                    const inKbps = s.kbps?.recv_30s ?? 0
+                    const outKbps = s.kbps?.send_30s ?? 0
+                    return (
+                      <div key={i} style={{ fontSize: 12, fontFamily: 'monospace', padding: '6px 8px', background: C.bg, borderRadius: 4, marginBottom: 4, color: s.publish?.active ? C.green : C.muted }}>
+                        <div>{s.app}/{s.name} — publisher: {s.publish?.active ? 'AKTIV' : 'inaktiv'} — clients: {s.clients ?? 0}</div>
+                        {(w && h) ? <div style={{ color: C.faint, fontSize: 11 }}>  {w}×{h} • {inKbps}↓ kbps / {outKbps}↑ kbps</div> : null}
+                      </div>
+                    )
+                  })
+              }
+
+              {/* Connected clients (IPs) */}
+              <span style={{ ...label, marginBottom: 8, marginTop: 12 }}>Clients ({srsClients.length})</span>
+              {srsClients.length === 0
+                ? <div style={{ fontSize: 12, color: C.faint, marginBottom: 12 }}>Keine Zuschauer verbunden</div>
+                : (
+                  <div style={{ background: C.bg, borderRadius: 4, marginBottom: 12, overflow: 'hidden' }}>
+                    {srsClients.map((cl, i) => {
+                      const isPub = (cl.type || '').includes('publish')
+                      const kindColor = isPub ? C.orange : C.green
+                      const kindLabel = isPub ? 'PUBLISH' : (cl.type || '?').toUpperCase()
+                      const sec = Math.round(cl.alive ?? 0)
+                      return (
+                        <div key={cl.id || i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderBottom: i < srsClients.length - 1 ? `1px solid ${C.border}` : 'none', fontSize: 12, fontFamily: 'monospace' }}>
+                          <span style={{ minWidth: 56, fontSize: 9, fontWeight: 700, letterSpacing: 0.8, color: kindColor, background: cl.type?.includes('hls') ? C.greenLight : '#FDF4EE', border: `1px solid ${kindColor}`, borderRadius: 3, padding: '1px 5px', textAlign: 'center' }}>{kindLabel}</span>
+                          <span style={{ minWidth: 130, color: C.text, fontWeight: 600 }}>{cl.ip || '—'}</span>
+                          <span style={{ color: C.muted, fontSize: 11, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={cl.pageUrl || ''}>
+                            {cl.pageUrl ? cl.pageUrl.replace(/^https?:\/\//, '').split('?')[0] : (cl.url || '')}
+                          </span>
+                          <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{sec}s</span>
+                          <span style={{ color: C.faint, fontSize: 11, flexShrink: 0, minWidth: 50, textAlign: 'right' }}>
+                            {(cl.send_kbps ?? 0) > 0 ? `${cl.send_kbps}↓` : ''}{(cl.recv_kbps ?? 0) > 0 ? ` ${cl.recv_kbps}↑` : ''}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
               }
 
               {/* ffmpeg stderr log */}
