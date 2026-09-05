@@ -10,15 +10,38 @@ const C = {
   green: '#22c55e', red: '#ef4444', orange: '#f97316',
 }
 
-type FileEntry = { name: string; size: number; mtime: number }
+type FileEntry = { name: string; size: number; mtime: number; duration?: number }
 type StreamStatus = { running: boolean; info?: { filename?: string; started?: string }; progress?: string; scheduled: ScheduledJob[] }
 type ScheduledJob = { id: string; filename: string; streamKey: string; datetime: string }
-type SlotDef = { date: string; label: string; slot: 1 | 2; utc: Date }
+type SlotDef = { date: string; label: string; slot: 1 | 2 }
 
 function fmt(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
+
+function fmtDuration(s: number): string {
+  if (!s) return ''
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60)
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+  return `${m}:${String(sec).padStart(2,'0')}`
+}
+
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
+function defaultSlotTime(date: string, slot: 1 | 2): string {
+  const dow = new Date(date + 'T12:00:00').getDay()
+  const isWeekend = dow === 0 || dow === 6
+  return slot === 1 ? (isWeekend ? '07:00' : '06:30') : '10:00'
+}
+
+function formatJobTime(utcStr: string): string {
+  return new Date(utcStr).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })
+}
+
+function slotKey(s: SlotDef): string { return `${s.date}:${s.slot}` }
 
 function isBerlinDST(year: number, month: number, day: number) {
   if (month < 2 || month > 9) return false
@@ -42,24 +65,20 @@ function buildSlots(): SlotDef[] {
   const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
   for (let i = 0; i < 14; i++) {
     const d = new Date(now); d.setDate(now.getDate() + i); d.setHours(0, 0, 0, 0)
-    const dateStr = d.toISOString().slice(0, 10)
+    const dateStr = localDateStr(d) // use LOCAL date to avoid UTC offset shifting the day
     const dow = d.getDay()
-    const isWeekend = dow === 0 || dow === 6
     const label = `${DAYS[dow]} ${d.getDate()} ${MONTHS[d.getMonth()]}`
-    slots.push({ date: dateStr, label, slot: 1, utc: berlinToUTC(dateStr, isWeekend ? 7 : 6, isWeekend ? 0 : 30) })
-    slots.push({ date: dateStr, label, slot: 2, utc: berlinToUTC(dateStr, 10, 0) })
+    slots.push({ date: dateStr, label, slot: 1 })
+    slots.push({ date: dateStr, label, slot: 2 })
   }
   return slots
 }
 
-function slotLabel(s: SlotDef) {
-  const d = new Date(s.date); const dow = d.getDay()
-  const isWeekend = dow === 0 || dow === 6
-  return s.slot === 1 ? (isWeekend ? '07:00' : '06:30') : '10:00'
-}
-
-function matchJob(slot: SlotDef, jobs: ScheduledJob[]): ScheduledJob | undefined {
-  return jobs.find(j => Math.abs(new Date(j.datetime).getTime() - slot.utc.getTime()) < 90_000)
+// Match a job to a slot: job datetime must be within 1h45m of the slot's (editable) time
+function matchJob(slot: SlotDef, slotTime: string, jobs: ScheduledJob[]): ScheduledJob | undefined {
+  const [hh, mm] = slotTime.split(':').map(Number)
+  const slotUtc = berlinToUTC(slot.date, hh, mm)
+  return jobs.find(j => Math.abs(new Date(j.datetime).getTime() - slotUtc.getTime()) < 1.75 * 3_600_000)
 }
 
 export default function StudioClient() {
@@ -73,8 +92,12 @@ export default function StudioClient() {
   const [assigning, setAssigning] = useState<SlotDef | null>(null)
   const [conflictFile, setConflictFile] = useState<{ file: File; name: string } | null>(null)
   const [directApi, setDirectApi] = useState<{ url: string; token: string } | null>(null)
+  const [slotTimes, setSlotTimes] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
+
+  const getSlotTime = useCallback((s: SlotDef) =>
+    slotTimes[slotKey(s)] ?? defaultSlotTime(s.date, s.slot), [slotTimes])
 
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 4000) }
 
@@ -166,11 +189,14 @@ export default function StudioClient() {
   }
 
   async function assignSlot(slot: SlotDef, filename: string) {
+    const t = getSlotTime(slot)
+    const [hh, mm] = t.split(':').map(Number)
+    const utcDate = berlinToUTC(slot.date, hh, mm)
     const r = await fetch(`${API}/stream/schedule`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename, streamKey: 'live', datetime: slot.utc.toISOString() }),
+      body: JSON.stringify({ filename, streamKey: 'live', datetime: utcDate.toISOString() }),
     })
-    flash(r.ok ? `Eingeplant: ${filename} um ${slotLabel(slot)}` : `Fehler ${r.status}`)
+    flash(r.ok ? `Eingeplant: ${filename} um ${t}` : `Fehler ${r.status}`)
     setAssigning(null); loadStatus()
   }
 
@@ -240,7 +266,7 @@ export default function StudioClient() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div style={{ ...s.panel, maxWidth: 400, width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
             <div style={{ fontWeight: 600, marginBottom: 4 }}>Video auswählen</div>
-            <div style={{ color: C.muted, fontSize: 12, marginBottom: 16 }}>{assigning.label} · Slot {assigning.slot} · {slotLabel(assigning)}</div>
+            <div style={{ color: C.muted, fontSize: 12, marginBottom: 16 }}>{assigning.label} · Slot {assigning.slot} · {getSlotTime(assigning)}</div>
             {files.length === 0 && <div style={{ color: C.muted }}>Keine Dateien vorhanden</div>}
             {files.map(f => (
               <div key={f.name} onClick={() => assignSlot(assigning, f.name)}
@@ -325,6 +351,7 @@ export default function StudioClient() {
                   {/* Info row */}
                   <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>{f.name}</span>
+                    {f.duration ? <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmtDuration(f.duration)}</span> : null}
                     <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(f.size)}</span>
                     {!status.running && (
                       <button onClick={() => startStream(f.name)} style={btn(C.green, true)}>▶ Live</button>
@@ -344,36 +371,44 @@ export default function StudioClient() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}`, width: 120 }}>Datum</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>Slot 1 (06:30 / 07:00)</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>Slot 2 (10:00)</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}`, width: 110 }}>Datum</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>Slot 1</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>Slot 2</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(groupedSlots).map(([date, daySlots]) => {
                   const slot1 = daySlots.find(s => s.slot === 1)!
                   const slot2 = daySlots.find(s => s.slot === 2)!
-                  const job1 = matchJob(slot1, status.scheduled)
-                  const job2 = matchJob(slot2, status.scheduled)
-                  const isPast1 = slot1.utc < new Date()
-                  const isPast2 = slot2.utc < new Date()
                   return (
                     <tr key={date} style={{ borderBottom: `1px solid ${C.border}` }}>
                       <td style={{ padding: '10px 12px', color: C.muted, whiteSpace: 'nowrap' }}>{slot1.label}</td>
-                      {[{ slot: slot1, job: job1, past: isPast1 }, { slot: slot2, job: job2, past: isPast2 }].map(({ slot, job, past }) => (
-                        <td key={slot.slot} style={{ padding: '8px 12px' }}>
-                          {job ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200, color: C.accent }}>{job.filename}</span>
-                              <button onClick={() => cancelSlot(job.id)} style={btn(C.red, true)}>✕</button>
-                            </div>
-                          ) : past ? (
-                            <span style={{ color: C.muted, fontSize: 11 }}>—</span>
-                          ) : (
-                            <button onClick={() => setAssigning(slot)} style={btn(C.border.replace('#', '') ? '#2a2d3a' : C.surface, true)}>+ Zuweisen</button>
-                          )}
-                        </td>
-                      ))}
+                      {[slot1, slot2].map(slot => {
+                        const t = getSlotTime(slot)
+                        const job = matchJob(slot, t, status.scheduled)
+                        const [hh, mm] = t.split(':').map(Number)
+                        const isPast = berlinToUTC(slot.date, hh, mm) < new Date()
+                        return (
+                          <td key={slot.slot} style={{ padding: '8px 12px' }}>
+                            {job ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ color: C.muted, fontSize: 11, minWidth: 38 }}>{formatJobTime(job.datetime)}</span>
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200, color: C.accent }}>{job.filename}</span>
+                                <button onClick={() => cancelSlot(job.id)} style={btn(C.red, true)}>✕</button>
+                              </div>
+                            ) : isPast ? (
+                              <span style={{ color: C.muted, fontSize: 11 }}>—</span>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <input type="time" value={t}
+                                  onChange={e => setSlotTimes(prev => ({ ...prev, [slotKey(slot)]: e.target.value }))}
+                                  style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 4, padding: '3px 6px', fontSize: 12 }} />
+                                <button onClick={() => setAssigning(slot)} style={btn('#2a2d3a', true)}>+ Zuweisen</button>
+                              </div>
+                            )}
+                          </td>
+                        )
+                      })}
                     </tr>
                   )
                 })}
