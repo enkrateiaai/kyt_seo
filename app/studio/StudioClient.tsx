@@ -4,10 +4,22 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 
 const API = '/api/studio-proxy/api'
 
+// Site color palette — warm parchment / gold
 const C = {
-  bg: '#0f1117', surface: '#1a1d27', border: '#2a2d3a',
-  text: '#e2e8f0', muted: '#7c8394', accent: '#6366f1',
-  green: '#22c55e', red: '#ef4444', orange: '#f97316',
+  bg: '#FAF7F2',
+  surface: '#FDFBF8',
+  border: '#DDD5C8',
+  borderStrong: '#C4B49A',
+  text: '#2C2416',
+  muted: '#6B5D4F',
+  faint: '#9B8E7E',
+  gold: '#D3BC76',
+  goldDark: '#B8A15F',
+  green: '#4A7C59',
+  greenLight: '#EDF5F0',
+  red: '#A35050',
+  redLight: '#FAF0F0',
+  orange: '#C8834E',
 }
 
 type FileEntry = { name: string; size: number; mtime: number; duration?: number }
@@ -65,7 +77,7 @@ function buildSlots(): SlotDef[] {
   const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
   for (let i = 0; i < 14; i++) {
     const d = new Date(now); d.setDate(now.getDate() + i); d.setHours(0, 0, 0, 0)
-    const dateStr = localDateStr(d) // use LOCAL date to avoid UTC offset shifting the day
+    const dateStr = localDateStr(d)
     const dow = d.getDay()
     const label = `${DAYS[dow]} ${d.getDate()} ${MONTHS[d.getMonth()]}`
     slots.push({ date: dateStr, label, slot: 1 })
@@ -74,11 +86,18 @@ function buildSlots(): SlotDef[] {
   return slots
 }
 
-// Match a job to a slot: job datetime must be within 1h45m of the slot's (editable) time
 function matchJob(slot: SlotDef, slotTime: string, jobs: ScheduledJob[]): ScheduledJob | undefined {
   const [hh, mm] = slotTime.split(':').map(Number)
   const slotUtc = berlinToUTC(slot.date, hh, mm)
   return jobs.find(j => Math.abs(new Date(j.datetime).getTime() - slotUtc.getTime()) < 1.75 * 3_600_000)
+}
+
+function ThumbnailImg({ name, size = 48 }: { name: string; size?: number }) {
+  return (
+    <img src={`${API}/files/${encodeURIComponent(name)}/thumbnail`} alt=""
+      style={{ width: size, height: size * 0.56, objectFit: 'cover', borderRadius: 3, flexShrink: 0, background: C.border }}
+      onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden' }} />
+  )
 }
 
 export default function StudioClient() {
@@ -122,7 +141,6 @@ export default function StudioClient() {
     return () => clearInterval(id)
   }, [loadFiles, loadStatus])
 
-  // Try to establish direct Tailscale connection for fast uploads
   useEffect(() => {
     fetch('/api/studio/direct')
       .then(r => r.ok ? r.json() : null)
@@ -134,7 +152,7 @@ export default function StudioClient() {
             signal: AbortSignal.timeout(3000),
           })
           if (r.ok) setDirectApi(cfg)
-        } catch { /* not on Tailscale, proxy will be used */ }
+        } catch { /* not on Tailscale */ }
       })
       .catch(() => {})
   }, [])
@@ -237,47 +255,77 @@ export default function StudioClient() {
     const f = e.dataTransfer.files[0]; if (f) doUpload(f)
   }
 
-  const btn = (bg: string, sm?: boolean): React.CSSProperties => ({ padding: sm ? '4px 10px' : '7px 14px', borderRadius: 6, border: 'none', background: bg, color: '#fff', cursor: 'pointer', fontSize: sm ? 11 : 13, fontWeight: 500 })
-
-  const s: Record<string, React.CSSProperties> = {
-    page: { minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', fontSize: 14 },
-    header: { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 24px', background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 20 },
-    badge: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: C.bg, border: `1px solid ${C.border}`, fontSize: 12, fontWeight: 600 },
-    dot: { width: 8, height: 8, borderRadius: '50%', background: status.running ? C.green : C.muted, boxShadow: status.running ? `0 0 8px ${C.green}` : 'none' },
-    panel: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 },
-    title: { fontSize: 11, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 1, color: C.muted, marginBottom: 12 },
-    dropZone: { border: `2px dashed ${drag ? C.accent : C.border}`, borderRadius: 8, padding: '20px', textAlign: 'center' as const, cursor: 'pointer', background: drag ? 'rgba(99,102,241,.05)' : 'transparent', marginBottom: 16 },
+  // --- Shared styles ---
+  const card: React.CSSProperties = {
+    background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: 20,
+  }
+  const label: React.CSSProperties = {
+    fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' as const,
+    color: C.faint, marginBottom: 14, display: 'block',
+  }
+  const btnPrimary = (danger?: boolean): React.CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', gap: 5,
+    padding: '7px 14px', borderRadius: 5, border: 'none', cursor: 'pointer', fontSize: 12,
+    fontWeight: 600, letterSpacing: 0.3,
+    background: danger ? C.redLight : C.goldDark,
+    color: danger ? C.red : C.surface,
+  })
+  const btnSmall = (variant: 'gold' | 'danger' | 'ghost' = 'ghost'): React.CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', gap: 4,
+    padding: '4px 10px', borderRadius: 4, border: `1px solid ${variant === 'danger' ? C.red : variant === 'gold' ? C.goldDark : C.border}`,
+    cursor: 'pointer', fontSize: 11, fontWeight: 600,
+    background: variant === 'danger' ? C.redLight : variant === 'gold' ? C.gold : 'transparent',
+    color: variant === 'danger' ? C.red : variant === 'gold' ? C.text : C.muted,
+  })
+  const inputStyle: React.CSSProperties = {
+    background: C.bg, border: `1px solid ${C.border}`, color: C.text,
+    borderRadius: 4, padding: '5px 8px', fontSize: 12, outline: 'none',
   }
 
   const groupedSlots: Record<string, SlotDef[]> = {}
   slots.forEach(sl => { if (!groupedSlots[sl.date]) groupedSlots[sl.date] = []; groupedSlots[sl.date].push(sl) })
 
   return (
-    <div style={s.page}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 14 }}>
+
       {/* Header */}
-      <header style={s.header}>
-        <span style={{ fontSize: 17, fontWeight: 600 }}>Enkra Studio</span>
-        {directApi && <span style={{ fontSize: 11, color: C.green, background: 'rgba(34,197,94,.1)', border: `1px solid ${C.green}`, borderRadius: 4, padding: '2px 7px' }}>⚡ Direct</span>}
-        {statusError && <span style={{ fontSize: 11, color: C.orange, background: 'rgba(249,115,22,.1)', border: `1px solid ${C.orange}`, borderRadius: 4, padding: '2px 7px' }}>⚠ Verbindungsfehler</span>}
-        <div style={s.badge}>
-          <span style={s.dot} />
-          <span style={{ color: status.running ? C.green : C.muted }}>{status.running ? 'LIVE' : 'OFFLINE'}</span>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 28px', background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 20 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0.3, color: C.text }}>Enkra Studio</span>
+        {directApi && (
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: C.green, background: C.greenLight, border: `1px solid ${C.green}`, borderRadius: 3, padding: '2px 7px' }}>
+            DIRECT
+          </span>
+        )}
+        {statusError && (
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: C.orange, background: '#FDF4EE', border: `1px solid ${C.orange}`, borderRadius: 3, padding: '2px 7px' }}>
+            KEINE VERBINDUNG
+          </span>
+        )}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: status.running ? C.green : C.faint, display: 'inline-block' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: status.running ? C.green : C.faint }}>
+            {status.running ? 'LIVE' : 'OFFLINE'}
+          </span>
         </div>
       </header>
 
-      {/* Flash message */}
-      {msg && <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '8px 24px', fontSize: 13, color: C.accent }}>{msg}</div>}
+      {/* Flash */}
+      {msg && (
+        <div style={{ background: C.gold, color: C.text, padding: '9px 28px', fontSize: 12, fontWeight: 600, borderBottom: `1px solid ${C.goldDark}` }}>
+          {msg}
+        </div>
+      )}
 
       {/* Conflict dialog */}
       {conflictFile && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ ...s.panel, maxWidth: 360, width: '100%' }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Datei existiert bereits</div>
-            <div style={{ color: C.muted, marginBottom: 16, fontSize: 13 }}>„{conflictFile.name}" existiert schon. Überschreiben oder Kopie erstellen?</div>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ ...card, maxWidth: 380, width: '100%', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
+            <span style={label}>Datei existiert</span>
+            <p style={{ color: C.muted, marginBottom: 20, fontSize: 13 }}>„{conflictFile.name}" ist bereits vorhanden. Überschreiben oder Kopie erstellen?</p>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button style={btn(C.red)} onClick={() => { const f = conflictFile; setConflictFile(null); doUpload(f.file, true) }}>Überschreiben</button>
-              <button style={btn(C.accent)} onClick={handleUploadCopy}>Kopie erstellen</button>
-              <button style={btn(C.muted)} onClick={() => setConflictFile(null)}>Abbrechen</button>
+              <button style={btnPrimary(true)} onClick={() => { const f = conflictFile; setConflictFile(null); doUpload(f.file, true) }}>Überschreiben</button>
+              <button style={btnPrimary()} onClick={handleUploadCopy}>Kopie</button>
+              <button style={btnSmall('ghost')} onClick={() => setConflictFile(null)}>Abbrechen</button>
             </div>
           </div>
         </div>
@@ -285,13 +333,13 @@ export default function StudioClient() {
 
       {/* Delete confirmation */}
       {confirmDelete && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ ...s.panel, maxWidth: 360, width: '100%' }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Datei löschen?</div>
-            <div style={{ color: C.muted, marginBottom: 16, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>„{confirmDelete}"</div>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ ...card, maxWidth: 380, width: '100%', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
+            <span style={label}>Datei löschen?</span>
+            <p style={{ color: C.muted, marginBottom: 20, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>„{confirmDelete}"</p>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button style={btn(C.red)} onClick={confirmAndDelete}>Ja, löschen</button>
-              <button style={btn(C.muted)} onClick={() => setConfirmDelete(null)}>Abbrechen</button>
+              <button style={btnPrimary(true)} onClick={confirmAndDelete}>Ja, löschen</button>
+              <button style={btnSmall('ghost')} onClick={() => setConfirmDelete(null)}>Abbrechen</button>
             </div>
           </div>
         </div>
@@ -299,28 +347,30 @@ export default function StudioClient() {
 
       {/* Assign modal */}
       {assigning && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ ...s.panel, maxWidth: 400, width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>Video auswählen</div>
-            <div style={{ color: C.muted, fontSize: 12, marginBottom: 16 }}>{assigning.label} · Slot {assigning.slot} · {getSlotTime(assigning)}</div>
-            {files.length === 0 && <div style={{ color: C.muted }}>Keine Dateien vorhanden</div>}
-            {files.map(f => (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ ...card, maxWidth: 420, width: '100%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
+            <span style={label}>Video auswählen</span>
+            <p style={{ color: C.muted, fontSize: 12, marginBottom: 16 }}>{assigning.label} · Slot {assigning.slot} · {getSlotTime(assigning)}</p>
+            {files.length === 0 && <div style={{ color: C.faint }}>Keine Dateien vorhanden</div>}
+            {files.map((f, i) => (
               <div key={f.name} onClick={() => assignSlot(assigning, f.name)}
-                style={{ padding: '10px 12px', borderRadius: 6, border: `1px solid ${C.border}`, marginBottom: 6, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,.08)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>{f.name}</span>
-                <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(f.size)}</span>
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px', borderRadius: 5, border: `1px solid ${C.border}`, marginBottom: 6, cursor: 'pointer', background: C.bg }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#F5EDD8')}
+                onMouseLeave={e => (e.currentTarget.style.background = C.bg)}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.faint, minWidth: 20 }}>#{i+1}</span>
+                <ThumbnailImg name={f.name} size={40} />
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>{f.name}</span>
+                {f.duration ? <span style={{ color: C.faint, fontSize: 11 }}>{fmtDuration(f.duration)}</span> : null}
               </div>
             ))}
-            <button style={{ ...btn(C.muted), marginTop: 12 }} onClick={() => setAssigning(null)}>Abbrechen</button>
+            <button style={{ ...btnSmall('ghost'), marginTop: 12 }} onClick={() => setAssigning(null)}>Abbrechen</button>
           </div>
         </div>
       )}
 
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: 16, display: 'grid', gridTemplateColumns: '380px 1fr', gap: 16 }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '20px 20px', display: 'grid', gridTemplateColumns: '360px 1fr', gap: 20 }}>
 
-        {/* Left column: upload + library */}
+        {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Now streaming / resume panel */}
@@ -331,98 +381,110 @@ export default function StudioClient() {
             const pct = dur > 0 ? Math.min(100, (posSecs / dur) * 100) : 0
             const remaining = dur > 0 ? fmtDuration(Math.max(0, dur - posSecs)) : ''
             return (
-              <div style={{ ...s.panel, borderColor: status.running ? C.green : C.border }}>
-                <div style={s.title}>{status.running ? 'Jetzt live' : 'Pausiert'}</div>
-                <div style={{ fontWeight: 500, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{filename}</div>
+              <div style={{ ...card, borderColor: status.running ? C.green : C.border, borderLeftWidth: 3, borderLeftColor: status.running ? C.green : C.faint }}>
+                <span style={label}>{status.running ? 'Jetzt live' : 'Pausiert'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  {filename && <ThumbnailImg name={filename} size={40} />}
+                  <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>{filename}</span>
+                </div>
                 {dur > 0 && (
                   <>
-                    <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
-                      <div style={{ height: '100%', background: status.running ? C.green : C.muted, width: `${pct}%`, transition: seekDraft !== null ? 'none' : 'width 1s linear' }} />
+                    <div style={{ height: 3, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 6 }}>
+                      <div style={{ height: '100%', background: status.running ? C.green : C.faint, width: `${pct}%`, transition: seekDraft !== null ? 'none' : 'width 1s linear' }} />
                     </div>
                     <input type="range" min={0} max={Math.round(dur)} value={Math.round(posSecs)}
                       onInput={e => setSeekDraft(parseInt((e.target as HTMLInputElement).value))}
                       onMouseUp={e => { const s = parseInt((e.target as HTMLInputElement).value); startStream(filename!, s) }}
                       onTouchEnd={e => { const s = parseInt((e.target as HTMLInputElement).value); startStream(filename!, s) }}
-                      style={{ width: '100%', marginBottom: 4, accentColor: C.green }} />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.muted, marginBottom: 12 }}>
+                      style={{ width: '100%', marginBottom: 6, accentColor: C.goldDark }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.faint, marginBottom: 14 }}>
                       <span>{fmtDuration(posSecs)}</span>
-                      <span>{remaining ? `-${remaining}` : fmtDuration(dur)}</span>
+                      <span>{remaining ? `−${remaining}` : fmtDuration(dur)}</span>
                     </div>
                   </>
                 )}
-                {!dur && status.running && <div style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>Position: {status.progress}</div>}
-                <div style={{ display: 'flex', gap: 8 }}>
+                {!dur && status.running && <div style={{ color: C.faint, fontSize: 12, marginBottom: 14 }}>Position: {status.progress || '—'}</div>}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                   {status.running
-                    ? <button style={btn(C.red)} onClick={stopStream}>⏹ Stoppen</button>
-                    : <button style={btn(C.green)} onClick={() => startStream(filename!, status.resumeAt ?? 0)}>▶ Fortsetzen von {fmtDuration(status.resumeAt ?? 0)}</button>
+                    ? <button style={btnPrimary(true)} onClick={stopStream}>Pause</button>
+                    : <button style={btnPrimary()} onClick={() => startStream(filename!, status.resumeAt ?? 0)}>Fortsetzen {fmtDuration(status.resumeAt ?? 0)}</button>
                   }
-                  {status.running && <button style={btn('#2a2d3a')} onClick={() => startStream(filename!, 0)}>⏮ Von Anfang</button>}
+                  {status.running && <button style={btnSmall()} onClick={() => startStream(filename!, 0)}>Von Anfang</button>}
                 </div>
               </div>
             )
           })()}
 
           {/* Upload */}
-          <div style={s.panel}>
-            <div style={s.title}>Upload</div>
-            <div style={s.dropZone} onClick={() => fileInputRef.current?.click()}
+          <div style={card}>
+            <span style={label}>Upload</span>
+            <div
+              onClick={() => fileInputRef.current?.click()}
               onDragOver={e => { e.preventDefault(); setDrag(true) }}
-              onDragLeave={() => setDrag(false)} onDrop={onDrop}>
-              <p style={{ color: C.muted, fontSize: 13 }}><strong style={{ color: C.accent }}>Datei auswählen</strong> oder hierher ziehen</p>
-              {uploading && <div style={{ color: C.orange, fontSize: 12, marginTop: 8 }}>{uploadPct}% hochgeladen…</div>}
+              onDragLeave={() => setDrag(false)} onDrop={onDrop}
+              style={{ border: `2px dashed ${drag ? C.goldDark : C.border}`, borderRadius: 6, padding: '18px 16px', textAlign: 'center' as const, cursor: 'pointer', background: drag ? '#F5EDD8' : 'transparent', marginBottom: uploading ? 10 : 0 }}>
+              <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
+                <span style={{ color: C.goldDark, fontWeight: 600 }}>Datei wählen</span> oder hierher ziehen
+              </p>
               <input ref={fileInputRef} type="file" accept="video/*" style={{ display: 'none' }}
                 onChange={e => { const f = e.target.files?.[0]; if (f) doUpload(f); e.target.value = '' }} />
             </div>
+            {uploading && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ height: 3, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: C.goldDark, width: `${uploadPct}%`, transition: 'width .3s' }} />
+                </div>
+                <span style={{ fontSize: 11, color: C.muted, marginTop: 4, display: 'block' }}>{uploadPct}% hochgeladen</span>
+              </div>
+            )}
           </div>
 
           {/* Preview player */}
           {preview && (
-            <div style={s.panel}>
+            <div style={card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ ...s.title, margin: 0 }}>Vorschau</div>
-                <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16 }}>✕</button>
+                <span style={label}>Vorschau</span>
+                <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', color: C.faint, cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
               </div>
-              <div style={{ fontSize: 12, color: C.muted, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</div>
-              <video key={videoKey} controls style={{ width: '100%', borderRadius: 6, background: '#000' }}
+              <div style={{ fontSize: 11, color: C.faint, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</div>
+              <video key={videoKey} controls style={{ width: '100%', borderRadius: 5, background: '#1a1509', display: 'block' }}
                 src={`${API}/files/${encodeURIComponent(preview)}/stream?v=${videoKey}`} />
               {!status.running && (
-                <button style={{ ...btn(C.green), width: '100%', marginTop: 10 }} onClick={() => startStream(preview)}>
-                  Dieses Video streamen ▶
+                <button style={{ ...btnPrimary(), width: '100%', marginTop: 10, justifyContent: 'center' }} onClick={() => startStream(preview)}>
+                  Jetzt streamen
                 </button>
               )}
             </div>
           )}
 
           {/* Video library */}
-          <div style={s.panel}>
-            <div style={s.title}>Mediathek ({files.length})</div>
-            {files.length === 0 && <div style={{ color: C.muted, fontSize: 13 }}>Noch keine Dateien hochgeladen</div>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={card}>
+            <span style={label}>Mediathek ({files.length})</span>
+            {files.length === 0 && <div style={{ color: C.faint, fontSize: 13 }}>Noch keine Dateien hochgeladen</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {files.map((f, idx) => (
-                <div key={f.name} style={{ borderRadius: 8, border: `1px solid ${C.border}`, overflow: 'hidden', background: C.bg }}>
-                  {/* Thumbnail */}
-                  <div style={{ position: 'relative', width: '100%', paddingBottom: '42%', background: '#000', overflow: 'hidden' }}>
+                <div key={f.name} style={{ borderRadius: 6, border: `1px solid ${C.border}`, overflow: 'hidden', background: C.bg }}>
+                  <div style={{ position: 'relative', width: '100%', paddingBottom: '40%', background: '#1a1509', overflow: 'hidden' }}>
                     <img src={`${API}/files/${encodeURIComponent(f.name)}/thumbnail`}
                       alt="" loading="lazy"
                       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                     <button onClick={() => openPreview(f.name)}
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: preview === f.name ? 'rgba(99,102,241,.3)' : 'rgba(0,0,0,.3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,.2)', border: '2px solid rgba(255,255,255,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21" /></svg>
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: preview === f.name ? 'rgba(211,188,118,.25)' : 'rgba(44,36,22,.25)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(253,251,248,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill={C.text}><polygon points="5,3 19,12 5,21" /></svg>
                       </div>
                     </button>
-                    <span style={{ position: 'absolute', top: 6, left: 8, background: 'rgba(0,0,0,.7)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>#{idx + 1}</span>
+                    <span style={{ position: 'absolute', top: 6, left: 8, background: 'rgba(44,36,22,.75)', color: '#FAF7F2', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 3 }}>#{idx + 1}</span>
                   </div>
-                  {/* Info row */}
-                  <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>{f.name}</span>
-                    {f.duration ? <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmtDuration(f.duration)}</span> : null}
-                    <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(f.size)}</span>
+                  <div style={{ padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{f.name}</span>
+                    {f.duration ? <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmtDuration(f.duration)}</span> : null}
+                    <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmt(f.size)}</span>
                     {!status.running && (
-                      <button onClick={() => startStream(f.name)} style={btn(C.green, true)}>▶ Live</button>
+                      <button onClick={() => startStream(f.name)} style={btnSmall('gold')}>Live</button>
                     )}
-                    <button onClick={() => setConfirmDelete(f.name)} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>✕</button>
+                    <button onClick={() => setConfirmDelete(f.name)} style={{ background: 'none', border: 'none', color: C.faint, cursor: 'pointer', fontSize: 16, padding: '0 2px', lineHeight: 1 }}>×</button>
                   </div>
                 </div>
               ))}
@@ -430,80 +492,95 @@ export default function StudioClient() {
           </div>
         </div>
 
-        {/* Right column: schedule */}
+        {/* Right column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={s.panel}>
-          <div style={s.title}>Zeitplan — nächste 14 Tage</div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}`, width: 110 }}>Datum</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>Slot 1</th>
-                  <th style={{ textAlign: 'left', padding: '8px 12px', color: C.muted, fontWeight: 500, borderBottom: `1px solid ${C.border}` }}>Slot 2</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(groupedSlots).map(([date, daySlots]) => {
-                  const slot1 = daySlots.find(s => s.slot === 1)!
-                  const slot2 = daySlots.find(s => s.slot === 2)!
-                  return (
-                    <tr key={date} style={{ borderBottom: `1px solid ${C.border}` }}>
-                      <td style={{ padding: '10px 12px', color: C.muted, whiteSpace: 'nowrap' }}>{slot1.label}</td>
-                      {[slot1, slot2].map(slot => {
-                        const t = getSlotTime(slot)
-                        const job = matchJob(slot, t, status.scheduled)
-                        // Past only when the whole day is past — today always shows time input
-                        const isPast = berlinToUTC(slot.date, 23, 59) < new Date()
-                        return (
-                          <td key={slot.slot} style={{ padding: '8px 12px' }}>
-                            {job ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ color: C.muted, fontSize: 11, minWidth: 38 }}>{formatJobTime(job.datetime)}</span>
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200, color: C.accent }}>{job.filename}</span>
-                                <button onClick={() => cancelSlot(job.id)} style={btn(C.red, true)}>✕</button>
-                              </div>
-                            ) : isPast ? (
-                              <span style={{ color: C.muted, fontSize: 11 }}>—</span>
-                            ) : (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <input type="time" value={t}
-                                  onChange={e => setSlotTimes(prev => ({ ...prev, [slotKey(slot)]: e.target.value }))}
-                                  style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 4, padding: '3px 6px', fontSize: 12 }} />
-                                <button onClick={() => setAssigning(slot)} style={btn('#2a2d3a', true)}>+ Zuweisen</button>
-                              </div>
-                            )}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
 
-        {/* Active timers / cron list */}
-        <div style={s.panel}>
-          <div style={s.title}>Aktive Timer ({status.scheduled.length})</div>
-          {status.scheduled.length === 0
-            ? <div style={{ color: C.muted, fontSize: 12 }}>Keine geplanten Streams</div>
-            : status.scheduled.map((j, i) => {
-                const localTime = new Date(j.datetime).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-                const minutesLeft = Math.round((new Date(j.datetime).getTime() - Date.now()) / 60000)
-                return (
-                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < status.scheduled.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-                    <span style={{ color: C.muted, fontSize: 11, minWidth: 16 }}>#{i + 1}</span>
-                    <span style={{ fontSize: 11, color: C.green, minWidth: 130 }}>{localTime}</span>
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: C.accent }}>{j.filename}</span>
-                    <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{minutesLeft > 0 ? `in ${minutesLeft}min` : 'gleich'}</span>
-                    <button onClick={() => cancelSlot(j.id)} style={btn(C.red, true)}>✕</button>
-                  </div>
-                )
-              })
-          }
-        </div>
+          {/* Schedule table */}
+          <div style={card}>
+            <span style={label}>Zeitplan — nächste 14 Tage</span>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${C.border}` }}>
+                    <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const, width: 110 }}>Datum</th>
+                    <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 1</th>
+                    <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(groupedSlots).map(([date, daySlots], rowIdx) => {
+                    const slot1 = daySlots.find(s => s.slot === 1)!
+                    const slot2 = daySlots.find(s => s.slot === 2)!
+                    return (
+                      <tr key={date} style={{ borderBottom: `1px solid ${C.border}`, background: rowIdx % 2 === 0 ? 'transparent' : 'rgba(221,213,200,.15)' }}>
+                        <td style={{ padding: '10px 12px', color: C.muted, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 500 }}>{slot1.label}</td>
+                        {[slot1, slot2].map(slot => {
+                          const t = getSlotTime(slot)
+                          const job = matchJob(slot, t, status.scheduled)
+                          const isPast = berlinToUTC(slot.date, 23, 59) < new Date()
+                          return (
+                            <td key={slot.slot} style={{ padding: '8px 12px' }}>
+                              {job ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <ThumbnailImg name={job.filename} size={36} />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: C.green }}>{formatJobTime(job.datetime)}</div>
+                                    <div style={{ fontSize: 11, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{job.filename}</div>
+                                  </div>
+                                  <button onClick={() => cancelSlot(job.id)} style={btnSmall('danger')}>×</button>
+                                </div>
+                              ) : isPast ? (
+                                <span style={{ color: C.faint, fontSize: 11 }}>—</span>
+                              ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <input type="time" value={t}
+                                    onChange={e => setSlotTimes(prev => ({ ...prev, [slotKey(slot)]: e.target.value }))}
+                                    style={inputStyle} />
+                                  <button onClick={() => setAssigning(slot)} style={btnSmall('gold')}>+ Zuweisen</button>
+                                </div>
+                              )}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Active timers */}
+          <div style={card}>
+            <span style={label}>Aktive Timer ({status.scheduled.length})</span>
+            {status.scheduled.length === 0
+              ? <div style={{ color: C.faint, fontSize: 12 }}>Keine geplanten Streams</div>
+              : status.scheduled
+                  .slice()
+                  .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
+                  .map((j, i, arr) => {
+                    const localTime = new Date(j.datetime).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                    const minutesLeft = Math.round((new Date(j.datetime).getTime() - Date.now()) / 60000)
+                    const fileIdx = files.findIndex(f => f.name === j.filename)
+                    return (
+                      <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                        <ThumbnailImg name={j.filename} size={48} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 2 }}>
+                            {fileIdx >= 0 ? <span style={{ color: C.faint, marginRight: 6 }}>#{fileIdx + 1}</span> : null}
+                            {j.filename}
+                          </div>
+                          <div style={{ fontSize: 11, color: C.green, fontWeight: 600 }}>{localTime}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' as const, flexShrink: 0 }}>
+                          <div style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>{minutesLeft > 0 ? `in ${minutesLeft} min` : 'gleich'}</div>
+                          <button onClick={() => cancelSlot(j.id)} style={btnSmall('danger')}>Löschen</button>
+                        </div>
+                      </div>
+                    )
+                  })
+            }
+          </div>
         </div>
       </div>
     </div>
