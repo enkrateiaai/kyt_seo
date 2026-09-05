@@ -94,6 +94,7 @@ export default function StudioClient() {
   const [directApi, setDirectApi] = useState<{ url: string; token: string } | null>(null)
   const [slotTimes, setSlotTimes] = useState<Record<string, string>>({})
   const [seekDraft, setSeekDraft] = useState<number | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
 
@@ -212,6 +213,12 @@ export default function StudioClient() {
     loadFiles()
   }
 
+  async function confirmAndDelete() {
+    if (!confirmDelete) return
+    setConfirmDelete(null)
+    await deleteFile(confirmDelete)
+  }
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDrag(false)
     const f = e.dataTransfer.files[0]; if (f) doUpload(f)
@@ -257,6 +264,20 @@ export default function StudioClient() {
               <button style={btn(C.red)} onClick={() => { const f = conflictFile; setConflictFile(null); doUpload(f.file, true) }}>Überschreiben</button>
               <button style={btn(C.accent)} onClick={handleUploadCopy}>Kopie erstellen</button>
               <button style={btn(C.muted)} onClick={() => setConflictFile(null)}>Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ ...s.panel, maxWidth: 360, width: '100%' }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Datei löschen?</div>
+            <div style={{ color: C.muted, marginBottom: 16, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>„{confirmDelete}"</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button style={btn(C.red)} onClick={confirmAndDelete}>Ja, löschen</button>
+              <button style={btn(C.muted)} onClick={() => setConfirmDelete(null)}>Abbrechen</button>
             </div>
           </div>
         </div>
@@ -386,7 +407,7 @@ export default function StudioClient() {
                     {!status.running && (
                       <button onClick={() => startStream(f.name)} style={btn(C.green, true)}>▶ Live</button>
                     )}
-                    <button onClick={() => deleteFile(f.name)} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>✕</button>
+                    <button onClick={() => setConfirmDelete(f.name)} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>✕</button>
                   </div>
                 </div>
               ))}
