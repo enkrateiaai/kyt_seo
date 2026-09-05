@@ -223,6 +223,44 @@ export default function StudioClient() {
     slotTimes[slotKey(s)] ?? defaultSlotTime(s.date, s.slot), [slotTimes])
 
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 4000) }
+  const flashPersist = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 12000) }
+
+  // Centralized API helper. Returns { ok, data, status, error } so callers can
+  // decide what to do. NEVER throws: both network errors and non-OK responses
+  // are captured and exposed via .error + console.error so users can copy them
+  // from DevTools when something goes wrong.
+  async function apiCall(
+    path: string,
+    init: RequestInit = {},
+  ): Promise<{ ok: boolean; data: any; status: number; error: string }> {
+    const url = path.startsWith('http') ? path : `${API}${path}`
+    const method = init.method || 'GET'
+    let r: Response
+    try {
+      r = await fetch(url, init)
+    } catch (e: any) {
+      const msg = (e && e.message) || String(e) || 'Unbekannter Netzwerkfehler'
+      console.error(`[apiCall ${method} ${path}] Netzwerkfehler: ${msg}`, e)
+      return { ok: false, data: null, status: 0, error: `Netzwerkfehler: ${msg}` }
+    }
+    let text = ''
+    try { text = await r.text() } catch { /* ignore body read errors */ }
+    let data: any = null
+    if (text) {
+      try { data = JSON.parse(text) } catch { /* not JSON, leave data null and keep raw text */ }
+    }
+    if (!r.ok) {
+      // Try to extract a useful error message from common shapes
+      const serverMsg =
+        (data && (data.error || data.message || data.detail)) ||
+        (text && text.length < 300 ? text : '') ||
+        r.statusText || 'Unbekannt'
+      const error = `${r.status} ${serverMsg}`.trim()
+      console.error(`[apiCall ${method} ${path}] ${error}`, { status: r.status, body: text, data })
+      return { ok: false, data, status: r.status, error }
+    }
+    return { ok: true, data, status: r.status, error: '' }
+  }
 
   const loadFiles = useCallback(async () => {
     const r = await fetch(`${API}/files`); if (r.ok) setFiles(await r.json())
@@ -366,23 +404,29 @@ export default function StudioClient() {
     setSwitching(true)
     flash(wasRunning ? `Wechselt zu: ${filename}…` : `Gestartet: ${filename}…`)
     try {
-      const r = await fetch(`${API}/stream/start`, {
+      const res = await apiCall('/stream/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename, streamKey: 'live', seekSeconds }),
       })
-      if (!r.ok) {
-        flash(`Fehler ${r.status}`)
+      if (!res.ok) {
+        console.error('[startStream] failed', { filename, seekSeconds, error: res.error, status: res.status, data: res.data })
+        flashPersist(`Live fehlgeschlagen: ${res.error}`)
         return
       }
-      const d = await r.json().catch(() => ({} as any))
-      const killed = d?.killedCount ?? 0
-      if (wasRunning && d?.switched) {
+      const d = res.data || {}
+      const killed = d.killedCount ?? 0
+      if (wasRunning && d.switched) {
         const tail = killed > 0 ? ` (${killed} ffmpeg beendet)` : ''
         flash(`Gewechselt zu: ${filename}${tail}`)
       } else {
         flash(`Gestartet: ${filename}`)
       }
+    } catch (e: any) {
+      // Should not happen since apiCall swallows errors, but defend anyway
+      const msg = e?.message || String(e)
+      console.error('[startStream] uncaught exception', e)
+      flashPersist(`Live fehlgeschlagen: ${msg}`)
     } finally {
       setSwitching(false)
       setSeekDraft(null)
@@ -391,25 +435,36 @@ export default function StudioClient() {
   }
 
   async function stopStream() {
-    const r = await fetch(`${API}/stream/stop`, { method: 'POST' })
-    flash(r.ok ? 'Pausiert' : `Fehler ${r.status}`)
+    const res = await apiCall('/stream/stop', { method: 'POST' })
+    if (res.ok) flash('Pausiert')
+    else flashPersist(`Pause fehlgeschlagen: ${res.error}`)
     loadStatus()
   }
 
   async function fullStop() {
-    const r = await fetch(`${API}/stream/stop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ full: true }) })
-    flash(r.ok ? 'Stream beendet' : `Fehler ${r.status}`)
+    const res = await apiCall('/stream/stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ full: true }),
+    })
+    if (res.ok) flash('Stream beendet')
+    else flashPersist(`Stopp fehlgeschlagen: ${res.error}`)
     loadStatus()
   }
 
   async function forceReset() {
     setResetting(true)
     flash('SRS zurücksetzen…')
-    const r = await fetch(`${API}/srs/force-reset`, { method: 'POST' })
-    const d = r.ok ? await r.json() : null
-    const n = d?.killed_count ?? (Array.isArray(d?.killed) ? d.killed.length : 0)
+    const res = await apiCall('/srs/force-reset', { method: 'POST' })
+    if (!res.ok) {
+      flashPersist(`Force-Reset fehlgeschlagen: ${res.error}`)
+      setResetting(false)
+      return
+    }
+    const d = res.data || {}
+    const n = d.killed_count ?? (Array.isArray(d.killed) ? d.killed.length : 0)
     if (n > 0) flash(`${n} ffmpeg${n === 1 ? '' : 's'} gekillt — SRS-Slot wird in ~30s frei`)
-    else if (d?.slot_will_free) flash('SRS-Slot freigegeben ✓')
+    else if (d.slot_will_free) flash('SRS-Slot freigegeben ✓')
     else flash('Nichts zu killen')
     setResetting(false)
     loadStatus()
@@ -498,7 +553,8 @@ export default function StudioClient() {
           </span>
         )}
         {statusError && (
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: C.orange, background: '#FDF4EE', border: `1px solid ${C.orange}`, borderRadius: 3, padding: '2px 7px' }}>
+          <span title="Verbindung zur API fehlgeschlagen. Letzte Aktionen könnten fehlgeschlagen sein — Details in der Browser-Konsole."
+            style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: C.orange, background: '#FDF4EE', border: `1px solid ${C.orange}`, borderRadius: 3, padding: '2px 7px', cursor: 'help' }}>
             KEINE VERBINDUNG
           </span>
         )}
