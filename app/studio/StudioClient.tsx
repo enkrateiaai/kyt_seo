@@ -95,6 +95,8 @@ export default function StudioClient() {
   const [slotTimes, setSlotTimes] = useState<Record<string, string>>({})
   const [seekDraft, setSeekDraft] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [videoKey, setVideoKey] = useState(0)
+  const [statusError, setStatusError] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
 
@@ -108,7 +110,10 @@ export default function StudioClient() {
   }, [])
 
   const loadStatus = useCallback(async () => {
-    const r = await fetch(`${API}/stream/status`); if (r.ok) setStatus(await r.json())
+    try {
+      const r = await fetch(`${API}/stream/status`)
+      if (r.ok) { setStatus(await r.json()); setStatusError(false) } else setStatusError(true)
+    } catch { setStatusError(true) }
   }, [])
 
   useEffect(() => {
@@ -219,6 +224,14 @@ export default function StudioClient() {
     await deleteFile(confirmDelete)
   }
 
+  function openPreview(name: string) {
+    setPreview(prev => {
+      const next = prev === name ? null : name
+      if (next !== null) setVideoKey(k => k + 1)
+      return next
+    })
+  }
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDrag(false)
     const f = e.dataTransfer.files[0]; if (f) doUpload(f)
@@ -245,6 +258,7 @@ export default function StudioClient() {
       <header style={s.header}>
         <span style={{ fontSize: 17, fontWeight: 600 }}>Enkra Studio</span>
         {directApi && <span style={{ fontSize: 11, color: C.green, background: 'rgba(34,197,94,.1)', border: `1px solid ${C.green}`, borderRadius: 4, padding: '2px 7px' }}>⚡ Direct</span>}
+        {statusError && <span style={{ fontSize: 11, color: C.orange, background: 'rgba(249,115,22,.1)', border: `1px solid ${C.orange}`, borderRadius: 4, padding: '2px 7px' }}>⚠ Verbindungsfehler</span>}
         <div style={s.badge}>
           <span style={s.dot} />
           <span style={{ color: status.running ? C.green : C.muted }}>{status.running ? 'LIVE' : 'OFFLINE'}</span>
@@ -369,8 +383,8 @@ export default function StudioClient() {
                 <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16 }}>✕</button>
               </div>
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</div>
-              <video key={preview} controls style={{ width: '100%', borderRadius: 6, background: '#000' }}
-                src={`${API}/files/${encodeURIComponent(preview)}/stream`} />
+              <video key={videoKey} controls style={{ width: '100%', borderRadius: 6, background: '#000' }}
+                src={`${API}/files/${encodeURIComponent(preview)}/stream?v=${videoKey}`} />
               {!status.running && (
                 <button style={{ ...btn(C.green), width: '100%', marginTop: 10 }} onClick={() => startStream(preview)}>
                   Dieses Video streamen ▶
@@ -384,7 +398,7 @@ export default function StudioClient() {
             <div style={s.title}>Mediathek ({files.length})</div>
             {files.length === 0 && <div style={{ color: C.muted, fontSize: 13 }}>Noch keine Dateien hochgeladen</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {files.map(f => (
+              {files.map((f, idx) => (
                 <div key={f.name} style={{ borderRadius: 8, border: `1px solid ${C.border}`, overflow: 'hidden', background: C.bg }}>
                   {/* Thumbnail */}
                   <div style={{ position: 'relative', width: '100%', paddingBottom: '42%', background: '#000', overflow: 'hidden' }}>
@@ -392,12 +406,13 @@ export default function StudioClient() {
                       alt="" loading="lazy"
                       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                    <button onClick={() => setPreview(preview === f.name ? null : f.name)}
+                    <button onClick={() => openPreview(f.name)}
                       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: preview === f.name ? 'rgba(99,102,241,.3)' : 'rgba(0,0,0,.3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,.2)', border: '2px solid rgba(255,255,255,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21" /></svg>
                       </div>
                     </button>
+                    <span style={{ position: 'absolute', top: 6, left: 8, background: 'rgba(0,0,0,.7)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>#{idx + 1}</span>
                   </div>
                   {/* Info row */}
                   <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -416,6 +431,7 @@ export default function StudioClient() {
         </div>
 
         {/* Right column: schedule */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={s.panel}>
           <div style={s.title}>Zeitplan — nächste 14 Tage</div>
           <div style={{ overflowX: 'auto' }}>
@@ -466,6 +482,28 @@ export default function StudioClient() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Active timers / cron list */}
+        <div style={s.panel}>
+          <div style={s.title}>Aktive Timer ({status.scheduled.length})</div>
+          {status.scheduled.length === 0
+            ? <div style={{ color: C.muted, fontSize: 12 }}>Keine geplanten Streams</div>
+            : status.scheduled.map((j, i) => {
+                const localTime = new Date(j.datetime).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                const minutesLeft = Math.round((new Date(j.datetime).getTime() - Date.now()) / 60000)
+                return (
+                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < status.scheduled.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                    <span style={{ color: C.muted, fontSize: 11, minWidth: 16 }}>#{i + 1}</span>
+                    <span style={{ fontSize: 11, color: C.green, minWidth: 130 }}>{localTime}</span>
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: C.accent }}>{j.filename}</span>
+                    <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{minutesLeft > 0 ? `in ${minutesLeft}min` : 'gleich'}</span>
+                    <button onClick={() => cancelSlot(j.id)} style={btn(C.red, true)}>✕</button>
+                  </div>
+                )
+              })
+          }
+        </div>
         </div>
       </div>
     </div>
