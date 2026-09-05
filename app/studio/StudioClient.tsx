@@ -93,21 +93,30 @@ export default function StudioClient() {
 
   async function doUpload(file: File, overwrite = false) {
     setUploading(true); setUploadPct(0)
-    const fd = new FormData(); fd.append('file', file)
-    if (overwrite) fd.append('overwrite', 'true')
-    const xhr = new XMLHttpRequest()
-    xhr.upload.onprogress = e => e.lengthComputable && setUploadPct(Math.round(e.loaded / e.total * 100))
-    xhr.onload = async () => {
-      setUploading(false)
-      if (xhr.status === 409) {
-        const data = JSON.parse(xhr.responseText)
-        if (data.conflict) { setConflictFile({ file, name: data.name }); return }
+    const CHUNK = 5 * 1024 * 1024
+    const total = Math.max(1, Math.ceil(file.size / CHUNK))
+    try {
+      for (let i = 0; i < total; i++) {
+        const fd = new FormData()
+        fd.append('file', file.slice(i * CHUNK, (i + 1) * CHUNK), file.name)
+        fd.append('filename', file.name)
+        fd.append('chunk_index', String(i))
+        fd.append('total_chunks', String(total))
+        if (overwrite) fd.append('overwrite', 'true')
+        const res = await fetch(`${API}/upload/chunk`, { method: 'POST', body: fd })
+        if (res.status === 409) {
+          const data = await res.json()
+          if (data.conflict) { setConflictFile({ file, name: data.name }); return }
+        }
+        if (!res.ok) { flash(`Fehler: ${res.status}`); return }
+        setUploadPct(Math.round((i + 1) / total * 100))
       }
-      if (xhr.status < 300) { flash(`Hochgeladen: ${file.name}`); loadFiles() }
-      else flash(`Fehler: ${xhr.status}`)
+      flash(`Hochgeladen: ${file.name}`); loadFiles()
+    } catch {
+      flash('Upload fehlgeschlagen')
+    } finally {
+      setUploading(false)
     }
-    xhr.onerror = () => { setUploading(false); flash('Upload fehlgeschlagen') }
-    xhr.open('POST', `${API}/upload`); xhr.send(fd)
   }
 
   function handleUploadCopy() {
