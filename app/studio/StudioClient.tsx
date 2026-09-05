@@ -38,6 +38,18 @@ type SrsClient = {
   send_kbps?: number
   recv_kbps?: number
 }
+type UploadSession = {
+  sessionId: string
+  filename: string
+  percent: number
+  chunksReceived: number
+  totalChunks: number
+  bytesReceived: number
+  totalBytes: number
+  speedBps: number
+  etaSeconds: number | null
+  phase: 'uploading' | 'assembling' | 'converting'
+}
 type SlotDef = { date: string; label: string; slot: 1 | 2 }
 
 function fmt(bytes: number) {
@@ -113,6 +125,64 @@ function ThumbnailImg({ name, size = 48 }: { name: string; size?: number }) {
   )
 }
 
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`
+}
+function fmtSpeed(bps: number): string {
+  if (bps < 1024) return `${Math.round(bps)} B/s`
+  if (bps < 1024 * 1024) return `${(bps / 1024).toFixed(0)} KB/s`
+  return `${(bps / 1024 / 1024).toFixed(1)} MB/s`
+}
+function fmtEta(s: number | null): string {
+  if (s == null) return ''
+  if (s < 60) return `${Math.round(s)}s`
+  const m = Math.floor(s / 60); const r = Math.round(s % 60)
+  if (m < 60) return `${m}m ${r}s`
+  const h = Math.floor(m / 60); return `${h}h ${m % 60}m`
+}
+
+function UploadBanner({ uploads }: { uploads: UploadSession[] }) {
+  const first = uploads[0]
+  const phaseLabel: Record<string, string> = {
+    uploading: 'lädt hoch',
+    assembling: 'baut Datei zusammen',
+    converting: 'konvertiert Video',
+  }
+  const phaseText = phaseLabel[first.phase] || first.phase
+  const totalPct = Math.round(uploads.reduce((s, u) => s + u.percent, 0) / uploads.length)
+  return (
+    <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#92400E', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <span style={{ fontSize: 18 }}>⏫</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600 }}>
+          Upload läuft: <span style={{ fontFamily: 'monospace' }}>{first.filename}</span> {phaseText} ({first.percent}%)
+          {uploads.length > 1 && <span style={{ color: '#B45309' }}> · {uploads.length} Uploads gesamt</span>}
+        </div>
+        <div style={{ fontSize: 11, color: '#B45309', marginTop: 2 }}>
+          {first.phase === 'uploading' && (
+            <>
+              {fmtBytes(first.bytesReceived)}{first.totalBytes > 0 ? ` / ${fmtBytes(first.totalBytes)}` : ''}
+              {' · '}{fmtSpeed(first.speedBps)}
+              {first.etaSeconds != null && first.etaSeconds > 0 && <> · ETA {fmtEta(first.etaSeconds)}</>}
+            </>
+          )}
+          {first.phase === 'assembling' && 'Chunks werden zusammengefügt …'}
+          {first.phase === 'converting' && 'Video wird für Streaming konvertiert (ffmpeg) …'}
+          {' · Video-Wiedergabe kann währenddessen eingeschränkt sein'}
+        </div>
+        {uploads.length > 1 && (
+          <div style={{ height: 4, background: '#FCD34D', borderRadius: 2, marginTop: 6, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: '#B45309', width: `${Math.min(100, totalPct)}%`, transition: 'width .5s' }} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function StudioClient() {
   const [files, setFiles] = useState<FileEntry[]>([])
   const [status, setStatus] = useState<StreamStatus>({ running: false, scheduled: [] })
@@ -135,6 +205,8 @@ export default function StudioClient() {
   const [showDiag, setShowDiag] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [switching, setSwitching] = useState(false)
+  const [otherUploads, setOtherUploads] = useState<UploadSession[]>([])
+  const ownSessionIdRef = useRef<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
 
@@ -181,7 +253,28 @@ export default function StudioClient() {
     loadDiag()
     const id = setInterval(loadDiag, 3000)
     return () => clearInterval(id)
-  }, [showDiag, loadDiag])
+    }, [showDiag, loadDiag])
+
+  const loadUploads = useCallback(async () => {
+    try {
+      const url = directApi ? `${directApi.url}/api/upload/status` : `${API}/upload/status`
+      const headers: Record<string, string> = directApi ? { Authorization: `Bearer ${directApi.token}` } : {}
+      const r = await fetch(url, { headers })
+      if (!r.ok) return
+      const d = await r.json()
+      const own = ownSessionIdRef.current
+      const others = (d.uploads ?? []).filter((u: UploadSession) => u.sessionId !== own)
+      setOtherUploads(others)
+    } catch {
+      /* swallow; transient errors are fine */
+    }
+  }, [directApi])
+
+  useEffect(() => {
+    loadUploads()
+    const id = setInterval(loadUploads, 3000)
+    return () => clearInterval(id)
+  }, [loadUploads])
 
   useEffect(() => {
     fetch('/api/studio/direct')
@@ -205,6 +298,11 @@ export default function StudioClient() {
     const total = Math.max(1, Math.ceil(file.size / CHUNK))
     const uploadUrl = directApi ? `${directApi.url}/api/upload/chunk` : `${API}/upload/chunk`
     const authHeader: Record<string, string> = directApi ? { Authorization: `Bearer ${directApi.token}` } : {}
+    // Generate a fresh session id so other viewers can identify (and filter out)
+    // this upload when polling /api/upload/status. Reused across all chunks of
+    // this file; cleared when upload finishes.
+    const sessionId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2))
+    ownSessionIdRef.current = sessionId
     try {
       for (let i = 0; i < total; i++) {
         const fd = new FormData()
@@ -212,6 +310,8 @@ export default function StudioClient() {
         fd.append('filename', file.name)
         fd.append('chunk_index', String(i))
         fd.append('total_chunks', String(total))
+        fd.append('file_size', String(file.size))
+        fd.append('session_id', sessionId)
         if (overwrite) fd.append('overwrite', 'true')
         const res = await fetch(uploadUrl, { method: 'POST', body: fd, headers: authHeader })
         if (res.status === 409) {
@@ -221,11 +321,16 @@ export default function StudioClient() {
         if (!res.ok) { flash(`Fehler: ${res.status}`); return }
         setUploadPct(Math.round((i + 1) / total * 100))
       }
-      flash(`Hochgeladen: ${file.name}`); loadFiles()
+      flash(`Hochgeladen: ${file.name}`); loadFiles(); loadUploads()
     } catch {
       flash('Upload fehlgeschlagen')
     } finally {
       setUploading(false)
+      ownSessionIdRef.current = ''
+      // Force an immediate refresh so the just-finished session disappears
+      // from broadcasts (server removes it on the final chunk but a 3s tick
+      // would otherwise still see it briefly).
+      setTimeout(loadUploads, 300)
     }
   }
 
@@ -460,6 +565,12 @@ export default function StudioClient() {
       )}
 
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '20px 20px', display: 'grid', gridTemplateColumns: '360px 1fr', gap: 20 }}>
+
+        {otherUploads.length > 0 && !uploading && (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <UploadBanner uploads={otherUploads} />
+          </div>
+        )}
 
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
