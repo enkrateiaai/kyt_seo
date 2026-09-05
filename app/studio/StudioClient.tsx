@@ -416,8 +416,8 @@ export default function StudioClient() {
                       {[slot1, slot2].map(slot => {
                         const t = getSlotTime(slot)
                         const job = matchJob(slot, t, status.scheduled)
-                        const [hh, mm] = t.split(':').map(Number)
-                        const isPast = berlinToUTC(slot.date, hh, mm) < new Date()
+                        // Past only when the whole day is past — today always shows time input
+                        const isPast = berlinToUTC(slot.date, 23, 59) < new Date()
                         return (
                           <td key={slot.slot} style={{ padding: '8px 12px' }}>
                             {job ? (
