@@ -50,6 +50,19 @@ type UploadSession = {
   etaSeconds: number | null
   phase: 'uploading' | 'assembling' | 'converting'
 }
+type FlaskStatus = {
+  pid: number
+  uptimeSeconds: number
+  ffmpegCount: number
+  streamRunning: boolean
+  activeUploads: number
+  scheduledCount: number
+  diskTotal: number
+  diskFree: number
+  diskUsed: number
+  diskUsedPct: number
+  lastInfo: { filename?: string }
+}
 type SlotDef = { date: string; label: string; slot: 1 | 2 }
 
 function fmt(bytes: number) {
@@ -183,6 +196,44 @@ function UploadBanner({ uploads }: { uploads: UploadSession[] }) {
   )
 }
 
+function fmtUptime(s: number): string {
+  if (!s || s < 0) return '—'
+  if (s < 60) return `${Math.round(s)}s`
+  if (s < 3600) return `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`
+  const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60)
+  if (h < 24) return `${h}h ${m}m`
+  const d = Math.floor(h / 24); return `${d}d ${h % 24}h`
+}
+function Stat({ label, value, sub, accent, truncate }: {
+  label: string; value: string; sub?: string; accent?: string; truncate?: boolean
+}) {
+  return (
+    <div style={{ padding: '8px 10px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 5 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase' as const, color: C.faint, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: accent || C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: truncate ? 'nowrap' : 'normal' }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: C.faint, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+
+function ActionBtn({ label, busy, disabled, danger, onClick }: {
+  label: string; busy?: boolean; disabled?: boolean; danger?: boolean; onClick: () => void
+}) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{
+        padding: '7px 12px', fontSize: 12, fontWeight: 600,
+        background: busy ? C.faint : danger ? C.redLight : C.bg,
+        color: busy ? C.surface : danger ? C.red : C.text,
+        border: `1px solid ${busy ? C.faint : danger ? C.red : C.border}`,
+        borderRadius: 4, cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled && !busy ? 0.5 : 1,
+      }}>
+      {busy ? '…' : label}
+    </button>
+  )
+}
+
 export default function StudioClient() {
   const [files, setFiles] = useState<FileEntry[]>([])
   // Stable per-video number: #1 = oldest (by mtime), #N = newest.
@@ -215,6 +266,8 @@ export default function StudioClient() {
   const [resetting, setResetting] = useState(false)
   const [switching, setSwitching] = useState(false)
   const [otherUploads, setOtherUploads] = useState<UploadSession[]>([])
+  const [flaskStatus, setFlaskStatus] = useState<FlaskStatus | null>(null)
+  const [flaskBusy, setFlaskBusy] = useState<string | null>(null)
   const ownSessionIdRef = useRef<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
@@ -322,6 +375,17 @@ export default function StudioClient() {
     const id = setInterval(loadUploads, 3000)
     return () => clearInterval(id)
   }, [loadUploads])
+
+  const loadFlaskStatus = useCallback(async () => {
+    const res = await apiCall('/flask/status')
+    if (res.ok) setFlaskStatus(res.data)
+  }, [])
+
+  useEffect(() => {
+    loadFlaskStatus()
+    const id = setInterval(loadFlaskStatus, 5000)
+    return () => clearInterval(id)
+  }, [loadFlaskStatus])
 
   useEffect(() => {
     fetch('/api/studio/direct')
@@ -938,6 +1002,76 @@ export default function StudioClient() {
                   })
             }
           </div>
+        </div>
+        {/* Flask Console */}
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={label}>Flask Konsole</span>
+            <span style={{ fontSize: 10, color: C.faint }}>
+              auto-refresh 5s
+            </span>
+          </div>
+
+          {!flaskStatus ? (
+            <div style={{ color: C.faint, fontSize: 12 }}>Wird geladen …</div>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 14 }}>
+                <Stat label="Status" value={flaskStatus.streamRunning ? 'Streamt' : 'Bereit'}
+                  accent={flaskStatus.streamRunning ? C.green : C.faint} />
+                <Stat label="PID" value={String(flaskStatus.pid)} />
+                <Stat label="Uptime" value={fmtUptime(flaskStatus.uptimeSeconds)} />
+                <Stat label="ffmpeg-Prozesse" value={String(flaskStatus.ffmpegCount)}
+                  accent={flaskStatus.ffmpegCount > 0 ? C.orange : C.faint} />
+                <Stat label="Aktive Uploads" value={String(flaskStatus.activeUploads)}
+                  accent={flaskStatus.activeUploads > 0 ? C.goldDark : C.faint} />
+                <Stat label="Geplant" value={String(flaskStatus.scheduledCount)} />
+                <Stat label="Disk belegt" value={`${flaskStatus.diskUsedPct}%`}
+                  sub={fmtBytes(flaskStatus.diskUsed) + ' / ' + fmtBytes(flaskStatus.diskTotal)}
+                  accent={flaskStatus.diskUsedPct > 90 ? C.red : flaskStatus.diskUsedPct > 75 ? C.orange : C.faint} />
+                <Stat label="Letzter Stream" value={flaskStatus.lastInfo?.filename || '—'}
+                  sub={flaskStatus.lastInfo?.filename ? '' : ''} truncate />
+              </div>
+
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
+                <ActionBtn label="SRS resetten" busy={flaskBusy === 'srs'} disabled={!!flaskBusy}
+                  onClick={async () => {
+                    if (!confirm('Alle Publisher im SRS-Container kicken?')) return
+                    setFlaskBusy('srs')
+                    const res = await apiCall('/srs/force-reset', { method: 'POST' })
+                    if (res.ok) {
+                      const d = res.data || {}
+                      const n = d.killed_count ?? (Array.isArray(d.killed) ? d.killed.length : 0)
+                      flashPersist(n > 0 ? `SRS reset: ${n} ffmpeg beendet` : 'SRS reset (nichts zu killen)')
+                    } else {
+                      flashPersist(`SRS reset fehlgeschlagen: ${res.error}`)
+                    }
+                    setFlaskBusy(null); loadFlaskStatus(); loadStatus()
+                  }} />
+                <ActionBtn label="Uploads zurücksetzen" busy={flaskBusy === 'uploads'} disabled={!!flaskBusy}
+                  onClick={async () => {
+                    if (flaskStatus.activeUploads === 0) { flash('Keine aktiven Uploads'); return }
+                    if (!confirm(`${flaskStatus.activeUploads} Upload-Session(s) verwerfen?`)) return
+                    setFlaskBusy('uploads')
+                    const res = await apiCall('/flask/clear-uploads', { method: 'POST' })
+                    if (res.ok) flashPersist(`${res.data.cleared} Upload-Session(s) verworfen`)
+                    else flashPersist(`Uploads zurücksetzen fehlgeschlagen: ${res.error}`)
+                    setFlaskBusy(null); loadFlaskStatus(); loadUploads()
+                  }} />
+                <ActionBtn label="Alle Pläne löschen" busy={flaskBusy === 'schedules'} disabled={!!flaskBusy}
+                  danger
+                  onClick={async () => {
+                    if (flaskStatus.scheduledCount === 0) { flash('Keine Pläne'); return }
+                    if (!confirm(`Alle ${flaskStatus.scheduledCount} geplanten Streams abbrechen? Dies lässt sich nicht rückgängig machen.`)) return
+                    setFlaskBusy('schedules')
+                    const res = await apiCall('/flask/clear-schedules', { method: 'POST' })
+                    if (res.ok) flashPersist(`${res.data.cancelled} Plan(s) abgebrochen`)
+                    else flashPersist(`Pläne löschen fehlgeschlagen: ${res.error}`)
+                    setFlaskBusy(null); loadFlaskStatus(); loadStatus()
+                  }} />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
