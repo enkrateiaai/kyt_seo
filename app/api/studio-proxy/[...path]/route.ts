@@ -44,9 +44,26 @@ function nodeProxy(request: NextRequest, joined: string): Promise<NextResponse> 
   })
 }
 
+async function streamProxy(request: NextRequest, joined: string): Promise<NextResponse> {
+  const target = new URL(joined, STUDIO_BASE + '/')
+  request.nextUrl.searchParams.forEach((v, k) => target.searchParams.append(k, v))
+  const reqHeaders: Record<string, string> = { authorization: `Bearer ${STUDIO_TOKEN}` }
+  request.headers.forEach((v, k) => { if (k !== 'host') reqHeaders[k] = v })
+  try {
+    const upstream = await fetch(target.toString(), { method: request.method, headers: reqHeaders, cache: 'no-store' })
+    const resHeaders = new Headers()
+    upstream.headers.forEach((v, k) => { if (!['transfer-encoding'].includes(k)) resHeaders.set(k, v) })
+    resHeaders.set('cache-control', 'no-store')
+    return new NextResponse(upstream.body, { status: upstream.status, headers: resHeaders })
+  } catch {
+    return new NextResponse('Stream unavailable', { status: 502 })
+  }
+}
+
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params
   const joined = Array.isArray(path) ? path.join('/') : ''
+  if (joined.endsWith('/stream') || joined.endsWith('/thumbnail')) return streamProxy(request, joined)
   return nodeProxy(request, joined)
 }
 
