@@ -72,6 +72,7 @@ export default function StudioClient() {
   const [drag, setDrag] = useState(false)
   const [assigning, setAssigning] = useState<SlotDef | null>(null)
   const [conflictFile, setConflictFile] = useState<{ file: File; name: string } | null>(null)
+  const [directApi, setDirectApi] = useState<{ url: string; token: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
 
@@ -91,10 +92,29 @@ export default function StudioClient() {
     return () => clearInterval(id)
   }, [loadFiles, loadStatus])
 
+  // Try to establish direct Tailscale connection for fast uploads
+  useEffect(() => {
+    fetch('/api/studio/direct')
+      .then(r => r.ok ? r.json() : null)
+      .then(async (cfg: { url: string; token: string } | null) => {
+        if (!cfg?.url || !cfg?.token) return
+        try {
+          const r = await fetch(`${cfg.url}/api/health`, {
+            headers: { Authorization: `Bearer ${cfg.token}` },
+            signal: AbortSignal.timeout(3000),
+          })
+          if (r.ok) setDirectApi(cfg)
+        } catch { /* not on Tailscale, proxy will be used */ }
+      })
+      .catch(() => {})
+  }, [])
+
   async function doUpload(file: File, overwrite = false) {
     setUploading(true); setUploadPct(0)
     const CHUNK = 5 * 1024 * 1024
     const total = Math.max(1, Math.ceil(file.size / CHUNK))
+    const uploadUrl = directApi ? `${directApi.url}/api/upload/chunk` : `${API}/upload/chunk`
+    const authHeader: Record<string, string> = directApi ? { Authorization: `Bearer ${directApi.token}` } : {}
     try {
       for (let i = 0; i < total; i++) {
         const fd = new FormData()
@@ -103,7 +123,7 @@ export default function StudioClient() {
         fd.append('chunk_index', String(i))
         fd.append('total_chunks', String(total))
         if (overwrite) fd.append('overwrite', 'true')
-        const res = await fetch(`${API}/upload/chunk`, { method: 'POST', body: fd })
+        const res = await fetch(uploadUrl, { method: 'POST', body: fd, headers: authHeader })
         if (res.status === 409) {
           const data = await res.json()
           if (data.conflict) { setConflictFile({ file, name: data.name }); return }
@@ -190,6 +210,7 @@ export default function StudioClient() {
       {/* Header */}
       <header style={s.header}>
         <span style={{ fontSize: 17, fontWeight: 600 }}>Enkra Studio</span>
+        {directApi && <span style={{ fontSize: 11, color: C.green, background: 'rgba(34,197,94,.1)', border: `1px solid ${C.green}`, borderRadius: 4, padding: '2px 7px' }}>⚡ Direct</span>}
         <div style={s.badge}>
           <span style={s.dot} />
           <span style={{ color: status.running ? C.green : C.muted }}>{status.running ? 'LIVE' : 'OFFLINE'}</span>
