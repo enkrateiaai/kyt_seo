@@ -134,6 +134,7 @@ export default function StudioClient() {
   const [srsClients, setSrsClients] = useState<SrsClient[]>([])
   const [showDiag, setShowDiag] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const [switching, setSwitching] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
 
@@ -243,10 +244,36 @@ export default function StudioClient() {
   }
 
   async function startStream(filename: string, seekSeconds = 0) {
-    const endpoint = status?.running ? 'stream/switch' : 'stream/start'
-    const r = await fetch(`${API}/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, streamKey: 'live', seekSeconds }) })
-    flash(r.ok ? (status?.running ? `Gewechselt: ${filename}` : `Gestartet: ${filename}`) : `Fehler ${r.status}`)
-    setSeekDraft(null); loadStatus()
+    // Single endpoint: backend always kills any running ffmpeg, clears orphan
+    // procs in the container, and resets resume state if switching videos.
+    // Response includes { wasRunning, killedCount, clearedResume } so we can
+    // give precise feedback about what happened on the server.
+    const wasRunning = !!status?.running
+    setSwitching(true)
+    flash(wasRunning ? `Wechselt zu: ${filename}…` : `Gestartet: ${filename}…`)
+    try {
+      const r = await fetch(`${API}/stream/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename, streamKey: 'live', seekSeconds }),
+      })
+      if (!r.ok) {
+        flash(`Fehler ${r.status}`)
+        return
+      }
+      const d = await r.json().catch(() => ({} as any))
+      const killed = d?.killedCount ?? 0
+      if (wasRunning && d?.switched) {
+        const tail = killed > 0 ? ` (${killed} ffmpeg beendet)` : ''
+        flash(`Gewechselt zu: ${filename}${tail}`)
+      } else {
+        flash(`Gestartet: ${filename}`)
+      }
+    } finally {
+      setSwitching(false)
+      setSeekDraft(null)
+      loadStatus()
+    }
   }
 
   async function stopStream() {
@@ -464,10 +491,10 @@ export default function StudioClient() {
                     <div style={{ height: 3, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 6 }}>
                       <div style={{ height: '100%', background: status.running ? C.green : C.faint, width: `${pct}%`, transition: seekDraft !== null ? 'none' : 'width 1s linear' }} />
                     </div>
-                    <input type="range" min={0} max={Math.round(dur)} value={Math.round(posSecs)}
+                    <input type="range" min={0} max={Math.round(dur)} value={Math.round(posSecs)} disabled={switching}
                       onInput={e => setSeekDraft(parseInt((e.target as HTMLInputElement).value))}
-                      onMouseUp={e => { const s = parseInt((e.target as HTMLInputElement).value); startStream(filename!, s) }}
-                      onTouchEnd={e => { const s = parseInt((e.target as HTMLInputElement).value); startStream(filename!, s) }}
+                      onMouseUp={e => { if (switching) return; const s = parseInt((e.target as HTMLInputElement).value); startStream(filename!, s) }}
+                      onTouchEnd={e => { if (switching) return; const s = parseInt((e.target as HTMLInputElement).value); startStream(filename!, s) }}
                       style={{ width: '100%', marginBottom: 6, accentColor: C.goldDark }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.faint, marginBottom: 14 }}>
                       <span>{fmtDuration(posSecs)}</span>
@@ -479,13 +506,13 @@ export default function StudioClient() {
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                   {status.running ? (
                     <>
-                      <button style={btnPrimary()} onClick={stopStream}>Pause</button>
-                      <button style={btnPrimary(true)} onClick={fullStop}>Stopp</button>
-                      <button style={btnSmall()} onClick={() => startStream(filename!, 0)}>Von Anfang</button>
+                      <button style={btnPrimary()} onClick={stopStream} disabled={switching}>Pause</button>
+                      <button style={btnPrimary(true)} onClick={fullStop} disabled={switching}>Stopp</button>
+                      <button style={btnSmall()} onClick={() => startStream(filename!, 0)} disabled={switching}>Von Anfang</button>
                     </>
                   ) : (
                     <>
-                      <button style={btnPrimary()} onClick={() => startStream(filename!, status.resumeAt ?? 0)}>Fortsetzen {fmtDuration(status.resumeAt ?? 0)}</button>
+                      <button style={btnPrimary()} onClick={() => startStream(filename!, status.resumeAt ?? 0)} disabled={switching}>Fortsetzen {fmtDuration(status.resumeAt ?? 0)}</button>
                       <button style={btnSmall('danger')} onClick={fullStop}>Verwerfen</button>
                     </>
                   )}
@@ -560,7 +587,7 @@ export default function StudioClient() {
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{f.name}</span>
                     {f.duration ? <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmtDuration(f.duration)}</span> : null}
                     <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmt(f.size)}</span>
-                    <button onClick={() => startStream(f.name)}
+                    <button onClick={() => startStream(f.name)} disabled={switching}
                       style={btnSmall(status.running && status.info?.filename === f.name ? 'ghost' : 'gold')}
                       title={status.running ? 'Anderen Stream starten (aktueller wird gestoppt)' : 'Jetzt streamen'}>
                       {status.running && status.info?.filename === f.name ? '▶ Live' : 'Live'}
