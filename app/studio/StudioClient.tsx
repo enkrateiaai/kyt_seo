@@ -11,7 +11,7 @@ const C = {
 }
 
 type FileEntry = { name: string; size: number; mtime: number; duration?: number }
-type StreamStatus = { running: boolean; info?: { filename?: string; started?: string }; progress?: string; scheduled: ScheduledJob[] }
+type StreamStatus = { running: boolean; info?: { filename?: string; started?: string; seekSeconds?: number }; progress?: string; progressSecs?: number; resumeAt?: number; lastInfo?: { filename?: string; seekSeconds?: number }; scheduled: ScheduledJob[] }
 type ScheduledJob = { id: string; filename: string; streamKey: string; datetime: string }
 type SlotDef = { date: string; label: string; slot: 1 | 2 }
 
@@ -93,6 +93,7 @@ export default function StudioClient() {
   const [conflictFile, setConflictFile] = useState<{ file: File; name: string } | null>(null)
   const [directApi, setDirectApi] = useState<{ url: string; token: string } | null>(null)
   const [slotTimes, setSlotTimes] = useState<Record<string, string>>({})
+  const [seekDraft, setSeekDraft] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
 
@@ -176,10 +177,10 @@ export default function StudioClient() {
     doUpload(renamed, false)
   }
 
-  async function startStream(filename: string) {
-    const r = await fetch(`${API}/stream/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, streamKey: 'live' }) })
+  async function startStream(filename: string, seekSeconds = 0) {
+    const r = await fetch(`${API}/stream/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, streamKey: 'live', seekSeconds }) })
     flash(r.ok ? `Stream gestartet: ${filename}` : `Fehler ${r.status}`)
-    loadStatus()
+    setSeekDraft(null); loadStatus()
   }
 
   async function stopStream() {
@@ -287,15 +288,44 @@ export default function StudioClient() {
         {/* Left column: upload + library */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Now streaming panel */}
-          {status.running && (
-            <div style={{ ...s.panel, borderColor: C.green }}>
-              <div style={s.title}>Jetzt live</div>
-              <div style={{ fontWeight: 500, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{status.info?.filename}</div>
-              {status.progress && <div style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>Position: {status.progress}</div>}
-              <button style={btn(C.red)} onClick={stopStream}>Stream stoppen</button>
-            </div>
-          )}
+          {/* Now streaming / resume panel */}
+          {(status.running || (status.resumeAt && status.resumeAt > 0)) && (() => {
+            const filename = status.running ? status.info?.filename : status.lastInfo?.filename
+            const dur = files.find(f => f.name === filename)?.duration ?? 0
+            const posSecs = seekDraft ?? status.progressSecs ?? 0
+            const pct = dur > 0 ? Math.min(100, (posSecs / dur) * 100) : 0
+            const remaining = dur > 0 ? fmtDuration(Math.max(0, dur - posSecs)) : ''
+            return (
+              <div style={{ ...s.panel, borderColor: status.running ? C.green : C.border }}>
+                <div style={s.title}>{status.running ? 'Jetzt live' : 'Pausiert'}</div>
+                <div style={{ fontWeight: 500, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{filename}</div>
+                {dur > 0 && (
+                  <>
+                    <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+                      <div style={{ height: '100%', background: status.running ? C.green : C.muted, width: `${pct}%`, transition: seekDraft !== null ? 'none' : 'width 1s linear' }} />
+                    </div>
+                    <input type="range" min={0} max={Math.round(dur)} value={Math.round(posSecs)}
+                      onInput={e => setSeekDraft(parseInt((e.target as HTMLInputElement).value))}
+                      onMouseUp={e => { const s = parseInt((e.target as HTMLInputElement).value); startStream(filename!, s) }}
+                      onTouchEnd={e => { const s = parseInt((e.target as HTMLInputElement).value); startStream(filename!, s) }}
+                      style={{ width: '100%', marginBottom: 4, accentColor: C.green }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.muted, marginBottom: 12 }}>
+                      <span>{fmtDuration(posSecs)}</span>
+                      <span>{remaining ? `-${remaining}` : fmtDuration(dur)}</span>
+                    </div>
+                  </>
+                )}
+                {!dur && status.running && <div style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>Position: {status.progress}</div>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {status.running
+                    ? <button style={btn(C.red)} onClick={stopStream}>⏹ Stoppen</button>
+                    : <button style={btn(C.green)} onClick={() => startStream(filename!, status.resumeAt ?? 0)}>▶ Fortsetzen von {fmtDuration(status.resumeAt ?? 0)}</button>
+                  }
+                  {status.running && <button style={btn('#2a2d3a')} onClick={() => startStream(filename!, 0)}>⏮ Von Anfang</button>}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Upload */}
           <div style={s.panel}>
@@ -318,7 +348,7 @@ export default function StudioClient() {
                 <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16 }}>✕</button>
               </div>
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</div>
-              <video controls style={{ width: '100%', borderRadius: 6, background: '#000' }}
+              <video key={preview} controls style={{ width: '100%', borderRadius: 6, background: '#000' }}
                 src={`${API}/files/${encodeURIComponent(preview)}/stream`} />
               {!status.running && (
                 <button style={{ ...btn(C.green), width: '100%', marginTop: 10 }} onClick={() => startStream(preview)}>
