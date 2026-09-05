@@ -185,6 +185,15 @@ function UploadBanner({ uploads }: { uploads: UploadSession[] }) {
 
 export default function StudioClient() {
   const [files, setFiles] = useState<FileEntry[]>([])
+  // Stable per-video number: #1 = oldest (by mtime), #N = newest.
+  // Computed once per files change so adding a new video only gives the new
+  // video a new number; existing videos keep their existing numbers.
+  const stableNumber = useMemo(() => {
+    const sorted = [...files].sort((a, b) => a.mtime - b.mtime)
+    const m = new Map<string, number>()
+    sorted.forEach((f, i) => m.set(f.name, i + 1))
+    return m
+  }, [files])
   const [status, setStatus] = useState<StreamStatus>({ running: false, scheduled: [] })
   const [uploading, setUploading] = useState(false)
   const [uploadPct, setUploadPct] = useState(0)
@@ -553,7 +562,7 @@ export default function StudioClient() {
                 style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px', borderRadius: 5, border: `1px solid ${C.border}`, marginBottom: 6, cursor: 'pointer', background: C.bg }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#F5EDD8')}
                 onMouseLeave={e => (e.currentTarget.style.background = C.bg)}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: C.faint, minWidth: 20 }}>#{i+1}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.faint, minWidth: 20 }}>#{stableNumber.get(f.name) ?? (i+1)}</span>
                 <ThumbnailImg name={f.name} size={40} />
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>{f.name}</span>
                 {f.duration ? <span style={{ color: C.faint, fontSize: 11 }}>{fmtDuration(f.duration)}</span> : null}
@@ -692,7 +701,7 @@ export default function StudioClient() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill={C.text}><polygon points="5,3 19,12 5,21" /></svg>
                       </div>
                     </button>
-                    <span style={{ position: 'absolute', top: 6, left: 8, background: 'rgba(44,36,22,.75)', color: '#FAF7F2', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 3 }}>#{idx + 1}</span>
+                    <span style={{ position: 'absolute', top: 6, left: 8, background: 'rgba(44,36,22,.75)', color: '#FAF7F2', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 3 }}>#{stableNumber.get(f.name) ?? (idx + 1)}</span>
                   </div>
                   <div style={{ padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{f.name}</span>
