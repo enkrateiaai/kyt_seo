@@ -25,6 +25,7 @@ const C = {
 type FileEntry = { name: string; size: number; mtime: number; duration?: number }
 type StreamStatus = { running: boolean; info?: { filename?: string; started?: string; seekSeconds?: number }; progress?: string; progressSecs?: number; resumeAt?: number; lastInfo?: { filename?: string; seekSeconds?: number }; scheduled: ScheduledJob[] }
 type ScheduledJob = { id: string; filename: string; streamKey: string; datetime: string }
+type SrsStream = { app?: string; name?: string; publish?: { active?: boolean }; clients?: number }
 type SlotDef = { date: string; label: string; slot: 1 | 2 }
 
 function fmt(bytes: number) {
@@ -116,6 +117,10 @@ export default function StudioClient() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [videoKey, setVideoKey] = useState(0)
   const [statusError, setStatusError] = useState(false)
+  const [streamLog, setStreamLog] = useState<string[]>([])
+  const [srsStreams, setSrsStreams] = useState<SrsStream[]>([])
+  const [showDiag, setShowDiag] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
 
@@ -135,11 +140,33 @@ export default function StudioClient() {
     } catch { setStatusError(true) }
   }, [])
 
+  const loadDiag = useCallback(async () => {
+    const [logR, srsR] = await Promise.allSettled([
+      fetch(`${API}/stream/log`),
+      fetch(`${API}/srs/info`),
+    ])
+    if (logR.status === 'fulfilled' && logR.value.ok) {
+      const d = await logR.value.json()
+      setStreamLog(d.lines ?? [])
+    }
+    if (srsR.status === 'fulfilled' && srsR.value.ok) {
+      const d = await srsR.value.json()
+      setSrsStreams(d.streams ?? [])
+    }
+  }, [])
+
   useEffect(() => {
     loadFiles(); loadStatus()
     const id = setInterval(loadStatus, 5000)
     return () => clearInterval(id)
   }, [loadFiles, loadStatus])
+
+  useEffect(() => {
+    if (!showDiag) return
+    loadDiag()
+    const id = setInterval(loadDiag, 3000)
+    return () => clearInterval(id)
+  }, [showDiag, loadDiag])
 
   useEffect(() => {
     fetch('/api/studio/direct')
@@ -202,8 +229,9 @@ export default function StudioClient() {
   }
 
   async function startStream(filename: string, seekSeconds = 0) {
-    const r = await fetch(`${API}/stream/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, streamKey: 'live', seekSeconds }) })
-    flash(r.ok ? `Stream gestartet: ${filename}` : `Fehler ${r.status}`)
+    const endpoint = status?.running ? 'stream/switch' : 'stream/start'
+    const r = await fetch(`${API}/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, streamKey: 'live', seekSeconds }) })
+    flash(r.ok ? (status?.running ? `Gewechselt: ${filename}` : `Gestartet: ${filename}`) : `Fehler ${r.status}`)
     setSeekDraft(null); loadStatus()
   }
 
@@ -217,6 +245,17 @@ export default function StudioClient() {
     const r = await fetch(`${API}/stream/stop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ full: true }) })
     flash(r.ok ? 'Stream beendet' : `Fehler ${r.status}`)
     loadStatus()
+  }
+
+  async function forceReset() {
+    setResetting(true)
+    flash('SRS zurücksetzen…')
+    const r = await fetch(`${API}/srs/force-reset`, { method: 'POST' })
+    const d = r.ok ? await r.json() : null
+    flash(d?.slot_freed ? 'SRS-Slot freigegeben ✓' : 'Reset gesendet (Slot evtl. noch belegt)')
+    setResetting(false)
+    loadStatus()
+    if (showDiag) loadDiag()
   }
 
   async function assignSlot(slot: SlotDef, filename: string) {
@@ -305,7 +344,11 @@ export default function StudioClient() {
             KEINE VERBINDUNG
           </span>
         )}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => setShowDiag(v => !v)}
+            style={{ ...btnSmall(showDiag ? 'gold' : 'ghost'), fontSize: 10 }}>
+            {showDiag ? 'Diagnose ▲' : 'Diagnose'}
+          </button>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: status.running ? C.green : C.faint, display: 'inline-block' }} />
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: status.running ? C.green : C.faint }}>
             {status.running ? 'LIVE' : 'OFFLINE'}
@@ -466,7 +509,7 @@ export default function StudioClient() {
                 <button onClick={() => setPreview(null)} style={{ background: 'none', border: 'none', color: C.faint, cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
               </div>
               <div style={{ fontSize: 11, color: C.faint, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</div>
-              <video key={videoKey} controls style={{ width: '100%', borderRadius: 5, background: '#1a1509', display: 'block' }}
+              <video key={videoKey} controls preload="metadata" style={{ width: '100%', borderRadius: 5, background: '#1a1509', display: 'block' }}
                 src={`${API}/files/${encodeURIComponent(preview)}/stream?v=${videoKey}`} />
               {!status.running && (
                 <button style={{ ...btnPrimary(), width: '100%', marginTop: 10, justifyContent: 'center' }} onClick={() => startStream(preview)}>
@@ -500,9 +543,11 @@ export default function StudioClient() {
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{f.name}</span>
                     {f.duration ? <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmtDuration(f.duration)}</span> : null}
                     <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmt(f.size)}</span>
-                    {!status.running && (
-                      <button onClick={() => startStream(f.name)} style={btnSmall('gold')}>Live</button>
-                    )}
+                    <button onClick={() => startStream(f.name)}
+                      style={btnSmall(status.running && status.info?.filename === f.name ? 'ghost' : 'gold')}
+                      title={status.running ? 'Anderen Stream starten (aktueller wird gestoppt)' : 'Jetzt streamen'}>
+                      {status.running && status.info?.filename === f.name ? '▶ Live' : 'Live'}
+                    </button>
                     <button onClick={() => setConfirmDelete(f.name)} style={{ background: 'none', border: 'none', color: C.faint, cursor: 'pointer', fontSize: 16, padding: '0 2px', lineHeight: 1 }}>×</button>
                   </div>
                 </div>
@@ -568,6 +613,44 @@ export default function StudioClient() {
               </table>
             </div>
           </div>
+
+          {/* Diagnostic panel */}
+          {showDiag && (
+            <div style={{ ...card, borderColor: C.orange }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <span style={{ ...label, marginBottom: 0 }}>Diagnose &amp; Reset</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                  <button onClick={loadDiag} style={btnSmall('ghost')} title="Aktualisieren">↻</button>
+                  <button onClick={forceReset} disabled={resetting}
+                    style={{ ...btnPrimary(true), opacity: resetting ? 0.6 : 1 }}>
+                    {resetting ? 'Warte…' : 'SRS Force-Reset'}
+                  </button>
+                </div>
+              </div>
+
+              {/* SRS active streams */}
+              <span style={{ ...label, marginBottom: 8 }}>SRS Streams</span>
+              {srsStreams.length === 0
+                ? <div style={{ fontSize: 12, color: C.faint, marginBottom: 12 }}>Keine Streams / SRS nicht erreichbar</div>
+                : srsStreams.map((s, i) => (
+                    <div key={i} style={{ fontSize: 12, fontFamily: 'monospace', padding: '4px 8px', background: C.bg, borderRadius: 4, marginBottom: 4, color: s.publish?.active ? C.green : C.muted }}>
+                      {s.app}/{s.name} — publisher: {s.publish?.active ? 'AKTIV' : 'inaktiv'} — clients: {s.clients ?? 0}
+                    </div>
+                  ))
+              }
+
+              {/* ffmpeg stderr log */}
+              <span style={{ ...label, marginBottom: 8, marginTop: 12 }}>ffmpeg Log (letzte 100 Zeilen)</span>
+              <div style={{ background: '#1a1509', borderRadius: 5, padding: '10px 12px', maxHeight: 260, overflowY: 'auto', fontFamily: 'monospace', fontSize: 11, color: '#c8f064', lineHeight: 1.6 }}>
+                {streamLog.length === 0
+                  ? <span style={{ color: '#6B5D4F' }}>Kein Log</span>
+                  : streamLog.slice().reverse().map((l, i) => (
+                      <div key={i} style={{ color: l.startsWith('[studio]') ? '#D3BC76' : l.toLowerCase().includes('error') || l.includes('failed') ? '#f06464' : '#c8f064' }}>{l}</div>
+                    ))
+                }
+              </div>
+            </div>
+          )}
 
           {/* Active timers */}
           <div style={card}>
