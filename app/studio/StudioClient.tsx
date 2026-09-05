@@ -266,7 +266,10 @@ export default function StudioClient() {
     flash('SRS zurücksetzen…')
     const r = await fetch(`${API}/srs/force-reset`, { method: 'POST' })
     const d = r.ok ? await r.json() : null
-    flash(d?.slot_freed ? 'SRS-Slot freigegeben ✓' : 'Reset gesendet (Slot evtl. noch belegt)')
+    const n = d?.killed_count ?? (Array.isArray(d?.killed) ? d.killed.length : 0)
+    if (n > 0) flash(`${n} ffmpeg${n === 1 ? '' : 's'} gekillt — SRS-Slot wird in ~30s frei`)
+    else if (d?.slot_will_free) flash('SRS-Slot freigegeben ✓')
+    else flash('Nichts zu killen')
     setResetting(false)
     loadStatus()
     if (showDiag) loadDiag()
