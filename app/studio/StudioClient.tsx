@@ -209,7 +209,13 @@ export default function StudioClient() {
 
   async function stopStream() {
     const r = await fetch(`${API}/stream/stop`, { method: 'POST' })
-    flash(r.ok ? 'Stream gestoppt' : `Fehler ${r.status}`)
+    flash(r.ok ? 'Pausiert' : `Fehler ${r.status}`)
+    loadStatus()
+  }
+
+  async function fullStop() {
+    const r = await fetch(`${API}/stream/stop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ full: true }) })
+    flash(r.ok ? 'Stream beendet' : `Fehler ${r.status}`)
     loadStatus()
   }
 
@@ -243,11 +249,9 @@ export default function StudioClient() {
   }
 
   function openPreview(name: string) {
-    setPreview(prev => {
-      const next = prev === name ? null : name
-      if (next !== null) setVideoKey(k => k + 1)
-      return next
-    })
+    const next = preview === name ? null : name
+    setPreview(next)
+    if (next !== null) setVideoKey(k => k + 1)
   }
 
   const onDrop = (e: React.DragEvent) => {
@@ -290,7 +294,7 @@ export default function StudioClient() {
 
       {/* Header */}
       <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 28px', background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 20 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0.3, color: C.text }}>Enkra Studio</span>
+        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0.3, color: C.text }}>Video Steuerung</span>
         {directApi && (
           <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: C.green, background: C.greenLight, border: `1px solid ${C.green}`, borderRadius: 3, padding: '2px 7px' }}>
             DIRECT
@@ -382,7 +386,15 @@ export default function StudioClient() {
             const remaining = dur > 0 ? fmtDuration(Math.max(0, dur - posSecs)) : ''
             return (
               <div style={{ ...card, borderColor: status.running ? C.green : C.border, borderLeftWidth: 3, borderLeftColor: status.running ? C.green : C.faint }}>
-                <span style={label}>{status.running ? 'Jetzt live' : 'Pausiert'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: C.faint }}>
+                    {status.running ? 'Jetzt live' : 'Pausiert'}
+                  </span>
+                  {status.running && status.info?.started && (() => {
+                    const t = new Date(status.info.started).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })
+                    return <span style={{ fontSize: 10, color: C.faint }}>· gestartet {t}</span>
+                  })()}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                   {filename && <ThumbnailImg name={filename} size={40} />}
                   <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>{filename}</span>
@@ -405,11 +417,18 @@ export default function StudioClient() {
                 )}
                 {!dur && status.running && <div style={{ color: C.faint, fontSize: 12, marginBottom: 14 }}>Position: {status.progress || '—'}</div>}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                  {status.running
-                    ? <button style={btnPrimary(true)} onClick={stopStream}>Pause</button>
-                    : <button style={btnPrimary()} onClick={() => startStream(filename!, status.resumeAt ?? 0)}>Fortsetzen {fmtDuration(status.resumeAt ?? 0)}</button>
-                  }
-                  {status.running && <button style={btnSmall()} onClick={() => startStream(filename!, 0)}>Von Anfang</button>}
+                  {status.running ? (
+                    <>
+                      <button style={btnPrimary()} onClick={stopStream}>Pause</button>
+                      <button style={btnPrimary(true)} onClick={fullStop}>Stopp</button>
+                      <button style={btnSmall()} onClick={() => startStream(filename!, 0)}>Von Anfang</button>
+                    </>
+                  ) : (
+                    <>
+                      <button style={btnPrimary()} onClick={() => startStream(filename!, status.resumeAt ?? 0)}>Fortsetzen {fmtDuration(status.resumeAt ?? 0)}</button>
+                      <button style={btnSmall('danger')} onClick={fullStop}>Verwerfen</button>
+                    </>
+                  )}
                 </div>
               </div>
             )

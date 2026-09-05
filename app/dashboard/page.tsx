@@ -28,14 +28,26 @@ export default async function DashboardPage() {
         {user && <p style={{ color: '#555', marginBottom: '40px' }}>{email}</p>}
 
         {user && (
-          <div style={{
-            background: '#111',
-            border: '1px solid #1e1e1e',
-            borderRadius: '10px',
-            padding: '24px'
-          }}>
-            <p style={{ color: '#c8f064', marginBottom: '8px', fontSize: '11px', letterSpacing: '0.15em' }}>// STATUS</p>
-            <p>◌ Angemeldet als <strong>{email}</strong></p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '24px' }}>
+              <p style={{ color: '#c8f064', marginBottom: '8px', fontSize: '11px', letterSpacing: '0.15em' }}>// STATUS</p>
+              <p>◌ Angemeldet als <strong>{email}</strong></p>
+            </div>
+            {(user.publicMetadata as { role?: string })?.role === 'admin' && (
+              <a href="/studio" style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                background: '#111', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '20px 24px',
+                color: '#e8e8e8', textDecoration: 'none',
+              }}>
+                <span style={{ fontSize: 24 }}>📡</span>
+                <div>
+                  <p style={{ color: '#c8f064', fontSize: '11px', letterSpacing: '0.15em', margin: '0 0 4px' }}>// VIDEO STEUERUNG</p>
+                  <p style={{ margin: 0, fontWeight: 600 }}>Kundalini Yoga Tribe — Studio</p>
+                  <p style={{ margin: '2px 0 0', color: '#555', fontSize: 13 }}>Stream planen, starten und überwachen</p>
+                </div>
+                <span style={{ marginLeft: 'auto', color: '#555' }}>→</span>
+              </a>
+            )}
           </div>
         )}
 

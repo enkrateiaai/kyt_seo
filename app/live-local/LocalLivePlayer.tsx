@@ -79,11 +79,8 @@ export default function LocalLivePlayer() {
         }}
       >
         <div>
-          <p style={{ margin: 0, color: '#9B8E7E', fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-            Lokaler Stream
-          </p>
-          <h2 style={{ margin: '6px 0 0', color: '#2C2416', fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 500 }}>
-            Direkt vom Studio-Server
+          <h2 style={{ margin: 0, color: '#2C2416', fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 500 }}>
+            Kundalini Yoga Live
           </h2>
         </div>
         <div
