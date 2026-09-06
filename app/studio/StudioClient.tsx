@@ -886,6 +886,9 @@ export default function StudioClient() {
                 <span style={{ fontSize: 11, color: C.muted, marginTop: 4, display: 'block' }}>{uploadPct}% hochgeladen</span>
               </div>
             )}
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 12, textAlign: 'center' as const, marginBottom: 0 }}>
+              Für Upload aus Google Drive: nach unten scrollen
+            </p>
           </div>
 
           {/* Preview player */}
