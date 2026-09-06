@@ -24,7 +24,7 @@ const C = {
 
 type FileEntry = { name: string; size: number; mtime: number; duration?: number }
 type StreamStatus = { running: boolean; info?: { filename?: string; started?: string; seekSeconds?: number }; progress?: string; progressSecs?: number; resumeAt?: number; lastInfo?: { filename?: string; seekSeconds?: number }; scheduled: ScheduledJob[] }
-type ScheduledJob = { id: string; filename: string; streamKey: string; datetime: string }
+type ScheduledJob = { id: string; filename?: string | null; streamKey: string; datetime: string; mode?: 'video' | 'live' }
 type SrsStream = { app?: string; name?: string; publish?: { active?: boolean }; clients?: number; video?: { width?: number; height?: number }; recv_bytes?: number; kbps?: { recv_30s?: number; send_30s?: number } }
 type SrsClient = {
   id?: string
@@ -583,6 +583,18 @@ export default function StudioClient() {
     setAssigning(null); loadStatus()
   }
 
+  async function assignLiveSlot(slot: SlotDef) {
+    const t = getSlotTime(slot)
+    const [hh, mm] = t.split(':').map(Number)
+    const utcDate = berlinToUTC(slot.date, hh, mm)
+    const r = await fetch(`${API}/stream/schedule`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'live', streamKey: 'live', datetime: utcDate.toISOString() }),
+    })
+    flash(r.ok ? `🔴 Live-Slot gesetzt: ${t} (manuell via OBS starten)` : `Fehler ${r.status}`)
+    setAssigning(null); loadStatus()
+  }
+
   async function cancelSlot(jobId: string) {
     await fetch(`${API}/stream/schedule/${jobId}`, { method: 'DELETE' })
     loadStatus()
@@ -710,8 +722,21 @@ export default function StudioClient() {
       {assigning && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div style={{ ...card, maxWidth: 420, width: '100%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
-            <span style={label}>Video auswählen</span>
-            <p style={{ color: C.muted, fontSize: 12, marginBottom: 16 }}>{assigning.label} · Slot {assigning.slot} · {getSlotTime(assigning)}</p>
+            <span style={label}>Slot zuweisen</span>
+            <p style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>{assigning.label} · Slot {assigning.slot} · {getSlotTime(assigning)}</p>
+            <div onClick={() => assignLiveSlot(assigning)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 5, border: `1px solid ${C.red}`, marginBottom: 12, cursor: 'pointer', background: C.redLight }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#F5E0E0')}
+              onMouseLeave={e => (e.currentTarget.style.background = C.redLight)}>
+              <span style={{ fontSize: 16, lineHeight: 1 }}>🔴</span>
+              <span style={{ flex: 1, fontWeight: 700, fontSize: 13, color: C.red }}>I stream live</span>
+              <span style={{ fontSize: 10, color: C.muted }}>kein Auto-Start</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ flex: 1, height: 1, background: C.border }} />
+              <span style={{ fontSize: 10, color: C.faint, letterSpacing: 1, textTransform: 'uppercase' }}>oder Video</span>
+              <div style={{ flex: 1, height: 1, background: C.border }} />
+            </div>
             {files.length === 0 && <div style={{ color: C.faint }}>Keine Dateien vorhanden</div>}
             {files.map((f, i) => (
               <div key={f.name} onClick={() => assignSlot(assigning, f.name)}
@@ -921,21 +946,33 @@ export default function StudioClient() {
                           return (
                             <td key={slot.slot} style={{ padding: '8px 12px' }}>
                               {job ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                                    <ThumbnailImg name={job.filename} size={36} />
-                                    {stableNumber.get(job.filename) && (
-                                      <span style={{ position: 'absolute', top: 2, left: 2, background: 'rgba(44,36,22,.8)', color: '#FAF7F2', fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 2, lineHeight: 1.4 }}>
-                                        #{stableNumber.get(job.filename)}
-                                      </span>
-                                    )}
+                                job.mode === 'live' ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: C.redLight, border: `1px solid ${C.red}`, borderRadius: 5 }}>
+                                    <span style={{ fontSize: 16, lineHeight: 1 }}>🔴</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 11, fontWeight: 700, color: C.red }}>{formatJobTime(job.datetime)}</div>
+                                      <div style={{ fontSize: 11, color: C.red, fontWeight: 600 }}>Live — manuell via OBS starten</div>
+                                    </div>
+                                    <button onClick={() => cancelSlot(job.id)} style={btnSmall('danger')}>×</button>
                                   </div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color: C.green }}>{formatJobTime(job.datetime)}</div>
-                                    <div style={{ fontSize: 11, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{job.filename}</div>
+                                ) : (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                                      <ThumbnailImg name={job.filename ?? ''} size={36} />
+                                      {job.filename && stableNumber.get(job.filename) && (
+                                        <span style={{ position: 'absolute', top: 2, left: 2, background: 'rgba(44,36,22,.8)', color: '#FAF7F2', fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 2, lineHeight: 1.4 }}>
+                                          #{stableNumber.get(job.filename)}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 11, fontWeight: 700, color: C.green }}>{formatJobTime(job.datetime)}</div>
+                                      <div style={{ fontSize: 11, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{job.filename}</div>
+                                    </div>
+                                    <button onClick={() => cancelSlot(job.id)} style={btnSmall('danger')}>×</button>
                                   </div>
-                                  <button onClick={() => cancelSlot(job.id)} style={btnSmall('danger')}>×</button>
-                                </div>
+                                )
+                              ) : isPast ? (
                               ) : isPast ? (
                                 <span style={{ color: C.faint, fontSize: 11 }}>—</span>
                               ) : (
