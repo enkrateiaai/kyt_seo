@@ -1075,16 +1075,25 @@ export default function StudioClient() {
                   .slice()
                   .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
                   .map((j, i, arr) => {
+                    const isLive = j.mode === 'live'
                     const localTime = new Date(j.datetime).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
                     const minutesLeft = Math.round((new Date(j.datetime).getTime() - Date.now()) / 60000)
                     const fileIdx = files.findIndex(f => f.name === j.filename)
                     return (
                       <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-                        <ThumbnailImg name={j.filename} size={48} />
+                        {isLive ? (
+                          <div style={{ width: 48, height: 48, borderRadius: 4, background: C.redLight, border: `1px solid ${C.red}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🔴</div>
+                        ) : (
+                          <ThumbnailImg name={j.filename ?? ''} size={48} />
+                        )}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 2 }}>
-                            {fileIdx >= 0 ? <span style={{ color: C.faint, marginRight: 6 }}>#{fileIdx + 1}</span> : null}
-                            {j.filename}
+                          <div style={{ fontSize: 12, fontWeight: 600, color: isLive ? C.red : C.text, marginBottom: 2 }}>
+                            {isLive ? 'Live — manuell via OBS starten' : (
+                              <>
+                                {fileIdx >= 0 ? <span style={{ color: C.faint, marginRight: 6 }}>#{fileIdx + 1}</span> : null}
+                                {j.filename}
+                              </>
+                            )}
                           </div>
                           <div style={{ fontSize: 11, color: C.green, fontWeight: 600 }}>{localTime}</div>
                         </div>
