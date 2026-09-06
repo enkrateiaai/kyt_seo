@@ -87,7 +87,7 @@ const html = `<!doctype html>
 
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
     <script>
-      const STREAM_URL = "/api/live-local-proxy/live/live.m3u8";
+      const STREAM_URL = "/api/hls-proxy/live/live.m3u8";
       const STREAM_STATE_URL = "/api/live-local-status";
 
       const player = document.getElementById("player");
