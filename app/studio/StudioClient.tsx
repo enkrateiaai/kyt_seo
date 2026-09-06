@@ -274,8 +274,6 @@ export default function StudioClient() {
   // Stable per-video number: #1 = oldest (by mtime), #N = newest.
   // Computed once per files change so adding a new video only gives the new
   // video a new number; existing videos keep their existing numbers.
-  const srsLive = useMemo(() => srsStreams.some(s => s.publish?.active), [srsStreams])
-
   const stableNumber = useMemo(() => {
     const sorted = [...files].sort((a, b) => a.mtime - b.mtime)
     const m = new Map<string, number>()
@@ -299,6 +297,7 @@ export default function StudioClient() {
   const [streamLog, setStreamLog] = useState<string[]>([])
   const [srsStreams, setSrsStreams] = useState<SrsStream[]>([])
   const [srsClients, setSrsClients] = useState<SrsClient[]>([])
+  const srsLive = useMemo(() => srsStreams.some(s => s.publish?.active), [srsStreams])
   const [showDiag, setShowDiag] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [switching, setSwitching] = useState(false)
