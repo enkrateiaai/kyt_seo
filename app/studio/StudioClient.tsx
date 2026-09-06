@@ -973,7 +973,6 @@ export default function StudioClient() {
                                   </div>
                                 )
                               ) : isPast ? (
-                              ) : isPast ? (
                                 <span style={{ color: C.faint, fontSize: 11 }}>—</span>
                               ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
