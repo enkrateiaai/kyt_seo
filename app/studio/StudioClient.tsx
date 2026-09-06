@@ -25,6 +25,15 @@ const C = {
 type FileEntry = { name: string; size: number; mtime: number; duration?: number }
 type StreamStatus = { running: boolean; info?: { filename?: string; started?: string; seekSeconds?: number }; progress?: string; progressSecs?: number; resumeAt?: number; lastInfo?: { filename?: string; seekSeconds?: number }; scheduled: ScheduledJob[] }
 type ScheduledJob = { id: string; filename?: string | null; streamKey: string; datetime: string; mode?: 'video' | 'live' }
+type HistoryEntry = { datetime: string; filename?: string | null; mode?: 'video' | 'live' }
+
+const HISTORY_KEY = 'kyt_studio_history'
+function loadHistory(): HistoryEntry[] {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') } catch { return [] }
+}
+function persistHistory(entries: HistoryEntry[]) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(entries)) } catch {}
+}
 type SrsStream = { app?: string; name?: string; publish?: { active?: boolean }; clients?: number; video?: { width?: number; height?: number }; recv_bytes?: number; kbps?: { recv_30s?: number; send_30s?: number } }
 type SrsClient = {
   id?: string
@@ -124,10 +133,13 @@ function buildSlots(): SlotDef[] {
   return slots
 }
 
-function matchJob(slot: SlotDef, slotTime: string, jobs: ScheduledJob[]): ScheduledJob | undefined {
-  const [hh, mm] = slotTime.split(':').map(Number)
-  const slotUtc = berlinToUTC(slot.date, hh, mm)
-  return jobs.find(j => Math.abs(new Date(j.datetime).getTime() - slotUtc.getTime()) < 1.75 * 3_600_000)
+function matchJob(slot: SlotDef, jobs: ScheduledJob[]): ScheduledJob | undefined {
+  const dayStart = berlinToUTC(slot.date, 0, 0).getTime()
+  const dayEnd = berlinToUTC(slot.date, 23, 59).getTime()
+  const dayJobs = jobs
+    .filter(j => { const t = new Date(j.datetime).getTime(); return t >= dayStart && t <= dayEnd })
+    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
+  return dayJobs[slot.slot - 1]
 }
 
 function ThumbnailImg({ name, size = 48 }: { name: string; size?: number }) {
@@ -284,6 +296,8 @@ export default function StudioClient() {
   const [otherUploads, setOtherUploads] = useState<UploadSession[]>([])
   const [flaskStatus, setFlaskStatus] = useState<FlaskStatus | null>(null)
   const [flaskBusy, setFlaskBusy] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const [history, setHistory] = useState<HistoryEntry[]>([])
   const ownSessionIdRef = useRef<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
@@ -293,6 +307,27 @@ export default function StudioClient() {
 
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 4000) }
   const flashPersist = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 12000) }
+
+  function addHistory(entry: HistoryEntry) {
+    setHistory(prev => {
+      const next = [entry, ...prev.filter(h => h.datetime !== entry.datetime)]
+      persistHistory(next)
+      return next
+    })
+  }
+  function removeHistory(datetime: string) {
+    setHistory(prev => {
+      const next = prev.filter(h => h.datetime !== datetime)
+      persistHistory(next)
+      return next
+    })
+  }
+  const pastHistory = useMemo(() =>
+    history
+      .filter(h => new Date(h.datetime).getTime() < Date.now())
+      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()),
+    [history]
+  )
 
   // Centralized API helper. Returns { ok, data, status, error } so callers can
   // decide what to do. NEVER throws: both network errors and non-OK responses
@@ -356,6 +391,10 @@ export default function StudioClient() {
       setSrsStreams(d.streams ?? [])
       setSrsClients(d.clients ?? [])
     }
+  }, [])
+
+  useEffect(() => {
+    setHistory(loadHistory())
   }, [])
 
   useEffect(() => {
@@ -559,6 +598,7 @@ export default function StudioClient() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filename, streamKey: 'live', datetime: utcDate.toISOString() }),
     })
+    if (r.ok) addHistory({ datetime: utcDate.toISOString(), filename, mode: 'video' })
     flash(r.ok ? `Eingeplant: ${filename} um ${t}` : `Fehler ${r.status}`)
     setAssigning(null); loadStatus()
   }
@@ -571,12 +611,14 @@ export default function StudioClient() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'live', streamKey: 'live', datetime: utcDate.toISOString() }),
     })
+    if (r.ok) addHistory({ datetime: utcDate.toISOString(), mode: 'live' })
     flash(r.ok ? `🔴 Live-Slot gesetzt: ${t} (manuell via OBS starten)` : `Fehler ${r.status}`)
     setAssigning(null); loadStatus()
   }
 
-  async function cancelSlot(jobId: string) {
+  async function cancelSlot(jobId: string, datetime: string) {
     await fetch(`${API}/stream/schedule/${jobId}`, { method: 'DELETE' })
+    removeHistory(datetime)
     loadStatus()
   }
 
@@ -905,7 +947,14 @@ export default function StudioClient() {
 
           {/* Schedule table */}
           <div style={card}>
-            <span style={label}>Zeitplan — nächste 14 Tage</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <span style={{ ...label, marginBottom: 0 }}>Zeitplan — nächste 14 Tage</span>
+              {pastHistory.length > 0 && (
+                <button onClick={() => setShowHistory(v => !v)} style={btnSmall('ghost')}>
+                  {showHistory ? 'Verlauf ▲' : `Verlauf (${pastHistory.length}) ▼`}
+                </button>
+              )}
+            </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
@@ -924,7 +973,7 @@ export default function StudioClient() {
                         <td style={{ padding: '10px 12px', color: C.muted, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 500 }}>{slot1.label}</td>
                         {[slot1, slot2].map(slot => {
                           const t = getSlotTime(slot)
-                          const job = matchJob(slot, t, status.scheduled)
+                          const job = matchJob(slot, status.scheduled)
                           const isPast = berlinToUTC(slot.date, 23, 59) < new Date()
                           return (
                             <td key={slot.slot} style={{ padding: '8px 12px' }}>
@@ -936,7 +985,7 @@ export default function StudioClient() {
                                       <div style={{ fontSize: 11, fontWeight: 700, color: C.red }}>{formatJobTime(job.datetime)}</div>
                                       <div style={{ fontSize: 11, color: C.red, fontWeight: 600 }}>Live — manuell via OBS starten</div>
                                     </div>
-                                    <button onClick={() => cancelSlot(job.id)} style={btnSmall('danger')}>×</button>
+                                    <button onClick={() => cancelSlot(job.id, job.datetime)} style={btnSmall('danger')}>×</button>
                                   </div>
                                 ) : (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -952,7 +1001,7 @@ export default function StudioClient() {
                                       <div style={{ fontSize: 11, fontWeight: 700, color: C.green }}>{formatJobTime(job.datetime)}</div>
                                       <div style={{ fontSize: 11, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{job.filename}</div>
                                     </div>
-                                    <button onClick={() => cancelSlot(job.id)} style={btnSmall('danger')}>×</button>
+                                    <button onClick={() => cancelSlot(job.id, job.datetime)} style={btnSmall('danger')}>×</button>
                                   </div>
                                 )
                               ) : isPast ? (
@@ -973,6 +1022,38 @@ export default function StudioClient() {
                   })}
                 </tbody>
               </table>
+              {showHistory && pastHistory.length > 0 && (
+                <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px dashed ${C.border}` }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: C.faint, textTransform: 'uppercase' as const, marginBottom: 8, paddingLeft: 12 }}>Verlauf</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <tbody>
+                      {pastHistory.map(h => (
+                        <tr key={h.datetime} style={{ borderBottom: `1px solid ${C.border}` }}>
+                          <td style={{ padding: '6px 12px', color: C.muted, whiteSpace: 'nowrap', fontSize: 11 }}>
+                            {new Date(h.datetime).toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: 'numeric', month: 'short' })}
+                          </td>
+                          <td style={{ padding: '6px 12px', color: C.faint, fontSize: 11, whiteSpace: 'nowrap' }}>
+                            {new Date(h.datetime).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })} Uhr
+                          </td>
+                          <td style={{ padding: '6px 12px' }}>
+                            {h.mode === 'live' ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 14 }}>🔴</span>
+                                <span style={{ fontSize: 11, color: C.red, fontWeight: 600 }}>Live (OBS)</span>
+                              </div>
+                            ) : h.filename ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <ThumbnailImg name={h.filename} size={28} />
+                                <span style={{ fontSize: 11, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>{h.filename}</span>
+                              </div>
+                            ) : <span style={{ color: C.faint }}>—</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1082,7 +1163,7 @@ export default function StudioClient() {
                         </div>
                         <div style={{ textAlign: 'right' as const, flexShrink: 0 }}>
                           <div style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>{minutesLeft > 0 ? `in ${minutesLeft} min` : 'gleich'}</div>
-                          <button onClick={() => cancelSlot(j.id)} style={btnSmall('danger')}>Löschen</button>
+                          <button onClick={() => cancelSlot(j.id, j.datetime)} style={btnSmall('danger')}>Löschen</button>
                         </div>
                       </div>
                     )
