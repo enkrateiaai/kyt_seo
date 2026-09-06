@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { noteViewer } from '@/lib/viewerTracker'
 
 // Direct SRS HLS access — bypasses Flask, no auth needed (stream is public to viewers anyway)
 const SRS_BASE = process.env.SRS_HLS_URL ?? 'http://100.117.19.15:8080'
@@ -9,6 +10,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ path: s
   const { path } = await context.params
   const joined = path.join('/')
   const search = req.nextUrl.search
+
+  // Track viewer via SRS-generated hls_ctx session ID (present on segment requests)
+  const hlsCtx = req.nextUrl.searchParams.get('hls_ctx')
+  if (hlsCtx && joined.endsWith('.ts')) noteViewer(hlsCtx)
 
   try {
     const upstream = await fetch(`${SRS_BASE}/${joined}${search}`, {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { liveViewerCount } from '@/lib/viewerTracker'
 
 const STUDIO_BASE = process.env.STUDIO_API_URL ?? 'http://100.117.19.15:3500'
 const STUDIO_TOKEN = process.env.STUDIO_API_TOKEN ?? ''
@@ -60,7 +61,7 @@ export async function GET() {
   }
 
   return NextResponse.json(
-    { live, next },
+    { live, next, viewers: live ? liveViewerCount() : 0 },
     { headers: { 'cache-control': 'no-store, max-age=0' } },
   )
 }

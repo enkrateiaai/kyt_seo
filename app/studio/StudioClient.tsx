@@ -26,6 +26,7 @@ type FileEntry = { name: string; size: number; mtime: number; duration?: number 
 type StreamStatus = { running: boolean; info?: { filename?: string; started?: string; seekSeconds?: number }; progress?: string; progressSecs?: number; resumeAt?: number; lastInfo?: { filename?: string; seekSeconds?: number }; scheduled: ScheduledJob[] }
 type ScheduledJob = { id: string; filename?: string | null; streamKey: string; datetime: string; mode?: 'video' | 'live' }
 type HistoryEntry = { datetime: string; filename?: string | null; mode?: 'video' | 'live' }
+type StreamStat = { startedAt: number; endedAt: number; durationSeconds: number; viewerCount: number; avgViewSeconds: number; maxViewSeconds: number; peakConcurrent: number }
 
 const HISTORY_KEY = 'kyt_studio_history'
 function loadHistory(): HistoryEntry[] {
@@ -298,6 +299,8 @@ export default function StudioClient() {
   const [flaskBusy, setFlaskBusy] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [streamStats, setStreamStats] = useState<StreamStat[]>([])
+  const [liveViewers, setLiveViewers] = useState(0)
   const ownSessionIdRef = useRef<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
@@ -398,8 +401,25 @@ export default function StudioClient() {
   }, [])
 
   useEffect(() => {
+    async function loadStreamStats() {
+      try {
+        const r = await fetch('/api/stream-stats')
+        if (r.ok) { const d = await r.json(); setStreamStats(d.records ?? []) }
+      } catch {}
+    }
+    loadStreamStats()
+  }, [])
+
+  useEffect(() => {
     loadFiles(); loadStatus()
-    const id = setInterval(loadStatus, 5000)
+    const id = setInterval(async () => {
+      await loadStatus()
+      // Piggyback live viewer count every 5s while live
+      try {
+        const r = await fetch('/api/live-local-status?_ts=' + Date.now(), { cache: 'no-store' })
+        if (r.ok) { const d = await r.json(); setLiveViewers(d.viewers ?? 0) }
+      } catch {}
+    }, 5000)
     return () => clearInterval(id)
   }, [loadFiles, loadStatus])
 
@@ -933,6 +953,11 @@ export default function StudioClient() {
                 <span style={label}>Live-Monitor</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button onClick={() => setLiveKey(Date.now())} style={btnSmall('ghost')} title="Player neu laden">↻</button>
+                  {liveViewers > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, background: C.border, borderRadius: 10, padding: '1px 7px' }}>
+                      👁 {liveViewers}
+                    </span>
+                  )}
                   <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: C.green }}>● LIVE</span>
                 </div>
               </div>
@@ -1026,30 +1051,50 @@ export default function StudioClient() {
                 <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px dashed ${C.border}` }}>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: C.faint, textTransform: 'uppercase' as const, marginBottom: 8, paddingLeft: 12 }}>Verlauf</div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <th style={{ textAlign: 'left', padding: '4px 12px', fontSize: 9, fontWeight: 700, color: C.faint, letterSpacing: 0.6, textTransform: 'uppercase' as const }}>Datum</th>
+                        <th style={{ textAlign: 'left', padding: '4px 12px', fontSize: 9, fontWeight: 700, color: C.faint, letterSpacing: 0.6, textTransform: 'uppercase' as const }}>Video</th>
+                        <th style={{ textAlign: 'right', padding: '4px 12px', fontSize: 9, fontWeight: 700, color: C.faint, letterSpacing: 0.6, textTransform: 'uppercase' as const }}>Zuschauer</th>
+                        <th style={{ textAlign: 'right', padding: '4px 12px', fontSize: 9, fontWeight: 700, color: C.faint, letterSpacing: 0.6, textTransform: 'uppercase' as const }}>Ø Watchtime</th>
+                        <th style={{ textAlign: 'right', padding: '4px 12px', fontSize: 9, fontWeight: 700, color: C.faint, letterSpacing: 0.6, textTransform: 'uppercase' as const }}>Dauer</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {pastHistory.map(h => (
-                        <tr key={h.datetime} style={{ borderBottom: `1px solid ${C.border}` }}>
-                          <td style={{ padding: '6px 12px', color: C.muted, whiteSpace: 'nowrap', fontSize: 11 }}>
-                            {new Date(h.datetime).toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: 'numeric', month: 'short' })}
-                          </td>
-                          <td style={{ padding: '6px 12px', color: C.faint, fontSize: 11, whiteSpace: 'nowrap' }}>
-                            {new Date(h.datetime).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })} Uhr
-                          </td>
-                          <td style={{ padding: '6px 12px' }}>
-                            {h.mode === 'live' ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{ fontSize: 14 }}>🔴</span>
-                                <span style={{ fontSize: 11, color: C.red, fontWeight: 600 }}>Live (OBS)</span>
-                              </div>
-                            ) : h.filename ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <ThumbnailImg name={h.filename} size={28} />
-                                <span style={{ fontSize: 11, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>{h.filename}</span>
-                              </div>
-                            ) : <span style={{ color: C.faint }}>—</span>}
-                          </td>
-                        </tr>
-                      ))}
+                      {pastHistory.map(h => {
+                        const hTime = new Date(h.datetime).getTime()
+                        const stat = streamStats.find(s => Math.abs(s.startedAt - hTime) < 2 * 3600 * 1000)
+                        return (
+                          <tr key={h.datetime} style={{ borderBottom: `1px solid ${C.border}` }}>
+                            <td style={{ padding: '7px 12px', color: C.muted, whiteSpace: 'nowrap', fontSize: 11 }}>
+                              <div>{new Date(h.datetime).toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                              <div style={{ color: C.faint, fontSize: 10 }}>{new Date(h.datetime).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })} Uhr</div>
+                            </td>
+                            <td style={{ padding: '7px 12px' }}>
+                              {h.mode === 'live' ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ fontSize: 14 }}>🔴</span>
+                                  <span style={{ fontSize: 11, color: C.red, fontWeight: 600 }}>Live (OBS)</span>
+                                </div>
+                              ) : h.filename ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <ThumbnailImg name={h.filename} size={28} />
+                                  <span style={{ fontSize: 11, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{h.filename}</span>
+                                </div>
+                              ) : <span style={{ color: C.faint }}>—</span>}
+                            </td>
+                            <td style={{ padding: '7px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              {stat ? <span style={{ fontSize: 11, fontWeight: 700, color: C.text }}>👁 {stat.viewerCount}{stat.peakConcurrent > stat.viewerCount ? ` (max ${stat.peakConcurrent})` : ''}</span> : <span style={{ color: C.faint, fontSize: 11 }}>—</span>}
+                            </td>
+                            <td style={{ padding: '7px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              {stat ? <span style={{ fontSize: 11, color: C.muted }}>{fmtDuration(stat.avgViewSeconds)}</span> : <span style={{ color: C.faint, fontSize: 11 }}>—</span>}
+                            </td>
+                            <td style={{ padding: '7px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              {stat ? <span style={{ fontSize: 11, color: C.faint }}>{fmtDuration(stat.durationSeconds)}</span> : <span style={{ color: C.faint, fontSize: 11 }}>—</span>}
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
