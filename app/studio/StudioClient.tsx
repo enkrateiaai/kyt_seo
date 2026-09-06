@@ -305,6 +305,16 @@ export default function StudioClient() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
 
+  // responsive: matches mobile breakpoint
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const apply = () => setIsMobile(mq.matches)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
+
   const getSlotTime = useCallback((s: SlotDef) =>
     slotTimes[slotKey(s)] ?? defaultSlotTime(s.date, s.slot), [slotTimes])
 
@@ -666,30 +676,32 @@ export default function StudioClient() {
   }
 
   // --- Shared styles ---
+  const pad = isMobile ? 12 : 20
   const card: React.CSSProperties = {
-    background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: 20,
+    background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: pad,
   }
   const label: React.CSSProperties = {
     fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' as const,
-    color: C.faint, marginBottom: 14, display: 'block',
+    color: C.faint, marginBottom: isMobile ? 10 : 14, display: 'block',
   }
   const btnPrimary = (danger?: boolean): React.CSSProperties => ({
     display: 'inline-flex', alignItems: 'center', gap: 5,
-    padding: '7px 14px', borderRadius: 5, border: 'none', cursor: 'pointer', fontSize: 12,
-    fontWeight: 600, letterSpacing: 0.3,
+    padding: isMobile ? '9px 14px' : '7px 14px', borderRadius: 5, border: 'none', cursor: 'pointer', fontSize: isMobile ? 13 : 12,
+    fontWeight: 600, letterSpacing: 0.3, minHeight: 36,
     background: danger ? C.redLight : C.goldDark,
     color: danger ? C.red : C.surface,
   })
   const btnSmall = (variant: 'gold' | 'danger' | 'ghost' = 'ghost'): React.CSSProperties => ({
     display: 'inline-flex', alignItems: 'center', gap: 4,
-    padding: '4px 10px', borderRadius: 4, border: `1px solid ${variant === 'danger' ? C.red : variant === 'gold' ? C.goldDark : C.border}`,
-    cursor: 'pointer', fontSize: 11, fontWeight: 600,
+    padding: isMobile ? '8px 12px' : '4px 10px', borderRadius: 4, border: `1px solid ${variant === 'danger' ? C.red : variant === 'gold' ? C.goldDark : C.border}`,
+    cursor: 'pointer', fontSize: isMobile ? 12 : 11, fontWeight: 600, minHeight: 32,
     background: variant === 'danger' ? C.redLight : variant === 'gold' ? C.gold : 'transparent',
     color: variant === 'danger' ? C.red : variant === 'gold' ? C.text : C.muted,
   })
   const inputStyle: React.CSSProperties = {
     background: C.bg, border: `1px solid ${C.border}`, color: C.text,
-    borderRadius: 4, padding: '5px 8px', fontSize: 12, outline: 'none',
+    borderRadius: 4, padding: isMobile ? '9px 10px' : '5px 8px', fontSize: isMobile ? 14 : 12, outline: 'none',
+    minHeight: 36,
   }
 
   const groupedSlots: Record<string, SlotDef[]> = {}
@@ -699,7 +711,7 @@ export default function StudioClient() {
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '"DM Sans", system-ui, sans-serif', fontSize: 14 }}>
 
       {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 28px', background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 20 }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: isMobile ? '12px 14px' : '14px 28px', background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 20, flexWrap: 'wrap' as const }}>
         <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0.3, color: C.text }}>Video Steuerung</span>
         {directApi && (
           <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: C.green, background: C.greenLight, border: `1px solid ${C.green}`, borderRadius: 3, padding: '2px 7px' }}>
@@ -734,7 +746,7 @@ export default function StudioClient() {
       {/* Conflict dialog */}
       {conflictFile && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ ...card, maxWidth: 380, width: '100%', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
+          <div style={{ ...card, maxWidth: 380, width: 'calc(100% - 32px)', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
             <span style={label}>Datei existiert</span>
             <p style={{ color: C.muted, marginBottom: 20, fontSize: 13 }}>„{conflictFile.name}" ist bereits vorhanden. Überschreiben oder Kopie erstellen?</p>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -749,7 +761,7 @@ export default function StudioClient() {
       {/* Delete confirmation */}
       {confirmDelete && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ ...card, maxWidth: 380, width: '100%', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
+          <div style={{ ...card, maxWidth: 380, width: 'calc(100% - 32px)', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
             <span style={label}>Datei löschen?</span>
             <p style={{ color: C.muted, marginBottom: 20, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>„{confirmDelete}"</p>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -763,7 +775,7 @@ export default function StudioClient() {
       {/* Assign modal */}
       {assigning && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ ...card, maxWidth: 420, width: '100%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
+          <div style={{ ...card, maxWidth: 420, width: 'calc(100% - 32px)', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
             <span style={label}>Slot zuweisen</span>
             <p style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>{assigning.label} · Slot {assigning.slot} · {getSlotTime(assigning)}</p>
             <div onClick={() => assignLiveSlot(assigning)}
@@ -796,7 +808,7 @@ export default function StudioClient() {
         </div>
       )}
 
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '20px 20px', display: 'grid', gridTemplateColumns: '360px 1fr', gap: 20 }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: isMobile ? '12px' : '20px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '360px 1fr', gap: isMobile ? 12 : 20 }}>
 
         {otherUploads.length > 0 && !uploading && (
           <div style={{ gridColumn: '1 / -1' }}>
@@ -805,7 +817,7 @@ export default function StudioClient() {
         )}
 
         {/* Left column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 16 }}>
 
           {/* Now streaming / resume panel */}
           {(status.running || (status.resumeAt && status.resumeAt > 0)) && (() => {
@@ -947,7 +959,7 @@ export default function StudioClient() {
         </div>
 
         {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 16 }}>
 
           {/* Live monitor — shows whenever SRS has an active publisher (OBS or file stream) */}
           {(status.running || srsLive) && (
