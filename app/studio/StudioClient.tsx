@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 
 const API = '/api/studio-proxy/api'
 
@@ -1241,6 +1241,196 @@ export default function StudioClient() {
             </>
           )}
         </div>
+      </div>
+
+      {/* GDrive Browser */}
+      <GDriveBrowser cardStyle={card} labelStyle={label} btnSmall={btnSmall} API={API} onAdded={loadFiles} />
+    </div>
+  )
+}
+
+// ── GDrive types ──────────────────────────────────────────────────────────────
+type GDriveFile = { name: string; size: number; modtime: string; id: string; in_mediathek: boolean }
+type CopyJob = { status: 'running' | 'done' | 'error' | 'already_exists'; progress?: string; error?: string }
+
+function fmtSize(b: number): string {
+  if (b >= 1024 ** 3) return `${(b / 1024 ** 3).toFixed(1)} GB`
+  return `${(b / 1024 ** 2).toFixed(0)} MB`
+}
+
+function GDriveLazyThumb({ name, API }: { name: string; API: string }) {
+  const ref = React.useRef<HTMLDivElement>(null)
+  const [src, setSrc] = React.useState<string | null>(null)
+  const [failed, setFailed] = React.useState(false)
+  React.useEffect(() => {
+    const el = ref.current; if (!el) return
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setSrc(`${API}/gdrive/thumbnail?name=${encodeURIComponent(name)}`)
+        obs.disconnect()
+      }
+    }, { rootMargin: '100px' })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [name, API])
+  return (
+    <div ref={ref} style={{ width: '100%', aspectRatio: '16/9', background: '#1a1614', borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
+      {src && !failed
+        ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setFailed(true)} />
+        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 22 }}>▶</div>
+      }
+    </div>
+  )
+}
+
+function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
+  cardStyle: React.CSSProperties
+  labelStyle: React.CSSProperties
+  btnSmall: (v?: 'gold' | 'danger' | 'ghost') => React.CSSProperties
+  API: string
+  onAdded: () => void
+}) {
+  const [open, setOpen] = React.useState(false)
+  const [months, setMonths] = React.useState(2)
+  const [files, setFiles] = React.useState<GDriveFile[]>([])
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState('')
+  const [jobs, setJobs] = React.useState<Record<string, CopyJob & { name: string }>>({})
+
+  async function load(m = months) {
+    setLoading(true); setError('')
+    try {
+      const r = await fetch(`${API}/gdrive/list?months=${m}`)
+      const d = await r.json()
+      if (!r.ok) { setError(d.error ?? 'Fehler'); setFiles([]) }
+      else setFiles(d.files ?? [])
+    } catch { setError('Netzwerkfehler') }
+    setLoading(false)
+  }
+
+  function toggle() {
+    if (!open && files.length === 0) load()
+    setOpen(v => !v)
+  }
+
+  function changeMonths(m: number) {
+    setMonths(m); load(m)
+  }
+
+  async function copyFile(f: GDriveFile) {
+    const r = await fetch(`${API}/gdrive/copy`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: f.name }),
+    })
+    const d = await r.json()
+    if (d.status === 'already_exists') {
+      setFiles(prev => prev.map(x => x.name === f.name ? { ...x, in_mediathek: true } : x))
+      return
+    }
+    if (d.job_id) {
+      setJobs(prev => ({ ...prev, [d.job_id]: { status: 'running', progress: '', name: f.name } }))
+      pollJob(d.job_id, f.name)
+    }
+  }
+
+  function pollJob(jobId: string, name: string) {
+    const iv = setInterval(async () => {
+      try {
+        const r = await fetch(`${API}/gdrive/copy-status?job=${jobId}`)
+        const d = await r.json() as CopyJob
+        setJobs(prev => ({ ...prev, [jobId]: { ...d, name } }))
+        if (d.status === 'done') {
+          clearInterval(iv)
+          setFiles(prev => prev.map(x => x.name === name ? { ...x, in_mediathek: true } : x))
+          onAdded()
+        }
+        if (d.status === 'error') clearInterval(iv)
+      } catch { clearInterval(iv) }
+    }, 3000)
+  }
+
+  const activeJobs = Object.entries(jobs).filter(([, j]) => j.status === 'running')
+
+  return (
+    <div style={{ padding: '0 28px 28px' }}>
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: open ? 16 : 0 }}>
+          <span style={{ ...labelStyle, marginBottom: 0 }}>GDrive Mediathek</span>
+          {activeJobs.length > 0 && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#C8834E', background: 'rgba(200,131,78,.1)', border: '1px solid rgba(200,131,78,.3)', borderRadius: 3, padding: '2px 7px', letterSpacing: 0.6 }}>
+              {activeJobs.length} Kopie läuft…
+            </span>
+          )}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            {open && (
+              <>
+                {[1, 2, 3, 6].map(m => (
+                  <button key={m} onClick={() => changeMonths(m)}
+                    style={{ ...btnSmall(months === m ? 'gold' : 'ghost'), padding: '3px 9px' }}>
+                    {m}M
+                  </button>
+                ))}
+                <button onClick={() => load()} style={btnSmall('ghost')} title="Neu laden">↻</button>
+              </>
+            )}
+            <button onClick={toggle} style={btnSmall('ghost')}>
+              {open ? 'Schließen ▲' : 'Öffnen ▼'}
+            </button>
+          </div>
+        </div>
+
+        {open && (
+          <>
+            {loading && <div style={{ color: '#9B8E7E', fontSize: 12, padding: '8px 0' }}>Lade GDrive-Liste…</div>}
+            {error && <div style={{ color: '#A35050', fontSize: 12, padding: '8px 0' }}>{error}</div>}
+
+            {/* Running copies status */}
+            {Object.entries(jobs).filter(([, j]) => j.status !== 'done').map(([id, j]) => (
+              <div key={id} style={{ marginBottom: 8, padding: '8px 12px', borderRadius: 5, background: j.status === 'error' ? 'rgba(163,80,80,.08)' : 'rgba(74,124,89,.08)', border: `1px solid ${j.status === 'error' ? 'rgba(163,80,80,.2)' : 'rgba(74,124,89,.2)'}`, fontSize: 11 }}>
+                <span style={{ fontWeight: 600, color: j.status === 'error' ? '#A35050' : '#4A7C59' }}>
+                  {j.status === 'running' ? '⬇ ' : '✗ '}{j.name}
+                </span>
+                {j.progress && <span style={{ color: '#9B8E7E', marginLeft: 8 }}>{j.progress}</span>}
+                {j.error && <span style={{ color: '#A35050', marginLeft: 8 }}>{j.error}</span>}
+              </div>
+            ))}
+
+            {!loading && !error && files.length === 0 && (
+              <div style={{ color: '#9B8E7E', fontSize: 12, padding: '8px 0' }}>Keine Videos gefunden (letzte {months} Monate, &gt;250 MB)</div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 8 }}>
+              {files.map(f => {
+                const copying = Object.values(jobs).some(j => j.name === f.name && j.status === 'running')
+                const copyErr = Object.values(jobs).find(j => j.name === f.name && j.status === 'error')
+                return (
+                  <div key={f.name} style={{ background: C.bg, border: `1px solid ${f.in_mediathek ? 'rgba(74,124,89,.35)' : C.border}`, borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <GDriveLazyThumb name={f.name} API={API} />
+                    <div style={{ padding: '8px 10px', flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: C.text, lineHeight: 1.35, wordBreak: 'break-all' }}>{f.name}</div>
+                      <div style={{ fontSize: 10, color: C.faint, display: 'flex', gap: 8 }}>
+                        <span>{fmtSize(f.size)}</span>
+                        <span>{new Date(f.modtime).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+                      </div>
+                      {copyErr && <div style={{ fontSize: 10, color: '#A35050' }}>Fehler: {copyErr.error}</div>}
+                      <div style={{ marginTop: 4 }}>
+                        {f.in_mediathek ? (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: '#4A7C59' }}>✓ In Mediathek</span>
+                        ) : copying ? (
+                          <span style={{ fontSize: 10, color: '#9B8E7E' }}>Wird kopiert…</span>
+                        ) : (
+                          <button onClick={() => copyFile(f)} style={{ ...btnSmall('gold'), width: '100%', justifyContent: 'center', padding: '5px 0' }}>
+                            + Zur Mediathek
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
