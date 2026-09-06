@@ -234,38 +234,17 @@ function ActionBtn({ label, busy, disabled, danger, onClick }: {
   )
 }
 
-function LivePlayer({ src }: { src: string }) {
-  const ref = useRef<HTMLVideoElement>(null)
-  useEffect(() => {
-    const video = ref.current
-    if (!video) return
-    let hls: any = null
-    function attach(Hls: any) {
-      if (Hls.isSupported()) {
-        hls = new Hls({ lowLatencyMode: false, maxBufferLength: 10 })
-        hls.loadSource(src)
-        hls.attachMedia(video!)
-        hls.on(Hls.Events.MANIFEST_PARSED, () => { video!.muted = true; video!.play().catch(() => {}) })
-      } else if (video!.canPlayType('application/vnd.apple.mpegurl')) {
-        video!.src = src
-        video!.muted = true
-        video!.play().catch(() => {})
-      }
-    }
-    const w = window as any
-    if (w.Hls) {
-      attach(w.Hls)
-    } else {
-      const s = document.createElement('script')
-      s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js'
-      s.onload = () => attach(w.Hls)
-      document.head.appendChild(s)
-    }
-    return () => { hls?.destroy() }
-  }, [src])
+function LiveMonitorIframe({ liveKey }: { liveKey: number }) {
   return (
-    <video ref={ref} controls muted playsInline
-      style={{ width: '100%', borderRadius: 5, background: '#1a1509', display: 'block', aspectRatio: '16/9' }} />
+    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 5, overflow: 'hidden', background: '#000' }}>
+      <iframe
+        key={liveKey}
+        src={`/live-local/widget?_ts=${liveKey}`}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+        allow="autoplay; fullscreen"
+        allowFullScreen
+      />
+    </div>
   )
 }
 
@@ -293,6 +272,7 @@ export default function StudioClient() {
   const [seekDraft, setSeekDraft] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [videoKey, setVideoKey] = useState(0)
+  const [liveKey, setLiveKey] = useState(() => Date.now())
   const [statusError, setStatusError] = useState(false)
   const [streamLog, setStreamLog] = useState<string[]>([])
   const [srsStreams, setSrsStreams] = useState<SrsStream[]>([])
@@ -909,14 +889,17 @@ export default function StudioClient() {
             <div style={{ ...card, borderTop: `3px solid ${C.green}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span style={label}>Live-Monitor</span>
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: C.green }}>● LIVE</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button onClick={() => setLiveKey(Date.now())} style={btnSmall('ghost')} title="Player neu laden">↻</button>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: C.green }}>● LIVE</span>
+                </div>
               </div>
               <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
                 {status.running
                   ? `${status.info?.filename ?? ''}${status.progress ? ' · ' + status.progress : ''}`
                   : 'OBS-Stream aktiv'}
               </div>
-              <LivePlayer src="/api/hls-proxy/live/live.m3u8" />
+              <LiveMonitorIframe liveKey={liveKey} />
             </div>
           )}
 
