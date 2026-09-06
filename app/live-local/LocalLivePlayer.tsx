@@ -99,7 +99,7 @@ export default function LocalLivePlayer() {
 
   const nextAt = nextStream ? new Date(nextStream.at).getTime() : null
   const msUntil = nextAt !== null ? nextAt - now : null
-  const isImminent = msUntil !== null && msUntil <= 5 * 60 * 1000 && msUntil > 0
+  const isImminent = msUntil !== null && msUntil <= 10 * 60 * 1000 && msUntil > 0
   const hasCountdown = nextStream && msUntil !== null && msUntil > 0
 
   return (
@@ -234,7 +234,7 @@ export default function LocalLivePlayer() {
                     lineHeight: 1.1,
                   }}
                 >
-                  Es geht gleich los
+                  {isImminent ? 'Es geht gleich los' : '(Nächste Übertragung)'}
                 </h3>
 
                 <div
@@ -263,45 +263,6 @@ export default function LocalLivePlayer() {
                   {formatBerlinWeekday(nextStream!.at)} · {formatBerlinTime(nextStream!.at)} Uhr
                 </div>
 
-                {nextStream?.filename && (
-                  <div
-                    style={{
-                      marginTop: 18,
-                      padding: '10px 16px',
-                      borderRadius: 12,
-                      background: 'rgba(255,255,255,0.55)',
-                      border: '1px solid rgba(221,213,200,0.85)',
-                      display: 'inline-block',
-                      maxWidth: '100%',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 10,
-                        letterSpacing: '0.16em',
-                        textTransform: 'uppercase',
-                        color: '#9B8E7E',
-                        marginBottom: 2,
-                      }}
-                    >
-                      Nächste Sendung
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        color: '#2C2416',
-                        fontWeight: 500,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: 360,
-                      }}
-                      title={nextStream.filename}
-                    >
-                      {stripExt(nextStream.filename)}
-                    </div>
-                  </div>
-                )}
 
                 <p
                   style={{
@@ -312,7 +273,7 @@ export default function LocalLivePlayer() {
                     lineHeight: 1.7,
                   }}
                 >
-                  Der Stream beginnt automatisch. Du musst die Seite nicht neu laden.
+                  Der Stream beginnt automatisch, eventuell musst du auf Play / Wiedergabe drücken.
                 </p>
               </div>
             </div>
