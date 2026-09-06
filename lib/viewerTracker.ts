@@ -33,7 +33,7 @@ const FINALIZE_DELAY = 60_000 // wait 60s after stream end before finalizing
 
 async function srsIsLive(): Promise<boolean> {
   try {
-    const r = await fetch(`${SRS_API}/api/v1/streams/`, {
+    const r = await fetch(`${SRS_API}/api/v1/streams/?_tracker=${Date.now()}`, {
       cache: 'no-store', signal: AbortSignal.timeout(3000),
     })
     if (!r.ok) return false

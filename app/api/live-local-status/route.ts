@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { liveViewerCount } from '@/lib/viewerTracker'
 
+export const dynamic = 'force-dynamic'
+
 const STUDIO_BASE = process.env.STUDIO_API_URL ?? 'http://100.117.19.15:3500'
 const STUDIO_TOKEN = process.env.STUDIO_API_TOKEN ?? ''
 
@@ -10,14 +12,16 @@ export async function GET() {
   // Run Flask + SRS checks in parallel — Flask for scheduled jobs, SRS for active publishers
   // OBS streams bypass Flask entirely, so SRS is the authoritative live source
   const srsBase = STUDIO_BASE.replace(':3500', ':1985')
+  // Append _ts to defeat Next.js in-flight fetch deduplication (same URL = shared Response)
+  const ts = Date.now()
 
   const [flaskResult, srsResult] = await Promise.allSettled([
-    fetch(`${STUDIO_BASE}/api/stream/status`, {
+    fetch(`${STUDIO_BASE}/api/stream/status?_ts=${ts}`, {
       cache: 'no-store',
       headers: { Authorization: `Bearer ${STUDIO_TOKEN}`, Accept: 'application/json' },
       signal: AbortSignal.timeout(4000),
     }),
-    fetch(`${srsBase}/api/v1/streams/`, {
+    fetch(`${srsBase}/api/v1/streams/?_ts=${ts}`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(3000),
@@ -27,19 +31,23 @@ export async function GET() {
   let flaskRunning = false
   let jobs: ScheduledJob[] = []
   if (flaskResult.status === 'fulfilled' && flaskResult.value.ok) {
-    const data = (await flaskResult.value.json()) as { running?: boolean; scheduled?: ScheduledJob[] }
-    flaskRunning = !!data.running
-    jobs = Array.isArray(data.scheduled) ? data.scheduled : []
+    try {
+      const data = (await flaskResult.value.json()) as { running?: boolean; scheduled?: ScheduledJob[] }
+      flaskRunning = !!data.running
+      jobs = Array.isArray(data.scheduled) ? data.scheduled : []
+    } catch { /* body consumed by concurrent request */ }
   }
 
   let srsLive = false
   if (srsResult.status === 'fulfilled' && srsResult.value.ok) {
-    const payload = (await srsResult.value.json()) as {
-      streams?: Array<{ app?: string; publish?: { active?: boolean } }>
-    }
-    srsLive = (payload.streams ?? []).some(
-      (s) => s.app === 'live' && Boolean(s.publish?.active),
-    )
+    try {
+      const payload = (await srsResult.value.json()) as {
+        streams?: Array<{ app?: string; publish?: { active?: boolean } }>
+      }
+      srsLive = (payload.streams ?? []).some(
+        (s) => s.app === 'live' && Boolean(s.publish?.active),
+      )
+    } catch { /* body consumed by concurrent request */ }
   }
 
   const live = flaskRunning || srsLive
