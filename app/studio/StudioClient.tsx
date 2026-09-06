@@ -234,11 +234,48 @@ function ActionBtn({ label, busy, disabled, danger, onClick }: {
   )
 }
 
+function LivePlayer({ src }: { src: string }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const video = ref.current
+    if (!video) return
+    let hls: any = null
+    function attach(Hls: any) {
+      if (Hls.isSupported()) {
+        hls = new Hls({ lowLatencyMode: false, maxBufferLength: 10 })
+        hls.loadSource(src)
+        hls.attachMedia(video!)
+        hls.on(Hls.Events.MANIFEST_PARSED, () => { video!.muted = true; video!.play().catch(() => {}) })
+      } else if (video!.canPlayType('application/vnd.apple.mpegurl')) {
+        video!.src = src
+        video!.muted = true
+        video!.play().catch(() => {})
+      }
+    }
+    const w = window as any
+    if (w.Hls) {
+      attach(w.Hls)
+    } else {
+      const s = document.createElement('script')
+      s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js'
+      s.onload = () => attach(w.Hls)
+      document.head.appendChild(s)
+    }
+    return () => { hls?.destroy() }
+  }, [src])
+  return (
+    <video ref={ref} controls muted playsInline
+      style={{ width: '100%', borderRadius: 5, background: '#1a1509', display: 'block', aspectRatio: '16/9' }} />
+  )
+}
+
 export default function StudioClient() {
   const [files, setFiles] = useState<FileEntry[]>([])
   // Stable per-video number: #1 = oldest (by mtime), #N = newest.
   // Computed once per files change so adding a new video only gives the new
   // video a new number; existing videos keep their existing numbers.
+  const srsLive = useMemo(() => srsStreams.some(s => s.publish?.active), [srsStreams])
+
   const stableNumber = useMemo(() => {
     const sorted = [...files].sort((a, b) => a.mtime - b.mtime)
     const m = new Map<string, number>()
@@ -348,12 +385,12 @@ export default function StudioClient() {
     return () => clearInterval(id)
   }, [loadFiles, loadStatus])
 
+  // Always poll SRS info for live player — faster when diag panel open
   useEffect(() => {
-    if (!showDiag) return
     loadDiag()
-    const id = setInterval(loadDiag, 3000)
+    const id = setInterval(loadDiag, showDiag ? 3000 : 5000)
     return () => clearInterval(id)
-    }, [showDiag, loadDiag])
+  }, [showDiag, loadDiag])
 
   const loadUploads = useCallback(async () => {
     try {
@@ -842,6 +879,22 @@ export default function StudioClient() {
 
         {/* Right column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Live monitor — shows whenever SRS has an active publisher (OBS or file stream) */}
+          {(status.running || srsLive) && (
+            <div style={{ ...card, borderTop: `3px solid ${C.green}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={label}>Live-Monitor</span>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: C.green }}>● LIVE</span>
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+                {status.running
+                  ? `${status.info?.filename ?? ''}${status.progress ? ' · ' + status.progress : ''}`
+                  : 'OBS-Stream aktiv'}
+              </div>
+              <LivePlayer src="/api/hls-proxy/live/live.m3u8" />
+            </div>
+          )}
 
           {/* Schedule table */}
           <div style={card}>
