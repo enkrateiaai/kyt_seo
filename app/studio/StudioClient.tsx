@@ -922,7 +922,14 @@ export default function StudioClient() {
                             <td key={slot.slot} style={{ padding: '8px 12px' }}>
                               {job ? (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <ThumbnailImg name={job.filename} size={36} />
+                                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                                    <ThumbnailImg name={job.filename} size={36} />
+                                    {stableNumber.get(job.filename) && (
+                                      <span style={{ position: 'absolute', top: 2, left: 2, background: 'rgba(44,36,22,.8)', color: '#FAF7F2', fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 2, lineHeight: 1.4 }}>
+                                        #{stableNumber.get(job.filename)}
+                                      </span>
+                                    )}
+                                  </div>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: 11, fontWeight: 700, color: C.green }}>{formatJobTime(job.datetime)}</div>
                                     <div style={{ fontSize: 11, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{job.filename}</div>
