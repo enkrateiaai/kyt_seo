@@ -188,41 +188,6 @@ export default function LocalLivePlayer() {
               }}
             >
               <div style={{ maxWidth: 580, width: '100%' }}>
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 14px',
-                    borderRadius: 999,
-                    border: '1px solid rgba(185, 130, 60, 0.25)',
-                    background: 'rgba(255,255,255,0.78)',
-                    color: '#7A5A4B',
-                    fontSize: 11,
-                    letterSpacing: '0.16em',
-                    textTransform: 'uppercase',
-                    marginBottom: 22,
-                  }}
-                >
-                  {isImminent ? (
-                    <>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          background: '#C8834E',
-                          boxShadow: '0 0 0 0 rgba(200,131,78,0.6)',
-                          animation: 'kyt-pulse 1.4s ease-out infinite',
-                        }}
-                      />
-                      Startet bald
-                    </>
-                  ) : (
-                    'Geplant'
-                  )}
-                </div>
 
                 <h3
                   style={{
@@ -234,7 +199,7 @@ export default function LocalLivePlayer() {
                     lineHeight: 1.1,
                   }}
                 >
-                  {isImminent ? 'Es geht gleich los' : '(Nächste Übertragung)'}
+                  Nächste Übertragung
                 </h3>
 
                 <div
@@ -333,13 +298,7 @@ export default function LocalLivePlayer() {
           )}
         </div>
       </div>
-      <style>{`
-        @keyframes kyt-pulse {
-          0%   { box-shadow: 0 0 0 0   rgba(200,131,78,0.55); }
-          70%  { box-shadow: 0 0 0 10px rgba(200,131,78,0);   }
-          100% { box-shadow: 0 0 0 0   rgba(200,131,78,0);    }
-        }
-      `}</style>
+
     </section>
   )
 }
