@@ -221,3 +221,69 @@ Site down?
 - GDrive scroll hint / viewer tracking shipped in `21aafa4`, monitor engagement
 - Counter numbering for new videos must assign a new number, not renumber existing (see session notes 2026-09)
 
+
+---
+
+## 11. Secret handling protocol
+
+You are operating on Viktor's infrastructure. When you need a secret value (API key, token, password, private key, etc.) to complete a task, follow this protocol.
+
+### When you need a secret
+
+You will encounter tasks like: "deploy this", "rotate the Clerk key", "add a new PayPal client", "fix the webhook". These tasks require real values. **Never invent, guess, derive, or fabricate any secret value.** If a value is not already in your context, you do not have it.
+
+### How to ask Viktor
+
+When you realize you need a secret, stop and ask in this exact format:
+
+> I need a secret for **[purpose, e.g. `REDIS_URL` for build-time injection / `SSH_DEPLOY_KEY` for the deploy step / `PAYPAL_CLIENT_SECRET` for the shop]**.
+>
+> Where to put it: **[repo secret name OR host path OR env var]**.
+>
+> Please provide it via the most secure channel you prefer:
+> - Paste into chat (acceptable here — this conversation is the operational channel)
+> - Add it directly to the host file `/home/vik/docker/kyt-seo/.env.local` on vrouwtje
+> - Add it as a GitHub repo secret under Settings → Secrets and variables → Actions
+>
+> After providing, I'll continue with **[the exact next step I will take]**.
+
+### What NOT to do
+
+- ❌ Do not invent placeholder values like `sk_test_REPLACE_ME` or `xxx`
+- ❌ Do not copy values from `.env.local` in your memory if the file may have rotated
+- ❌ Do not echo the secret back in chat after using it (one-time use is the goal)
+- ❌ Do not write the secret into a file in the repo, even temporarily — `.env.local` and `*.local` are gitignored but assume everything committed is public
+- ❌ Do not store the secret in your persistent memory across sessions
+
+### What TO do once received
+
+1. **Use it once** for the immediate task
+2. **Persist it in the right place** (host file or repo secret) and tell Viktor where you put it
+3. **Do not echo it back** in subsequent messages — refer to it by name only ("the Redis URL is set on vrouwtje")
+4. **Suggest rotation timing** — note in your final message if the secret should be rotated soon
+
+### The map of where secrets live
+
+| Purpose | Where |
+|---|---|
+| Runtime env (Redis, Clerk, PayPal) | `/home/vik/docker/kyt-seo/.env.local` on vrouwtje |
+| Build-time env (same names) | GitHub repo secrets → injected via `Dockerfile.deploy` build args |
+| GitHub Actions secrets | Repo Settings → Secrets: `CLERK_SECRET_KEY`, `REDIS_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `TS_AUTHKEY`, `SSH_DEPLOY_KEY` |
+| Cloudflare tunnel token | `cloudflared-kyt-production` container on vrouwtje, mounted via env or config file |
+| Tailscale auth key | GitHub repo secret `TS_AUTHKEY` (rotates) |
+| SSH keypair for deploy | Public key in `vik@100.90.161.78`'s `~/.ssh/authorized_keys`; private key in `SSH_DEPLOY_KEY` repo secret |
+
+### Asking Viktor to add a new secret
+
+If the task requires a brand-new credential that doesn't exist yet:
+
+> This needs a new credential we don't have set up. Suggested name: **`[NAME]`**.
+>
+> To create:
+> 1. Get the value from **[where the service issues it, e.g. Clerk dashboard → API keys → new key]**
+> 2. Add it to **[host path or repo secret]**
+> 3. Tell me when it's added and I'll wire it in
+
+### Trust boundary
+
+Anything Viktor pastes in chat is treated as live, but only the specific value for the specific purpose requested. If Viktor pastes something unrelated (e.g. a different service's key), do not use it for the current task — confirm first.
