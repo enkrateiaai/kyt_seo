@@ -52,6 +52,7 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/', userL
             <a href="/mantras">Mantras</a>
             <a href="/videos">Videos</a>
             <a href="/live">Live</a>
+            <a href="/programm">Programm</a>
             {!isLoggedIn && (
               <SignInButton mode="redirect" forceRedirectUrl={pathname} fallbackRedirectUrl={pathname}>
                 <button type="button" className="site-nav__auth-btn">Anmelden</button>
@@ -126,6 +127,7 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/', userL
             <a href="/mantras" onClick={() => setBurgerOpen(false)}>Mantras</a>
             <a href="/videos" onClick={() => setBurgerOpen(false)}>Videos</a>
             <a href="/live" onClick={() => setBurgerOpen(false)}>Live</a>
+            <a href="/programm" onClick={() => setBurgerOpen(false)}>Programm</a>
             {!isLoggedIn && (
               <SignInButton mode="redirect" forceRedirectUrl={pathname} fallbackRedirectUrl={pathname}>
                 <button type="button" className="site-nav__mobile-auth" onClick={() => setBurgerOpen(false)}>
