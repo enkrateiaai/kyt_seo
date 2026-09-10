@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import LiveExperience from './LiveExperience'
 import LocalLivePlayer from '../live-local/LocalLivePlayer'
 

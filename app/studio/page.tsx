@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { auth } from '@clerk/nextjs/server'
 import { hasClerkServerConfig } from '@/lib/authConfig'
 import { getViewerUser, isAdminUser } from '@/lib/memberAccess'

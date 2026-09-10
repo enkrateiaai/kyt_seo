@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { auth } from '@clerk/nextjs/server'
 import { SignInButton } from '@clerk/nextjs'
 import Image from 'next/image'
