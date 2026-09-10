@@ -1,3 +1,4 @@
+import { auth } from '@clerk/nextjs/server'
 import ProgrammContent from './ProgrammContent'
 import SiteHeader from '@/app/components/SiteHeader'
 
@@ -8,10 +9,11 @@ export const metadata = {
   robots: 'noindex',
 }
 
-export default function ProgrammPage() {
+export default async function ProgrammPage() {
+  const { userId } = await auth()
   return (
     <>
-      <SiteHeader isLoggedIn={false} />
+      <SiteHeader isLoggedIn={!!userId} />
       <ProgrammContent />
     </>
   )
