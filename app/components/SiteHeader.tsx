@@ -50,6 +50,7 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/', userL
           <nav className="site-nav__desktop" aria-label="Hauptnavigation">
             <a href="/blog">Blog</a>
             <a href="/mantras">Mantras</a>
+            <a href="/programm">Programm</a>
             <a href="/videos">Videos</a>
             <a href="/live">Live</a>
             {!isLoggedIn && (
@@ -124,6 +125,7 @@ export default function SiteHeader({ isLoggedIn, signOutRedirectUrl = '/', userL
           <nav className="site-nav__mobile" aria-label="Mobile Navigation">
             <a href="/blog" onClick={() => setBurgerOpen(false)}>Blog</a>
             <a href="/mantras" onClick={() => setBurgerOpen(false)}>Mantras</a>
+            <a href="/programm" onClick={() => setBurgerOpen(false)}>Programm</a>
             <a href="/videos" onClick={() => setBurgerOpen(false)}>Videos</a>
             <a href="/live" onClick={() => setBurgerOpen(false)}>Live</a>
             {!isLoggedIn && (
