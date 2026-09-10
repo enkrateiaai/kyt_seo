@@ -1,4 +1,5 @@
 import ProgrammContent from './ProgrammContent'
+import SiteHeader from '@/app/components/SiteHeader'
 
 export const metadata = {
   title: 'Programm – Kundalini Yoga Tribe',
@@ -8,5 +9,10 @@ export const metadata = {
 }
 
 export default function ProgrammPage() {
-  return <ProgrammContent />
+  return (
+    <>
+      <SiteHeader isLoggedIn={false} />
+      <ProgrammContent />
+    </>
+  )
 }
