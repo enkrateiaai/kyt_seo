@@ -30,7 +30,7 @@ export default async function VideosPage() {
 
       <SiteHeader clerkEnabled={clerkEnabled} isLoggedIn={!!user} userId={user?.id} userLabel={userLabel} userImageUrl={userImageUrl} canAccessLive={canAccessLive} />
 
-      <YouTubeGallery isMember={isMember} />
+      <YouTubeGallery isMember={isMember} isLoggedIn={!!user} />
     </>
   )
 }
