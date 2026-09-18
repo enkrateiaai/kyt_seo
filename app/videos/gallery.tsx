@@ -26,6 +26,9 @@ interface Playlist {
   id: number
   title: string
   playlistId: string
+  externalUrl?: string
+  description?: string
+  thumbnail?: string
   videos?: Video[]
   loading?: boolean
   page?: number
@@ -71,7 +74,8 @@ export default function YouTubeGallery({ isMember }: Props) {
       ? selectedPlaylistId
       : null
   const selectedPlaylist = filteredPlaylists.find(p => p.id === effectiveSelectedPlaylistId) || null
-  const visiblePlaylists = effectiveSelectedPlaylistId === null
+  const externalPlaylists = playlists.filter(p => p.externalUrl)
+  const visibleVideoPlaylists = effectiveSelectedPlaylistId === null
     ? filteredPlaylists
     : filteredPlaylists.filter(p => p.id === effectiveSelectedPlaylistId)
 
@@ -141,12 +145,13 @@ export default function YouTubeGallery({ isMember }: Props) {
         const withLoading = data.map(p => ({
           ...p,
           videos: [],
-          loading: true,
+          loading: !p.externalUrl,
           page: 0,
           error: null,
         }))
         setPlaylists(withLoading)
         withLoading.forEach(p => {
+          if (p.externalUrl) return
           fetch(`/api/playlist-items?playlistId=${encodeURIComponent(p.playlistId)}`)
             .then(async r => {
               const data = await r.json()
@@ -756,6 +761,58 @@ export default function YouTubeGallery({ isMember }: Props) {
           line-height: 1.6;
         }
 
+        /* External link kriya card */
+        .v-external-card {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          padding: 18px 20px;
+          background: #FDFBF8;
+          border: 1px solid #D3BC76;
+          border-radius: 14px;
+          text-decoration: none;
+          color: #2C2416;
+          transition: all 0.2s;
+          box-shadow: 0 4px 16px rgba(211,188,118,0.12);
+        }
+        .v-external-card:hover {
+          background: #F3EDE4;
+          border-color: #B89A4A;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(211,188,118,0.2);
+        }
+        .v-external-card__body {
+          flex: 1;
+          min-width: 0;
+        }
+        .v-external-card__title {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 1.15rem;
+          font-weight: 500;
+          color: #2C2416;
+          margin: 0 0 6px 0;
+        }
+        .v-external-card__desc {
+          font-size: 13px;
+          color: #6B5D4F;
+          line-height: 1.55;
+        }
+        .v-external-card__cta {
+          font-size: 12px;
+          color: #D3BC76;
+          font-weight: 600;
+          letter-spacing: 0.04em;
+          white-space: nowrap;
+        }
+        @media (max-width: 640px) {
+          .v-external-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+          .v-external-card__cta { align-self: flex-end; }
+        }
+
         /* TOC */
         .v-item { display: flex; flex-direction: column; }
         .v-item__meta {
@@ -923,8 +980,32 @@ export default function YouTubeGallery({ isMember }: Props) {
           </div>
         )}
 
-        {/* Playlists */}
-        {!searchResults && visiblePlaylists.map(playlist => {
+        {/* External Kriya Playlists (kundalini.yoga etc.) — rendered as link cards */}
+        {!searchResults && externalPlaylists.map(playlist => (
+          <div key={`ext-${playlist.id}`} id={`section-ext-${playlist.id}`} className="v-section" style={{ scrollMarginTop: 80 }}>
+            <div className="v-section__header">
+              <h2 className="v-section__title">{playlist.title}</h2>
+              <div className="v-section__line" />
+            </div>
+            <a
+              href={playlist.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="v-external-card"
+            >
+              <div className="v-external-card__body">
+                <h3 className="v-external-card__title">{playlist.title}</h3>
+                {playlist.description && (
+                  <p className="v-external-card__desc">{playlist.description}</p>
+                )}
+              </div>
+              <span className="v-external-card__cta">→ Auf kundalini.yoga lesen</span>
+            </a>
+          </div>
+        ))}
+
+        {/* YouTube Playlists */}
+        {!searchResults && visibleVideoPlaylists.map(playlist => {
           const page = playlist.page || 0
           // Pin free video to position 0 only for non-members
           const videos = [...(playlist.videos || [])].sort((a, b) => {
