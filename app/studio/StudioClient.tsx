@@ -1352,15 +1352,16 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
 }) {
   const [open, setOpen] = React.useState(false)
   const [months, setMonths] = React.useState(2)
+  const [minSizeMB, setMinSizeMB] = React.useState(500)
   const [files, setFiles] = React.useState<GDriveFile[]>([])
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState('')
   const [jobs, setJobs] = React.useState<Record<string, CopyJob & { name: string }>>({})
 
-  async function load(m = months) {
+  async function load(m = months, minMB = minSizeMB) {
     setLoading(true); setError('')
     try {
-      const r = await fetch(`${API}/gdrive/list?months=${m}`)
+      const r = await fetch(`${API}/gdrive/list?months=${m}&min_size_mb=${minMB}`)
       const d = await r.json()
       if (!r.ok) { setError(d.error ?? 'Fehler'); setFiles([]) }
       else setFiles(d.files ?? [])
@@ -1375,6 +1376,10 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
 
   function changeMonths(m: number) {
     setMonths(m); load(m)
+  }
+
+  function changeMinSize(v: number) {
+    setMinSizeMB(v); load(months, v)
   }
 
   async function copyFile(f: GDriveFile) {
@@ -1430,6 +1435,25 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                     {m}M
                   </button>
                 ))}
+                <select
+                  value={minSizeMB}
+                  onChange={e => changeMinSize(Number(e.target.value))}
+                  title="Mindestgröße in MB"
+                  style={{
+                    background: 'rgba(155,142,126,0.08)',
+                    border: '1px solid rgba(155,142,126,0.25)',
+                    color: '#e2e8f0',
+                    borderRadius: 4,
+                    fontSize: 11,
+                    padding: '3px 6px',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  {Array.from({ length: 17 }, (_, i) => 100 + i * 50).filter(v => v <= 900).map(v => (
+                    <option key={v} value={v} style={{ background: '#0f1117' }}>{v} MB</option>
+                  ))}
+                </select>
                 <button onClick={() => load()} style={btnSmall('ghost')} title="Neu laden">↻</button>
               </>
             )}
@@ -1456,7 +1480,7 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
             ))}
 
             {!loading && !error && files.length === 0 && (
-              <div style={{ color: '#9B8E7E', fontSize: 12, padding: '8px 0' }}>Keine Videos gefunden (letzte {months} Monate, &gt;250 MB)</div>
+              <div style={{ color: '#9B8E7E', fontSize: 12, padding: '8px 0' }}>Keine Videos gefunden (letzte {months} Monate, ≥{minSizeMB} MB)</div>
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 8 }}>
