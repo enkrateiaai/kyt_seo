@@ -24,10 +24,6 @@ const EVENTS: EventItem[] = [
   { id: 'so-2026-10-11', date: '2026-10-11', time: '20:30', title: 'Sonntags-Meditation', description: 'Geführte Meditation am Sonntagabend — lass die Woche still ausklingen und finde zurück zu dir.', category: 'sonntag' },
   { id: 'so-2026-10-18', date: '2026-10-18', time: '20:30', title: 'Sonntags-Meditation', description: 'Geführte Meditation am Sonntagabend — lass die Woche still ausklingen und finde zurück zu dir.', category: 'sonntag' },
   { id: 'so-2026-10-25', date: '2026-10-25', time: '20:30', title: 'Sonntags-Meditation', description: 'Geführte Meditation am Sonntagabend — lass die Woche still ausklingen und finde zurück zu dir.', category: 'sonntag' },
-  // Gastauftritte (Platzhalter — Catherine füllt die Themen später)
-  { id: 'ga-2026-10-10', date: '2026-10-10', time: '19:00', title: 'Gastauftritt: Anand Singh', description: 'Internationaler Kundalini-Yoga-Lehrer zu Gast im Tribe. Thema wird noch bekanntgegeben.', category: 'gastauftritt' },
-  { id: 'ga-2026-10-17', date: '2026-10-17', time: '19:00', title: 'Gastauftritt: Maya Devi', description: 'Lehrerin für transformative Kriyas zu Gast im Tribe. Thema wird noch bekanntgegeben.', category: 'gastauftritt' },
-  { id: 'ga-2026-10-24', date: '2026-10-24', time: '19:00', title: 'Gastauftritt: Guru Prem Singh', description: 'Mantra- und Meditations-Lehrer zu Gast im Tribe. Thema wird noch bekanntgegeben.', category: 'gastauftritt' },
 ]
 
 const C = {
