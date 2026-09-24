@@ -35,6 +35,7 @@ function loadHistory(): HistoryEntry[] {
 function persistHistory(entries: HistoryEntry[]) {
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(entries)) } catch {}
 }
+
 type SrsStream = { app?: string; name?: string; publish?: { active?: boolean }; clients?: number; video?: { width?: number; height?: number }; recv_bytes?: number; kbps?: { recv_30s?: number; send_30s?: number } }
 type SrsClient = {
   id?: string
@@ -335,6 +336,34 @@ export default function StudioClient() {
       return next
     })
   }
+  // Backfill Verlauf from the studio's /api/stream-stats endpoint, which has
+  // every past run (up to ~200 records). Merges into localStorage as a write-
+  // through cache so the Verlauf survives browser wipes / new devices.
+  async function backfillHistory(): Promise<void> {
+    try {
+      const r = await fetch('/api/stream-stats', { cache: 'no-store' })
+      if (!r.ok) return
+      const d = await r.json() as { records?: Array<{
+        startedAt: number; filename?: string; streamKey?: string
+      }> }
+      const records = d.records ?? []
+      const fromStats: HistoryEntry[] = records.map((rec) => ({
+        datetime: new Date(rec.startedAt).toISOString(),
+        filename: rec.filename ?? null,
+        mode: rec.filename ? 'video' : 'live',
+      }))
+      const cached = loadHistory()
+      const byDt = new Map<string, HistoryEntry>()
+      for (const h of [...fromStats, ...cached]) byDt.set(h.datetime, h)
+      const merged = Array.from(byDt.values())
+        .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())
+      if (merged.length === 0) return
+      persistHistory(merged)
+      setHistory(merged)
+    } catch {
+      /* keep local cache as-is */
+    }
+  }
   const pastHistory = useMemo(() =>
     history
       .filter(h => new Date(h.datetime).getTime() < Date.now())
@@ -408,6 +437,7 @@ export default function StudioClient() {
 
   useEffect(() => {
     setHistory(loadHistory())
+    backfillHistory()
   }, [])
 
   useEffect(() => {
