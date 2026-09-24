@@ -99,6 +99,19 @@ const MONTH_NAMES_DE = [
 ]
 const WEEKDAYS_DE_SHORT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 
+// 40-Tage-Kriya: 'Stärke deine Aura, für Schutz, Ausstrahlung und Positivität'
+const KRIYA_TITLE = 'Stärke deine Aura, für Schutz, Ausstrahlung und Positivität'
+const KRIYA_START_ISO = '2026-09-17'
+const KRIYA_END_ISO = '2026-10-26'
+const KRIYA_TOTAL_DAYS = 40
+const KRIYA_START = parseISODate(KRIYA_START_ISO)
+const KRIYA_END = (() => {
+  const d = parseISODate(KRIYA_END_ISO)
+  d.setHours(23, 59, 59, 999)
+  return d
+})()
+
+
 export default function ProgrammContent() {
   const today = useMemo(() => {
     const d = new Date()
@@ -183,6 +196,15 @@ export default function ProgrammContent() {
   }
 
   const cd = nextEvent ? diffToCountdown(nextEvent.dt, now) : null
+  const kriyaCd = diffToCountdown(KRIYA_END, now)
+  const kriyaElapsedDays = (() => {
+    const ms = today.getTime() - KRIYA_START.getTime()
+    if (ms < 0) return 0
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24)) + 1
+    return Math.min(KRIYA_TOTAL_DAYS, Math.max(0, days))
+  })()
+  const kriyaProgressPct = Math.round((kriyaElapsedDays / KRIYA_TOTAL_DAYS) * 100)
+
 
   return (
     <main
@@ -525,6 +547,73 @@ export default function ProgrammContent() {
           margin: 0;
         }
 
+        .kriya-challenge {
+          background: linear-gradient(135deg, rgba(184,154,74,0.16), rgba(211,188,118,0.22));
+          border: 1px solid rgba(184,154,74,0.45);
+          border-radius: 16px;
+          padding: 22px 24px;
+          margin-bottom: 28px;
+        }
+        .kriya-challenge__head {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 18px 28px;
+        }
+        .kriya-challenge__eyebrow {
+          font-size: 11px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: ${C.accentDeep};
+          margin: 0 0 6px;
+        }
+        .kriya-challenge__title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 22px;
+          font-weight: 500;
+          color: ${C.text};
+          margin: 0;
+          line-height: 1.2;
+        }
+        .kriya-challenge__meta {
+          font-size: 13px;
+          color: ${C.textSoft};
+          margin: 6px 0 0;
+        }
+        .kriya-challenge__ticker {
+          margin-left: auto;
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .kriya-challenge__progress {
+          margin-top: 18px;
+        }
+        .kriya-challenge__progress-bar {
+          height: 8px;
+          background: rgba(184,154,74,0.18);
+          border-radius: 999px;
+          overflow: hidden;
+        }
+        .kriya-challenge__progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, ${C.accent}, ${C.accentDeep});
+          border-radius: 999px;
+          transition: width 0.4s ease;
+        }
+        .kriya-challenge__progress-meta {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12px;
+          color: ${C.textMuted};
+          margin-top: 8px;
+          letter-spacing: 0.04em;
+        }
+        @media (max-width: 600px) {
+          .kriya-challenge { padding: 18px; }
+          .kriya-challenge__ticker { margin-left: 0; width: 100%; }
+        }
+
         @media (max-width: 600px) {
           .countdown-banner { padding: 18px; }
           .countdown-banner__ticker { margin-left: 0; width: 100%; }
@@ -573,6 +662,56 @@ export default function ProgrammContent() {
             </div>
           </div>
         )}
+
+        <div className="kriya-challenge" aria-live="polite">
+          <div className="kriya-challenge__head">
+            <div>
+              <p className="kriya-challenge__eyebrow">Aktuelles Thema · 40-Tage-Kriya</p>
+              <p className="kriya-challenge__title">{KRIYA_TITLE}</p>
+              <p className="kriya-challenge__meta">
+                {formatFullDateDE(KRIYA_START_ISO)} – {formatFullDateDE(KRIYA_END_ISO)} · Tag {kriyaElapsedDays} von {KRIYA_TOTAL_DAYS}
+              </p>
+            </div>
+            <div className="kriya-challenge__ticker">
+              <div className="countdown-cell">
+                <div className="countdown-cell__num">{kriyaCd.isPast ? 0 : kriyaCd.days}</div>
+                <div className="countdown-cell__label">{kriyaCd.isPast ? 'Vorbei' : 'Tage'}</div>
+              </div>
+              <div className="countdown-cell">
+                <div className="countdown-cell__num">{pad(kriyaCd.hours)}</div>
+                <div className="countdown-cell__label">Std</div>
+              </div>
+              <div className="countdown-cell">
+                <div className="countdown-cell__num">{pad(kriyaCd.minutes)}</div>
+                <div className="countdown-cell__label">Min</div>
+              </div>
+              <div className="countdown-cell">
+                <div className="countdown-cell__num">{pad(kriyaCd.seconds)}</div>
+                <div className="countdown-cell__label">Sek</div>
+              </div>
+            </div>
+          </div>
+          <div className="kriya-challenge__progress">
+            <div
+              className="kriya-challenge__progress-bar"
+              role="progressbar"
+              aria-valuenow={kriyaProgressPct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Fortschritt der 40-Tage-Kriya"
+            >
+              <div className="kriya-challenge__progress-fill" style={{ width: `${kriyaProgressPct}%` }} />
+            </div>
+            <div className="kriya-challenge__progress-meta">
+              <span>{kriyaProgressPct}% geschafft</span>
+              <span>
+                {kriyaCd.isPast
+                  ? 'Challenge beendet'
+                  : `Noch ${kriyaCd.days} Tage · ${KRIYA_TOTAL_DAYS - kriyaElapsedDays} Tage verbleibend`}
+              </span>
+            </div>
+          </div>
+        </div>
 
         <section className="calendar" aria-label="Programm-Kalender">
           <div className="calendar__top">
