@@ -697,10 +697,6 @@ export default function ProgrammContent() {
                 <div className="countdown-cell__num">{pad(cd.minutes)}</div>
                 <div className="countdown-cell__label">Min</div>
               </div>
-              <div className="countdown-cell">
-                <div className="countdown-cell__num">{pad(cd.seconds)}</div>
-                <div className="countdown-cell__label">Sek</div>
-              </div>
             </div>
           </div>
         )}
@@ -721,18 +717,6 @@ export default function ProgrammContent() {
               <div className="countdown-cell">
                 <div className="countdown-cell__num">{kriyaCd.isPast ? 0 : kriyaCd.days}</div>
                 <div className="countdown-cell__label">{kriyaCd.isPast ? 'Vorbei' : 'Tage'}</div>
-              </div>
-              <div className="countdown-cell">
-                <div className="countdown-cell__num">{pad(kriyaCd.hours)}</div>
-                <div className="countdown-cell__label">Std</div>
-              </div>
-              <div className="countdown-cell">
-                <div className="countdown-cell__num">{pad(kriyaCd.minutes)}</div>
-                <div className="countdown-cell__label">Min</div>
-              </div>
-              <div className="countdown-cell">
-                <div className="countdown-cell__num">{pad(kriyaCd.seconds)}</div>
-                <div className="countdown-cell__label">Sek</div>
               </div>
             </div>
           </div>
