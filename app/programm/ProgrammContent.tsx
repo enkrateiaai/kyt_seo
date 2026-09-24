@@ -282,6 +282,26 @@ export default function ProgrammContent() {
           gap: 10px;
           flex-wrap: wrap;
         }
+
+        .box-logo {
+          flex: 0 0 auto;
+          width: 88px;
+          height: 88px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          filter: drop-shadow(0 2px 6px rgba(44,36,22,0.18));
+        }
+        .box-logo--kriya img {
+          width: 100%;
+          height: 100%;
+          display: block;
+        }
+        .box-logo--event svg {
+          width: 100%;
+          height: 100%;
+          display: block;
+        }
         .countdown-cell {
           min-width: 64px;
           text-align: center;
@@ -612,12 +632,14 @@ export default function ProgrammContent() {
         @media (max-width: 600px) {
           .kriya-challenge { padding: 18px; }
           .kriya-challenge__ticker { margin-left: 0; width: 100%; }
+          .box-logo { width: 64px; height: 64px; }
         }
 
         @media (max-width: 600px) {
           .countdown-banner { padding: 18px; }
           .countdown-banner__ticker { margin-left: 0; width: 100%; }
           .countdown-cell { flex: 1; min-width: 0; }
+          .box-logo { width: 64px; height: 64px; }
         }
       `}</style>
 
@@ -633,6 +655,26 @@ export default function ProgrammContent() {
 
         {nextEvent && cd && (
           <div className="countdown-banner" aria-live="polite">
+            <div className="box-logo box-logo--event" aria-hidden="true">
+              <svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="rgba(184,154,74,0.75)" strokeWidth="2.2" strokeLinecap="round">
+                  <line x1="44" y1="4"  x2="44" y2="14" />
+                  <line x1="44" y1="74" x2="44" y2="84" />
+                  <line x1="4"  y1="44" x2="14" y2="44" />
+                  <line x1="74" y1="44" x2="84" y2="44" />
+                  <line x1="16" y1="16" x2="23" y2="23" />
+                  <line x1="65" y1="65" x2="72" y2="72" />
+                  <line x1="16" y1="72" x2="23" y2="65" />
+                  <line x1="65" y1="23" x2="72" y2="16" />
+                </g>
+                <circle cx="44" cy="44" r="22" fill="rgba(211,188,118,0.35)" stroke="rgba(184,154,74,0.85)" strokeWidth="2" />
+                <g fill="rgba(184,154,74,0.95)">
+                  <ellipse cx="44" cy="36" rx="4" ry="10" />
+                  <ellipse cx="34" cy="46" rx="4" ry="10" transform="rotate(-35 34 46)" />
+                  <ellipse cx="54" cy="46" rx="4" ry="10" transform="rotate(35 54 46)" />
+                </g>
+              </svg>
+            </div>
             <div>
               <p className="countdown-banner__eyebrow">
                 Nächstes Event · {getCategoryLabel(nextEvent.ev.category)}
@@ -665,6 +707,9 @@ export default function ProgrammContent() {
 
         <div className="kriya-challenge" aria-live="polite">
           <div className="kriya-challenge__head">
+            <div className="box-logo box-logo--kriya" aria-hidden="true">
+              <img src="/icon.png" alt="" />
+            </div>
             <div>
               <p className="kriya-challenge__eyebrow">Aktuelles Thema · 40-Tage-Kriya</p>
               <p className="kriya-challenge__title">{KRIYA_TITLE}</p>
