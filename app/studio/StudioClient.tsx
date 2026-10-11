@@ -1387,6 +1387,8 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState('')
   const [jobs, setJobs] = React.useState<Record<string, CopyJob & { name: string }>>({})
+  type YtJob = { status: 'starting' | 'running' | 'done' | 'error'; progress: string; video_id?: string; url?: string; error?: string }
+  const [ytJobs, setYtJobs] = React.useState<Record<string, YtJob>>({})
 
   async function load(m = months, minMB = minSizeMB) {
     setLoading(true); setError('')
@@ -1442,6 +1444,39 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
         if (d.status === 'error') clearInterval(iv)
       } catch { clearInterval(iv) }
     }, 3000)
+  }
+
+  async function uploadToYoutube(f: GDriveFile) {
+    if (!f.in_mediathek) { alert('Erst in Mediathek kopieren, dann YouTube-Upload möglich.'); return }
+    if (ytJobs[f.name]?.status === 'running' || ytJobs[f.name]?.status === 'starting') return
+    setYtJobs(prev => ({ ...prev, [f.name]: { status: 'starting', progress: '0%' } }))
+    try {
+      const r = await fetch(`${API}/youtube/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: f.name, title: f.name.replace(/\.[^.]+$/, ''), privacy: 'unlisted' }),
+      })
+      const d = await r.json()
+      if (!r.ok || !d.ok || !d.job_id) {
+        setYtJobs(prev => ({ ...prev, [f.name]: { status: 'error', progress: '', error: d.error ?? `HTTP ${r.status}` } }))
+        return
+      }
+      setYtJobs(prev => ({ ...prev, [f.name]: { status: 'running', progress: '0%' } }))
+      pollYtJob(d.job_id, f.name)
+    } catch (e: any) {
+      setYtJobs(prev => ({ ...prev, [f.name]: { status: 'error', progress: '', error: e?.message ?? 'Netzwerkfehler' } }))
+    }
+  }
+
+  function pollYtJob(serverJobId: string, name: string) {
+    const iv = setInterval(async () => {
+      try {
+        const r = await fetch(`${API}/youtube/jobs/${serverJobId}`)
+        const d = await r.json()
+        setYtJobs(prev => ({ ...prev, [name]: { status: d.status, progress: d.progress ?? '', video_id: d.video_id, url: d.url, error: d.error } }))
+        if (d.status === 'done' || d.status === 'error') clearInterval(iv)
+      } catch { clearInterval(iv) }
+    }, 4000)
   }
 
   const activeJobs = Object.entries(jobs).filter(([, j]) => j.status === 'running')
@@ -1538,6 +1573,24 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                           </button>
                         )}
                       </div>
+                      {(() => {
+                        const y = ytJobs[f.name]
+                        const label = !f.in_mediathek ? 'Erst kopieren' :
+                          y?.status === 'starting' ? '…' :
+                        y?.status === 'running' ? `⬆ ${y.progress || '0%'}` :
+                        y?.status === 'done' ? '✓ YouTube' :
+                        y?.status === 'error' ? `✗ ${(y.error || 'Fehler').slice(0, 28)}` :
+                        '↑ YouTube'
+                        const color = y?.status === 'done' ? '#4A7C59' : y?.status === 'error' ? '#A35050' : '#ff0033'
+                        return (
+                          <button onClick={() => uploadToYoutube(f)}
+                            disabled={!f.in_mediathek || y?.status === 'running' || y?.status === 'starting'}
+                            title={!f.in_mediathek ? 'Erst in Mediathek kopieren' : 'Upload to YouTube (unlisted)'}
+                            style={{ ...btnSmall('ghost'), marginTop: 6, width: '100%', justifyContent: 'center', padding: '4px 0', color, borderColor: 'rgba(255,0,51,.25)' }}>
+                            {label}
+                          </button>
+                        )
+                      })()}
                     </div>
                   </div>
                 )
