@@ -1573,20 +1573,21 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                           </button>
                         )}
                       </div>
-                      {(() => {
+                      {f.in_mediathek && (() => {
                         const y = ytJobs[f.name]
-                        const label = !f.in_mediathek ? 'Erst kopieren' :
-                          y?.status === 'starting' ? '…' :
-                        y?.status === 'running' ? `⬆ ${y.progress || '0%'}` :
-                        y?.status === 'done' ? '✓ YouTube' :
-                        y?.status === 'error' ? `✗ ${(y.error || 'Fehler').slice(0, 28)}` :
-                        '↑ YouTube'
+                        const label =
+                          y?.status === 'starting' ? '… YT' :
+                          y?.status === 'running' ? `⬆ YT ${y.progress || '0%'}` :
+                          y?.status === 'done' ? '✓ YouTube' :
+                          y?.status === 'error' ? `✗ ${(y.error || 'Fehler').slice(0, 28)}` :
+                          '↑ YouTube hochladen'
                         const color = y?.status === 'done' ? '#4A7C59' : y?.status === 'error' ? '#A35050' : '#ff0033'
+                        const disabled = y?.status === 'running' || y?.status === 'starting'
                         return (
                           <button onClick={() => uploadToYoutube(f)}
-                            disabled={!f.in_mediathek || y?.status === 'running' || y?.status === 'starting'}
-                            title={!f.in_mediathek ? 'Erst in Mediathek kopieren' : 'Upload to YouTube (unlisted)'}
-                            style={{ ...btnSmall('ghost'), marginTop: 6, width: '100%', justifyContent: 'center', padding: '4px 0', color, borderColor: 'rgba(255,0,51,.25)' }}>
+                            disabled={disabled}
+                            title={y?.status === 'error' ? y.error : 'Upload zu YouTube (unlisted, Kanal UCzwnk2e…VMQ)'}
+                            style={{ ...btnSmall('ghost'), marginTop: 6, width: '100%', justifyContent: 'center', padding: '4px 0', color, borderColor: 'rgba(255,0,51,.3)' }}>
                             {label}
                           </button>
                         )
