@@ -1458,7 +1458,14 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
       })
       const d = await r.json()
       if (!r.ok || !d.ok || !d.job_id) {
-        setYtJobs(prev => ({ ...prev, [f.name]: { status: 'error', progress: '', error: d.error ?? `HTTP ${r.status}` } }))
+        const errMsg = d.error ?? `HTTP ${r.status}`
+        const needsAuth = /authenticate|not authenticated|401/i.test(errMsg + ' ' + r.status)
+        setYtJobs(prev => ({
+          ...prev,
+          [f.name]: needsAuth
+            ? { status: 'error', progress: '', error: 'noauth' }
+            : { status: 'error', progress: '', error: errMsg }
+        }))
         return
       }
       setYtJobs(prev => ({ ...prev, [f.name]: { status: 'running', progress: '0%' } }))
@@ -1575,18 +1582,21 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                       </div>
                       {f.in_mediathek && (() => {
                         const y = ytJobs[f.name]
+                        const isNoauth = y?.status === 'error' && y.error === 'noauth'
                         const label =
                           y?.status === 'starting' ? '… YT' :
                           y?.status === 'running' ? `⬆ YT ${y.progress || '0%'}` :
                           y?.status === 'done' ? '✓ YouTube' :
+                          isNoauth ? '🔗 Connect YouTube (1×)' :
                           y?.status === 'error' ? `✗ ${(y.error || 'Fehler').slice(0, 28)}` :
                           '↑ YouTube hochladen'
                         const color = y?.status === 'done' ? '#4A7C59' : y?.status === 'error' ? '#A35050' : '#ff0033'
                         const disabled = y?.status === 'running' || y?.status === 'starting'
+                        const onClick = isNoauth ? () => window.open('https://enkra.tail1049ba.ts.net:3501/api/youtube/auth/start', '_blank') : () => uploadToYoutube(f)
                         return (
-                          <button onClick={() => uploadToYoutube(f)}
+                          <button onClick={onClick}
                             disabled={disabled}
-                            title={y?.status === 'error' ? y.error : 'Upload zu YouTube (unlisted, Kanal UCzwnk2e…VMQ)'}
+                            title={y?.status === 'error' && !isNoauth ? y.error : 'Upload zu YouTube (unlisted, Kanal UCzwnk2e…VMQ)'}
                             style={{ ...btnSmall('ghost'), marginTop: 6, width: '100%', justifyContent: 'center', padding: '4px 0', color, borderColor: 'rgba(255,0,51,.3)' }}>
                             {label}
                           </button>
