@@ -682,10 +682,23 @@ export default function StudioClient() {
     loadStatus()
   }
 
+  const [deletingName, setDeletingName] = useState<string | null>(null)
+
   async function deleteFile(name: string) {
     if (preview === name) setPreview(null)
-    await fetch(`${API}/files/${encodeURIComponent(name)}`, { method: 'DELETE' })
-    loadFiles()
+    setDeletingName(name)
+    try {
+      const r = await fetch(`${API}/files/${encodeURIComponent(name)}`, { method: 'DELETE' })
+      if (!r.ok) {
+        const txt = await r.text().catch(() => r.statusText)
+        alert(`Löschen fehlgeschlagen: HTTP ${r.status}\n${txt.slice(0, 200)}`)
+      }
+    } catch (e: any) {
+      alert(`Löschen fehlgeschlagen: ${e?.message ?? 'Netzwerkfehler'}`)
+    } finally {
+      setDeletingName(null)
+      loadFiles()
+    }
   }
 
   async function confirmAndDelete() {
@@ -980,7 +993,11 @@ export default function StudioClient() {
                       title={status.running ? 'Anderen Stream starten (aktueller wird gestoppt)' : 'Jetzt streamen'}>
                       {status.running && status.info?.filename === f.name ? '▶ Live' : 'Live'}
                     </button>
-                    <button onClick={() => setConfirmDelete(f.name)} style={{ background: 'none', border: 'none', color: C.faint, cursor: 'pointer', fontSize: 16, padding: '0 2px', lineHeight: 1 }}>×</button>
+                    <button onClick={() => setConfirmDelete(f.name)} disabled={deletingName === f.name}
+                      title="Aus Mediathek löschen"
+                      style={{ background: 'none', border: '1px solid rgba(163,80,80,.3)', color: '#A35050', cursor: deletingName === f.name ? 'wait' : 'pointer', fontSize: 14, fontWeight: 700, padding: '2px 7px', borderRadius: 3, lineHeight: 1 }}>
+                      {deletingName === f.name ? '…' : '×'}
+                    </button>
                   </div>
                 </div>
               ))}
