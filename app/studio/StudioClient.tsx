@@ -319,7 +319,7 @@ export default function StudioClient() {
   const getSlotTime = useCallback((s: SlotDef) =>
     slotTimes[slotKey(s)] ?? defaultSlotTime(s.date, s.slot), [slotTimes])
 
-  const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 4000) }
+  const flash = (m: string, persist = false) => { setMsg(m); setTimeout(() => setMsg(''), persist ? 12000 : 4000) }
   const flashPersist = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 12000) }
 
   function addHistory(entry: HistoryEntry) {
@@ -659,8 +659,9 @@ export default function StudioClient() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filename, streamKey: 'live', datetime: utcDate.toISOString() }),
     })
+    const d = await r.json().catch(() => ({}))
     if (r.ok) addHistory({ datetime: utcDate.toISOString(), filename, mode: 'video' })
-    flash(r.ok ? `Eingeplant: ${filename} um ${t}` : `Fehler ${r.status}`)
+    flash(r.ok ? `Eingeplant: ${filename} um ${t}` : (d.error || `Fehler ${r.status}`), r.ok ? false : true)
     setAssigning(null); loadStatus()
   }
 
@@ -672,8 +673,9 @@ export default function StudioClient() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'live', streamKey: 'live', datetime: utcDate.toISOString() }),
     })
+    const d = await r.json().catch(() => ({}))
     if (r.ok) addHistory({ datetime: utcDate.toISOString(), mode: 'live' })
-    flash(r.ok ? `🔴 Live-Slot gesetzt: ${t} (manuell via OBS starten)` : `Fehler ${r.status}`)
+    flash(r.ok ? `🔴 Live-Slot gesetzt: ${t} (manuell via OBS starten)` : (d.error || `Fehler ${r.status}`), r.ok ? false : true)
     setAssigning(null); loadStatus()
   }
 
