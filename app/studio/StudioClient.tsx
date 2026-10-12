@@ -654,6 +654,7 @@ export default function StudioClient() {
     const t = getSlotTime(slot)
     const [hh, mm] = t.split(':').map(Number)
     const utcDate = berlinToUTC(slot.date, hh, mm)
+    if (utcDate.getTime() < Date.now()) { flash('Slot liegt in der Vergangenheit — bitte andere Zeit wählen'); return }
     const r = await fetch(`${API}/stream/schedule`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filename, streamKey: 'live', datetime: utcDate.toISOString() }),
@@ -1061,7 +1062,9 @@ export default function StudioClient() {
                         {[slot1, slot2].map(slot => {
                           const t = getSlotTime(slot)
                           const job = matchJob(slot, status.scheduled)
-                          const isPast = berlinToUTC(slot.date, 23, 59) < new Date()
+                          const [hh, mm] = t.split(':').map(Number)
+                          const slotDt = berlinToUTC(slot.date, hh, mm)
+                          const isPast = slotDt.getTime() < Date.now()
                           return (
                             <td key={slot.slot} style={{ padding: '8px 12px' }}>
                               {job ? (
