@@ -1700,8 +1700,13 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                         const y = ytJobs[f.name]
                         const isLive = y?.status === 'running' || y?.status === 'starting'
                         const isNoauth = y?.status === 'error' && y.error === 'noauth'
-                        const lit = !!f.yt_uploaded
-                        const shortUrl = (f.yt_url ?? '').replace('https://youtu.be/', '') || (f.yt_video_id ?? '')
+                        // Treat as "uploaded" if either the persistent registry says so
+                        // OR an in-flight poll just saw status=done with a video_id.
+                        const pollDone = y?.status === 'done' && !!y.video_id
+                        const lit = !!f.yt_uploaded || pollDone
+                        const liveUrl = f.yt_url || y?.url || (y?.video_id ? `https://youtu.be/${y.video_id}` : undefined)
+                        const liveVideoId = f.yt_video_id || y?.video_id
+                        const shortUrl = ((liveUrl ?? '').replace('https://youtu.be/', '') || liveVideoId || '')
                         const isMarking = markForm?.name === f.name
                         const ytBtnBase = { ...btnSmall('gold'), padding: '4px 10px', fontSize: 11, color: '#2C2416' }
                         return (
@@ -1725,9 +1730,9 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                                 </>
                               ) : lit ? (
                                 <>
-                                  <a href={f.yt_url} target="_blank" rel="noreferrer"
+                                  <a href={liveUrl} target="_blank" rel="noreferrer"
                                     style={{ fontSize: 11, fontWeight: 600, color: '#4A7C59', textDecoration: 'none', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                    title={`YouTube: ${f.yt_url}`}>
+                                    title={`YouTube: ${liveUrl}`}>
                                     ✓ YouTube: {shortUrl}
                                   </a>
                                   <button onClick={() => uploadToYoutube(f)} style={ytBtnBase} title="Erneut hochladen">↻ Erneut</button>
