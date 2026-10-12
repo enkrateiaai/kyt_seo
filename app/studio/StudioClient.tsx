@@ -98,8 +98,7 @@ function defaultSlotTime(date: string, slot: 1 | 2): string {
   const baseSlot1 = isWeekend ? '07:00' : '06:30'
   const baseSlot2 = '10:00'
 
-  // Use Europe/Berlin wall clock for "now" so the defaults are correct
-  // regardless of the visitor's browser timezone.
+  // Europe/Berlin wall clock (visitor TZ-independent).
   const nowParts = new Date().toLocaleString('en-GB', {
     timeZone: 'Europe/Berlin', hour12: false, hour: '2-digit', minute: '2-digit',
   })
@@ -109,30 +108,23 @@ function defaultSlotTime(date: string, slot: 1 | 2): string {
   const todayBerlin = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' })
   const isToday = todayBerlin === date
 
-  // Future date: always use the base defaults (06:30/10:00 weekday, 07:00/10:00 weekend).
+  // Future date: always use base defaults.
   if (!isToday) return slot === 1 ? baseSlot1 : baseSlot2
 
-  // Today: round current Berlin time UP to the next :00 or :30 mark.
-  // At 10:20 -> slot 1 default = 10:30, slot 2 = 13:30 ("10 earliest" rule).
-  const HALF_HOUR_MIN = 30
-  const curMinTotal = curH * 60 + curM
-  const roundedMinTotal = Math.ceil(curMinTotal / HALF_HOUR_MIN) * HALF_HOUR_MIN
-  const roundedH = Math.floor(roundedMinTotal / 60) % 24
-  const roundedM = roundedMinTotal % 60
-  const roundedStr = `${String(roundedH).padStart(2, '0')}:${String(roundedM).padStart(2, '0')}`
-
-  const geq = (a: string, b: string) => {
-    const [ah, am] = a.split(':').map(Number)
-    const [bh, bm] = b.split(':').map(Number)
-    return ah > bh || (ah === bh && am >= bm)
+  // Today: default = baseSlot or (now + 1 min), whichever is later.
+  // Gives 1-minute granularity so the user can schedule ad-hoc on the
+  // same day (e.g. 10:21 at 10:20).
+  const toMin = (s: string) => {
+    const [h, m] = s.split(':').map(Number)
+    return h * 60 + m
   }
-
-  const slot1 = geq(baseSlot1, roundedStr) ? baseSlot1 : roundedStr
+  const slot1Min = Math.max(toMin(baseSlot1), curH * 60 + curM + 1)
+  const slot1 = `${String(Math.floor(slot1Min / 60) % 24).padStart(2, '0')}:${String(slot1Min % 60).padStart(2, '0')}`
   if (slot === 1) return slot1
 
-  const [s1h, s1m] = slot1.split(':').map(Number)
-  const slot2FromS1 = `${String((s1h + 3) % 24).padStart(2, '0')}:${String(s1m).padStart(2, '0')}`
-  return geq(baseSlot2, slot2FromS1) ? baseSlot2 : slot2FromS1
+  // Slot 2: baseSlot2 or slot-1 + 3h, whichever is later.
+  const slot2Min = Math.max(toMin(baseSlot2), slot1Min + 3 * 60)
+  return `${String(Math.floor(slot2Min / 60) % 24).padStart(2, '0')}:${String(slot2Min % 60).padStart(2, '0')}`
 }
 
 function formatJobTime(utcStr: string): string {
