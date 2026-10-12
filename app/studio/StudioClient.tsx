@@ -22,7 +22,7 @@ const C = {
   orange: '#C8834E',
 }
 
-type FileEntry = { name: string; size: number; mtime: number; duration?: number }
+type FileEntry = { name: string; size: number; mtime: number; duration?: number; yt_uploaded?: boolean; yt_url?: string }
 type StreamStatus = { running: boolean; info?: { filename?: string; started?: string; seekSeconds?: number }; progress?: string; progressSecs?: number; resumeAt?: number; lastInfo?: { filename?: string; seekSeconds?: number }; scheduled: ScheduledJob[] }
 type ScheduledJob = { id: string; filename?: string | null; streamKey: string; datetime: string; mode?: 'video' | 'live' }
 type HistoryEntry = { datetime: string; filename?: string | null; mode?: 'video' | 'live' }
@@ -1018,6 +1018,12 @@ export default function StudioClient() {
                   </div>
                   <div style={{ padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{f.name}</span>
+                    {f.yt_uploaded && (
+                      <a href={f.yt_url} target="_blank" rel="noreferrer" title={`Auf YouTube: ${f.yt_url}`}
+                        style={{ flexShrink: 0, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                        <YouTubeIcon size={16} lit={true} />
+                      </a>
+                    )}
                     {f.duration ? <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmtDuration(f.duration)}</span> : null}
                     <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmt(f.size)}</span>
                     <button onClick={() => startStream(f.name)} disabled={switching}
@@ -1391,7 +1397,25 @@ export default function StudioClient() {
 }
 
 // ── GDrive types ──────────────────────────────────────────────────────────────
-type GDriveFile = { name: string; size: number; modtime: string; id: string; in_mediathek: boolean }
+type GDriveFile = { name: string; size: number; modtime: string; id: string; in_mediathek: boolean; yt_uploaded?: boolean; yt_url?: string; yt_video_id?: string }
+
+// Small YouTube play-button icon. lit=true = full color (uploaded), lit=false = greyed.
+function YouTubeIcon({ size = 18, lit = false, title }: { size?: number; lit?: boolean; title?: string }) {
+  const w = size
+  const h = Math.round(size * 0.72)
+  return (
+    <svg width={w} height={h} viewBox="0 0 90 65" aria-label={title ?? (lit ? 'Auf YouTube hochgeladen' : 'YouTube (noch nicht hochgeladen)')}
+      style={{
+        filter: lit ? 'none' : 'grayscale(1) opacity(0.28)',
+        transition: 'filter .25s',
+        flexShrink: 0,
+        verticalAlign: 'middle',
+      }}>
+      <rect x="0" y="0" width="90" height="65" rx="14" fill={lit ? '#FF0000' : '#888'} />
+      <polygon points="36,18 36,47 70,33" fill="#fff" />
+    </svg>
+  )
+}
 type CopyJob = { status: 'running' | 'done' | 'error' | 'already_exists'; progress?: string; error?: string }
 
 function fmtSize(b: number): string {
@@ -1532,9 +1556,23 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
         const r = await fetch(`${API}/youtube/jobs/${serverJobId}`)
         const d = await r.json()
         setYtJobs(prev => ({ ...prev, [name]: { status: d.status, progress: d.progress ?? '', video_id: d.video_id, url: d.url, error: d.error } }))
+        if (d.status === 'done' && d.video_id) {
+          markFileUploaded(name, d.video_id, d.url ?? `https://youtu.be/${d.video_id}`)
+        }
         if (d.status === 'done' || d.status === 'error') clearInterval(iv)
       } catch { clearInterval(iv) }
     }, 4000)
+  }
+
+  // Mark a file as uploaded to YouTube on the local GDrive list state
+  // (server-side registry is already persisted by the backend).
+  function markFileUploaded(name: string, videoId: string, url: string) {
+    setFiles(prev => prev.map(x => x.name === name ? {
+      ...x,
+      yt_uploaded: true,
+      yt_video_id: videoId,
+      yt_url: url,
+    } : x))
   }
 
   const activeJobs = Object.entries(jobs).filter(([, j]) => j.status === 'running')
@@ -1633,24 +1671,43 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                       </div>
                       {f.in_mediathek && (() => {
                         const y = ytJobs[f.name]
+                        const isLive = y?.status === 'running' || y?.status === 'starting'
                         const isNoauth = y?.status === 'error' && y.error === 'noauth'
-                        const label =
-                          y?.status === 'starting' ? '… YT' :
-                          y?.status === 'running' ? `⬆ YT ${y.progress || '0%'}` :
-                          y?.status === 'done' ? '✓ YouTube' :
-                          isNoauth ? '🔗 Connect YouTube (1×)' :
-                          y?.status === 'error' ? `✗ ${(y.error || 'Fehler').slice(0, 28)}` :
-                          '↑ YouTube hochladen'
-                        const color = y?.status === 'done' ? '#4A7C59' : y?.status === 'error' ? '#A35050' : '#ff0033'
-                        const disabled = y?.status === 'running' || y?.status === 'starting'
-                        const onClick = isNoauth ? () => window.open('https://enkra.tail1049ba.ts.net:3501/api/youtube/auth/start', '_blank') : () => uploadToYoutube(f)
+                        const lit = !!f.yt_uploaded
+                        const shortUrl = (f.yt_url ?? '').replace('https://youtu.be/', '') || (f.yt_video_id ?? '')
                         return (
-                          <button onClick={onClick}
-                            disabled={disabled}
-                            title={y?.status === 'error' && !isNoauth ? y.error : 'Upload zu YouTube (unlisted, Kanal UCzwnk2e…VMQ)'}
-                            style={{ ...btnSmall('ghost'), marginTop: 6, width: '100%', justifyContent: 'center', padding: '4px 0', color, borderColor: 'rgba(255,0,51,.3)' }}>
-                            {label}
-                          </button>
+                          <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <YouTubeIcon size={22} lit={lit} title={lit ? `Auf YouTube: ${shortUrl}` : 'Noch nicht auf YouTube'} />
+                            {isLive ? (
+                              <span style={{ fontSize: 11, fontWeight: 600, color: '#C8834E', flex: 1 }}>⬆ {y?.progress || '0%'}</span>
+                            ) : isNoauth ? (
+                              <button onClick={() => window.open('https://enkra.tail1049ba.ts.net:3501/api/youtube/auth/start', '_blank')}
+                                style={{ ...btnSmall('gold'), flex: 1, justifyContent: 'center', padding: '4px 0', color: '#2C2416' }}>
+                                🔗 Connect YouTube
+                              </button>
+                            ) : y?.status === 'error' ? (
+                              <span style={{ fontSize: 11, color: '#A35050', flex: 1 }} title={y?.error}>✗ {((y?.error || 'Fehler') as string).slice(0, 32)}</span>
+                            ) : lit ? (
+                              <>
+                                <a href={f.yt_url} target="_blank" rel="noreferrer"
+                                  style={{ fontSize: 11, fontWeight: 600, color: '#4A7C59', textDecoration: 'none', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                  title={`YouTube: ${f.yt_url}`}>
+                                  ✓ YouTube: {shortUrl}
+                                </a>
+                                <button onClick={() => uploadToYoutube(f)}
+                                  title="Erneut hochladen"
+                                  style={{ background: 'none', border: '1px solid rgba(74,124,89,.4)', color: '#4A7C59', borderRadius: 3, padding: '1px 7px', fontSize: 12, cursor: 'pointer', lineHeight: 1 }}>
+                                  ↻
+                                </button>
+                              </>
+                            ) : (
+                              <button onClick={() => uploadToYoutube(f)}
+                                title="Upload zu YouTube (unlisted, Kanal UCzwnk2e…VMQ)"
+                                style={{ ...btnSmall('gold'), flex: 1, justifyContent: 'center', padding: '4px 0', color: '#2C2416' }}>
+                                ↑ Hochladen
+                              </button>
+                            )}
+                          </div>
                         )
                       })()}
                     </div>
