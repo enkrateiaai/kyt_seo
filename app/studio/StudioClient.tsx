@@ -1585,6 +1585,8 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
         setYtJobs(prev => ({ ...prev, [name]: { status: d.status, progress: d.progress ?? '', video_id: d.video_id, url: d.url, error: d.error } }))
         if (d.status === 'done' && d.video_id) {
           markFileUploaded(name, d.video_id, d.url ?? `https://youtu.be/${d.video_id}`)
+          // Also refresh the Mediathek list so its row icon turns red without a manual reload.
+          onAdded()
         }
         if (d.status === 'done' || d.status === 'error') clearInterval(iv)
       } catch { clearInterval(iv) }
