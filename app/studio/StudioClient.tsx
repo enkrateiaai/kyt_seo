@@ -95,7 +95,44 @@ function localDateStr(d: Date): string {
 function defaultSlotTime(date: string, slot: 1 | 2): string {
   const dow = new Date(date + 'T12:00:00').getDay()
   const isWeekend = dow === 0 || dow === 6
-  return slot === 1 ? (isWeekend ? '07:00' : '06:30') : '10:00'
+  const baseSlot1 = isWeekend ? '07:00' : '06:30'
+  const baseSlot2 = '10:00'
+
+  // Use Europe/Berlin wall clock for "now" so the defaults are correct
+  // regardless of the visitor's browser timezone.
+  const nowParts = new Date().toLocaleString('en-GB', {
+    timeZone: 'Europe/Berlin', hour12: false, hour: '2-digit', minute: '2-digit',
+  })
+  const [curHStr, curMStr] = nowParts.split(':')
+  const curH = parseInt(curHStr, 10)
+  const curM = parseInt(curMStr, 10)
+  const todayBerlin = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' })
+  const isToday = todayBerlin === date
+
+  // Future date: always use the base defaults (06:30/10:00 weekday, 07:00/10:00 weekend).
+  if (!isToday) return slot === 1 ? baseSlot1 : baseSlot2
+
+  // Today: round current Berlin time UP to the next :00 or :30 mark.
+  // At 10:20 -> slot 1 default = 10:30, slot 2 = 13:30 ("10 earliest" rule).
+  const HALF_HOUR_MIN = 30
+  const curMinTotal = curH * 60 + curM
+  const roundedMinTotal = Math.ceil(curMinTotal / HALF_HOUR_MIN) * HALF_HOUR_MIN
+  const roundedH = Math.floor(roundedMinTotal / 60) % 24
+  const roundedM = roundedMinTotal % 60
+  const roundedStr = `${String(roundedH).padStart(2, '0')}:${String(roundedM).padStart(2, '0')}`
+
+  const geq = (a: string, b: string) => {
+    const [ah, am] = a.split(':').map(Number)
+    const [bh, bm] = b.split(':').map(Number)
+    return ah > bh || (ah === bh && am >= bm)
+  }
+
+  const slot1 = geq(baseSlot1, roundedStr) ? baseSlot1 : roundedStr
+  if (slot === 1) return slot1
+
+  const [s1h, s1m] = slot1.split(':').map(Number)
+  const slot2FromS1 = `${String((s1h + 3) % 24).padStart(2, '0')}:${String(s1m).padStart(2, '0')}`
+  return geq(baseSlot2, slot2FromS1) ? baseSlot2 : slot2FromS1
 }
 
 function formatJobTime(utcStr: string): string {
