@@ -1464,6 +1464,33 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
   const [jobs, setJobs] = React.useState<Record<string, CopyJob & { name: string }>>({})
   type YtJob = { status: 'starting' | 'running' | 'done' | 'error'; progress: string; video_id?: string; url?: string; error?: string }
   const [ytJobs, setYtJobs] = React.useState<Record<string, YtJob>>({})
+  const [markForm, setMarkForm] = React.useState<{ name: string; value: string; saving: boolean; error: string } | null>(null)
+
+  async function saveMarkedUpload(name: string, raw: string) {
+    if (!markForm) return
+    setMarkForm({ name, value: raw, saving: true, error: '' })
+    try {
+      const r = await fetch(`${API}/youtube/registry`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: name, url: raw.trim() }),
+      })
+      const d = await r.json().catch(() => ({} as any))
+      if (!r.ok || !d.ok) {
+        setMarkForm({ name, value: raw, saving: false, error: d.error || `HTTP ${r.status}` })
+        return
+      }
+      const e = d.entry
+      setFiles(prev => prev.map(x => x.name === name ? {
+        ...x,
+        yt_uploaded: true,
+        yt_url: e.url,
+        yt_video_id: e.video_id,
+      } : x))
+      setMarkForm(null)
+    } catch (e: any) {
+      setMarkForm({ name, value: raw, saving: false, error: e?.message ?? 'Netzwerkfehler' })
+    }
+  }
 
   async function load(m = months, minMB = minSizeMB) {
     setLoading(true); setError('')
@@ -1675,37 +1702,72 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                         const isNoauth = y?.status === 'error' && y.error === 'noauth'
                         const lit = !!f.yt_uploaded
                         const shortUrl = (f.yt_url ?? '').replace('https://youtu.be/', '') || (f.yt_video_id ?? '')
+                        const isMarking = markForm?.name === f.name
+                        const ytBtnBase = { ...btnSmall('gold'), padding: '4px 10px', fontSize: 11, color: '#2C2416' }
                         return (
-                          <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <YouTubeIcon size={22} lit={lit} title={lit ? `Auf YouTube: ${shortUrl}` : 'Noch nicht auf YouTube'} />
-                            {isLive ? (
-                              <span style={{ fontSize: 11, fontWeight: 600, color: '#C8834E', flex: 1 }}>⬆ {y?.progress || '0%'}</span>
-                            ) : isNoauth ? (
-                              <button onClick={() => window.open('https://enkra.tail1049ba.ts.net:3501/api/youtube/auth/start', '_blank')}
-                                style={{ ...btnSmall('gold'), flex: 1, justifyContent: 'center', padding: '4px 0', color: '#2C2416' }}>
-                                🔗 Connect YouTube
-                              </button>
-                            ) : y?.status === 'error' ? (
-                              <span style={{ fontSize: 11, color: '#A35050', flex: 1 }} title={y?.error}>✗ {((y?.error || 'Fehler') as string).slice(0, 32)}</span>
-                            ) : lit ? (
-                              <>
-                                <a href={f.yt_url} target="_blank" rel="noreferrer"
-                                  style={{ fontSize: 11, fontWeight: 600, color: '#4A7C59', textDecoration: 'none', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                  title={`YouTube: ${f.yt_url}`}>
-                                  ✓ YouTube: {shortUrl}
-                                </a>
-                                <button onClick={() => uploadToYoutube(f)}
-                                  title="Erneut hochladen"
-                                  style={{ background: 'none', border: '1px solid rgba(74,124,89,.4)', color: '#4A7C59', borderRadius: 3, padding: '1px 7px', fontSize: 12, cursor: 'pointer', lineHeight: 1 }}>
-                                  ↻
+                          <div style={{ marginTop: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <YouTubeIcon size={22} lit={lit} title={lit ? `Auf YouTube: ${shortUrl}` : 'Noch nicht auf YouTube'} />
+                              {isLive ? (
+                                <>
+                                  <span style={{ fontSize: 11, fontWeight: 600, color: '#C8834E', flex: 1 }}>⬆ YT {y?.progress || '0%'}</span>
+                                  <button onClick={() => uploadToYoutube(f)} style={{ ...ytBtnBase, background: 'transparent', color: '#9B8E7E', borderColor: 'rgba(155,142,126,.25)' }} title="Erneut starten">↻</button>
+                                </>
+                              ) : isNoauth ? (
+                                <button onClick={() => window.open('https://enkra.tail1049ba.ts.net:3501/api/youtube/auth/start', '_blank')}
+                                  style={{ ...ytBtnBase, flex: 1, justifyContent: 'center' }}>
+                                  🔗 Connect YouTube
                                 </button>
-                              </>
-                            ) : (
-                              <button onClick={() => uploadToYoutube(f)}
-                                title="Upload zu YouTube (unlisted, Kanal UCzwnk2e…VMQ)"
-                                style={{ ...btnSmall('gold'), flex: 1, justifyContent: 'center', padding: '4px 0', color: '#2C2416' }}>
-                                ↑ Hochladen
-                              </button>
+                              ) : y?.status === 'error' ? (
+                                <>
+                                  <span style={{ fontSize: 11, color: '#A35050', flex: 1 }} title={y?.error}>✗ {((y?.error || 'Fehler') as string).slice(0, 32)}</span>
+                                  <button onClick={() => uploadToYoutube(f)} style={ytBtnBase}>↻</button>
+                                </>
+                              ) : lit ? (
+                                <>
+                                  <a href={f.yt_url} target="_blank" rel="noreferrer"
+                                    style={{ fontSize: 11, fontWeight: 600, color: '#4A7C59', textDecoration: 'none', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                    title={`YouTube: ${f.yt_url}`}>
+                                    ✓ YouTube: {shortUrl}
+                                  </a>
+                                  <button onClick={() => uploadToYoutube(f)} style={ytBtnBase} title="Erneut hochladen">↻ Erneut</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button onClick={() => uploadToYoutube(f)}
+                                    title="Upload zu YouTube (unlisted, Kanal UCzwnk2e…VMQ)"
+                                    style={{ ...ytBtnBase, flex: 1, justifyContent: 'center' }}>
+                                    ↑ Hochladen
+                                  </button>
+                                  <button onClick={() => setMarkForm({ name: f.name, value: '', saving: false, error: '' })}
+                                    title="Manuell als bereits hochgeladen markieren"
+                                    style={{ background: 'none', border: '1px solid rgba(155,142,126,.25)', color: '#9B8E7E', borderRadius: 3, padding: '3px 8px', fontSize: 11, lineHeight: 1, cursor: 'pointer' }}>
+                                    ✎
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                            {isMarking && (
+                              <div style={{ marginTop: 6, padding: '8px 10px', borderRadius: 5, background: 'rgba(211,188,118,.08)', border: '1px solid rgba(211,188,118,.3)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                <div style={{ fontSize: 10, fontWeight: 600, color: '#6B5D4F', letterSpacing: 0.6, textTransform: 'uppercase' }}>Bereits auf YouTube?</div>
+                                <input
+                                  autoFocus
+                                  placeholder="Video-ID oder youtu.be/…"
+                                  value={markForm?.value ?? ''}
+                                  onChange={e => markForm && setMarkForm({ ...markForm, value: e.target.value, error: '' })}
+                                  onKeyDown={e => { if (e.key === 'Enter') saveMarkedUpload(f.name, (e.target as HTMLInputElement).value); if (e.key === 'Escape') setMarkForm(null) }}
+                                  style={{ width: '100%', padding: '5px 8px', fontSize: 12, borderRadius: 3, border: '1px solid rgba(211,188,118,.4)', background: '#FDFBF8', color: '#2C2416', outline: 'none', boxSizing: 'border-box' }}
+                                />
+                                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                  <button onClick={() => setMarkForm(null)} style={{ ...btnSmall('ghost'), padding: '3px 9px' }}>Abbrechen</button>
+                                  <button onClick={() => saveMarkedUpload(f.name, markForm?.value ?? '')}
+                                    disabled={markForm?.saving || !(markForm?.value ?? '').trim()}
+                                    style={{ ...btnSmall('gold'), padding: '3px 9px', opacity: (markForm?.saving || !(markForm?.value ?? '').trim()) ? 0.5 : 1, cursor: (markForm?.saving || !(markForm?.value ?? '').trim()) ? 'not-allowed' : 'pointer' }}>
+                                    {markForm?.saving ? '…' : 'Speichern'}
+                                  </button>
+                                </div>
+                                {markForm?.error && <div style={{ fontSize: 10, color: '#A35050' }}>{markForm.error}</div>}
+                              </div>
                             )}
                           </div>
                         )
