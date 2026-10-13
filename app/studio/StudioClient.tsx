@@ -295,6 +295,9 @@ export default function StudioClient() {
   const [files, setFiles] = useState<FileEntry[]>([])
   type YtJobMed = { status: 'starting' | 'running' | 'done' | 'error'; progress: string; video_id?: string; url?: string; error?: string }
   const [ytJobsMediathek, setYtJobsMediathek] = useState<Record<string, YtJobMed>>({})
+  // video_id -> true if confirmed missing on YouTube via /api/youtube/validate.
+  // Loaded once on mount so icons reflect deletions made directly in YouTube Studio.
+  const [ytDeleted, setYtDeleted] = useState<Record<string, true>>({})
   // Stable per-video number: #1 = oldest (by mtime), #N = newest.
   // Computed once per files change so adding a new video only gives the new
   // video a new number; existing videos keep their existing numbers.
@@ -480,12 +483,32 @@ export default function StudioClient() {
         setYtJobsMediathek(prev => ({ ...prev, [name]: { status: d.status, progress: d.progress ?? '', video_id: d.video_id, url: d.url, error: d.error } }))
         if (d.status === 'done') {
           loadFiles() // Refresh the mediathek list so f.yt_uploaded becomes true server-side
+          validateYoutubeRegistry()
         }
         if (d.status === 'done' || d.status === 'error') clearInterval(iv)
       } catch { clearInterval(iv) }
     }, 4000)
   }
 
+  // Ask the SRS backend to verify each registry entry is still on YouTube.
+  // Marks video_ids that no longer exist so the UI can grey out their icons.
+  // Re-runs after uploads complete so newly-uploaded videos are confirmed live.
+  const validateYoutubeRegistry = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/youtube/validate`, { method: 'POST' })
+      if (!r.ok) {
+        // missing_scope or auth error — clear known set so icons fall back to local state
+        if (r.status === 403 || r.status === 401) setYtDeleted({})
+        return
+      }
+      const d = await r.json()
+      const next: Record<string, true> = {}
+      for (const vid of Object.keys(d.results ?? {})) {
+        if (d.results[vid] === false) next[vid] = true
+      }
+      setYtDeleted(next)
+    } catch {}
+  }, [])
 
   const loadStatus = useCallback(async () => {
     try {
@@ -526,7 +549,7 @@ export default function StudioClient() {
   }, [])
 
   useEffect(() => {
-    loadFiles(); loadStatus()
+    loadFiles(); loadStatus(); validateYoutubeRegistry()
     const id = setInterval(async () => {
       await loadStatus()
       // Piggyback live viewer count every 5s while live
@@ -1081,13 +1104,25 @@ export default function StudioClient() {
                           </span>
                         )
                       }
-                      if (f.yt_uploaded || medDone) {
+                      const liveVidId = ym?.video_id ?? f.yt_video_id
+                      const isYtDeleted = !!liveVidId && ytDeleted[liveVidId] === true
+                      if ((f.yt_uploaded || medDone) && !isYtDeleted) {
                         return (
-                          <a href={f.yt_url ?? (ym?.url ?? `https://youtu.be/${ym?.video_id ?? f.yt_video_id ?? ''}`)} target="_blank" rel="noreferrer"
+                          <a href={f.yt_url ?? (ym?.url ?? `https://youtu.be/${liveVidId}`)} target="_blank" rel="noreferrer"
                             title={`Auf YouTube: ${f.yt_url ?? ym?.url ?? ''}`}
                             style={{ flexShrink: 0, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
                             <YouTubeIcon size={16} lit={true} />
                           </a>
+                        )
+                      }
+                      if (isYtDeleted) {
+                        return (
+                          <span title={`Auf YouTube gelöscht oder privat — bitte erneut hochladen (${liveVidId})`}
+                            style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 6px', borderRadius: 4, background: 'rgba(163,80,80,.12)', border: '1px solid rgba(163,80,80,.4)', color: '#A35050', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
+                            <span aria-hidden>✗</span>
+                            <YouTubeIcon size={14} lit={false} />
+                            <span>gelöscht</span>
+                          </span>
                         )
                       }
                       const errTitle = medErr ? `Upload fehlgeschlagen: ${ym?.error || 'Fehler'} — erneut versuchen` : undefined
