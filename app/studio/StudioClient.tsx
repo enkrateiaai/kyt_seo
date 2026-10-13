@@ -1115,36 +1115,35 @@ export default function StudioClient() {
                           </a>
                         )
                       }
-                      if (isYtDeleted) {
-                        return (
-                          <span title={`Auf YouTube gelöscht oder privat — bitte erneut hochladen (${liveVidId})`}
-                            style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 3, padding: '3px 6px', borderRadius: 4, background: 'rgba(163,80,80,.12)', border: '1px solid rgba(163,80,80,.4)', color: '#A35050', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
-                            <span aria-hidden>✗</span>
-                            <YouTubeIcon size={14} lit={false} />
-                            <span>gelöscht</span>
-                          </span>
-                        )
-                      }
-                      const errTitle = medErr ? `Upload fehlgeschlagen: ${ym?.error || 'Fehler'} — erneut versuchen` : undefined
+                      // Re-upload button — used for the default (not yet uploaded) case,
+                      // the error case (last attempt failed), and the yt-deleted case
+                      // (uploaded but later removed on YouTube).
+                      const reuploadKind: 'err' | 'gone' | 'new' = medErr ? 'err' : isYtDeleted ? 'gone' : 'new'
+                      const reuploadTitle = reuploadKind === 'gone'
+                        ? `Auf YouTube gelöscht oder privat (${liveVidId}) — klicken zum erneuten Hochladen`
+                        : reuploadKind === 'err'
+                          ? `Upload fehlgeschlagen: ${ym?.error || 'Fehler'} — klicken zum erneuten Versuch`
+                          : `Auf YouTube hochladen (unlisted): ${f.name}`
+                      const reuploadLabel = reuploadKind === 'gone' ? 'Erneut' : 'Hochladen'
+                      const reuploadBg = reuploadKind === 'new' ? 'rgba(211,188,118,.18)' : 'rgba(163,80,80,.12)'
+                      const reuploadBorder = reuploadKind === 'new' ? 'rgba(211,188,118,.55)' : 'rgba(163,80,80,.5)'
+                      const reuploadColor = reuploadKind === 'new' ? '#6B5D4F' : '#A35050'
                       return (
                         <button onClick={() => uploadMediathekToYoutube(f)}
-                          title={errTitle ?? `Auf YouTube hochladen (unlisted): ${f.name}`}
-                          aria-label="Auf YouTube hochladen"
-                          className="yt-mediathek-upload-btn"
+                          title={reuploadTitle}
+                          aria-label={reuploadKind === 'gone' ? 'Auf YouTube erneut hochladen' : 'Auf YouTube hochladen'}
                           style={{
                             flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4,
                             padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
-                            background: medErr ? 'rgba(163,80,80,.12)' : 'rgba(211,188,118,.18)',
-                            border: `1px solid ${medErr ? 'rgba(163,80,80,.5)' : 'rgba(211,188,118,.55)'}`,
-                            color: medErr ? '#A35050' : '#6B5D4F',
+                            background: reuploadBg, border: `1px solid ${reuploadBorder}`, color: reuploadColor,
                             fontSize: 10, fontWeight: 700, lineHeight: 1,
                             transition: 'background .15s, border-color .15s',
                           }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = medErr ? 'rgba(163,80,80,.22)' : 'rgba(211,188,118,.32)' }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = medErr ? 'rgba(163,80,80,.12)' : 'rgba(211,188,118,.18)' }}>
-                          <span aria-hidden style={{ fontSize: 11, lineHeight: 1 }}>↑</span>
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = reuploadKind === 'new' ? 'rgba(211,188,118,.32)' : 'rgba(163,80,80,.22)' }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = reuploadBg }}>
+                          <span aria-hidden style={{ fontSize: 11, lineHeight: 1 }}>{reuploadKind === 'gone' ? '↻' : '↑'}</span>
                           <YouTubeIcon size={14} lit={false} />
-                          <span>YouTube</span>
+                          <span>{reuploadLabel}</span>
                         </button>
                       )
                     })()}
