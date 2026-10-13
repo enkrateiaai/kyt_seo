@@ -22,7 +22,7 @@ const C = {
   orange: '#C8834E',
 }
 
-type FileEntry = { name: string; size: number; mtime: number; duration?: number; yt_uploaded?: boolean; yt_url?: string }
+type FileEntry = { name: string; size: number; mtime: number; duration?: number; yt_uploaded?: boolean; yt_url?: string; yt_video_id?: string }
 type StreamStatus = { running: boolean; info?: { filename?: string; started?: string; seekSeconds?: number }; progress?: string; progressSecs?: number; resumeAt?: number; lastInfo?: { filename?: string; seekSeconds?: number }; scheduled: ScheduledJob[] }
 type ScheduledJob = { id: string; filename?: string | null; streamKey: string; datetime: string; mode?: 'video' | 'live' }
 type HistoryEntry = { datetime: string; filename?: string | null; mode?: 'video' | 'live' }
@@ -293,6 +293,8 @@ function LiveMonitorIframe({ liveKey }: { liveKey: number }) {
 
 export default function StudioClient() {
   const [files, setFiles] = useState<FileEntry[]>([])
+  type YtJobMed = { status: 'starting' | 'running' | 'done' | 'error'; progress: string; video_id?: string; url?: string; error?: string }
+  const [ytJobsMediathek, setYtJobsMediathek] = useState<Record<string, YtJobMed>>({})
   // Stable per-video number: #1 = oldest (by mtime), #N = newest.
   // Computed once per files change so adding a new video only gives the new
   // video a new number; existing videos keep their existing numbers.
@@ -440,6 +442,50 @@ export default function StudioClient() {
   const loadFiles = useCallback(async () => {
     const r = await fetch(`${API}/files`); if (r.ok) setFiles(await r.json())
   }, [])
+  // Upload a Mediathek file directly to YouTube. The server looks up the
+  // file by the same filename, so it works for any file already in UPLOADS_DIR.
+  async function uploadMediathekToYoutube(f: FileEntry) {
+    if (ytJobsMediathek[f.name]?.status === 'running' || ytJobsMediathek[f.name]?.status === 'starting') return
+    setYtJobsMediathek(prev => ({ ...prev, [f.name]: { status: 'starting', progress: '0%' } }))
+    try {
+      const r = await fetch(`${API}/youtube/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: f.name, title: f.name.replace(/\.[^.]+$/, ''), privacy: 'unlisted' }),
+      })
+      const d = await r.json()
+      if (!r.ok || !d.ok || !d.job_id) {
+        const errMsg = d.error ?? `HTTP ${r.status}`
+        const needsAuth = /authenticate|not authenticated|401/i.test(errMsg + ' ' + r.status)
+        setYtJobsMediathek(prev => ({
+          ...prev,
+          [f.name]: needsAuth
+            ? { status: 'error', progress: '', error: 'noauth' }
+            : { status: 'error', progress: '', error: errMsg }
+        }))
+        return
+      }
+      setYtJobsMediathek(prev => ({ ...prev, [f.name]: { status: 'running', progress: '0%' } }))
+      pollMediathekYtJob(d.job_id, f.name)
+    } catch (e: any) {
+      setYtJobsMediathek(prev => ({ ...prev, [f.name]: { status: 'error', progress: '', error: e?.message ?? 'Netzwerkfehler' } }))
+    }
+  }
+
+  function pollMediathekYtJob(serverJobId: string, name: string) {
+    const iv = setInterval(async () => {
+      try {
+        const r = await fetch(`${API}/youtube/jobs/${serverJobId}`)
+        const d = await r.json()
+        setYtJobsMediathek(prev => ({ ...prev, [name]: { status: d.status, progress: d.progress ?? '', video_id: d.video_id, url: d.url, error: d.error } }))
+        if (d.status === 'done') {
+          loadFiles() // Refresh the mediathek list so f.yt_uploaded becomes true server-side
+        }
+        if (d.status === 'done' || d.status === 'error') clearInterval(iv)
+      } catch { clearInterval(iv) }
+    }, 4000)
+  }
+
 
   const loadStatus = useCallback(async () => {
     try {
@@ -1018,12 +1064,49 @@ export default function StudioClient() {
                   </div>
                   <div style={{ padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{f.name}</span>
-                    {f.yt_uploaded && (
-                      <a href={f.yt_url} target="_blank" rel="noreferrer" title={`Auf YouTube: ${f.yt_url}`}
-                        style={{ flexShrink: 0, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-                        <YouTubeIcon size={16} lit={true} />
-                      </a>
-                    )}
+                    {(() => {
+                      const ym = ytJobsMediathek[f.name]
+                      const medLive = ym?.status === 'running' || ym?.status === 'starting'
+                      // Treat as "uploaded" only when the poll returned a real video_id,
+                      // matching the GDrive card's lit definition.
+                      const medDone = ym?.status === 'done' && !!ym.video_id
+                      const medErr = ym?.status === 'error'
+                      if (medLive) {
+                        return (
+                          <span title={`YouTube-Upload läuft: ${ym?.progress || '0%'}`}
+                            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#C8834E', fontWeight: 600 }}>
+                            <YouTubeIcon size={16} lit={false} />
+                            <span>⬆ {ym?.progress || '0%'}</span>
+                          </span>
+                        )
+                      }
+                      if (f.yt_uploaded || medDone) {
+                        return (
+                          <a href={f.yt_url ?? (ym?.url ?? `https://youtu.be/${ym?.video_id ?? f.yt_video_id ?? ''}`)} target="_blank" rel="noreferrer"
+                            title={`Auf YouTube: ${f.yt_url ?? ym?.url ?? ''}`}
+                            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                            <YouTubeIcon size={16} lit={true} />
+                          </a>
+                        )
+                      }
+                      if (medErr) {
+                        return (
+                          <button onClick={() => uploadMediathekToYoutube(f)}
+                            title={`Upload fehlgeschlagen: ${ym?.error || 'Fehler'} — erneut versuchen`}
+                            style={{ background: 'none', border: '1px solid rgba(163,80,80,.3)', padding: '2px 4px', borderRadius: 3, display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>
+                            <YouTubeIcon size={16} lit={false} />
+                          </button>
+                        )
+                      }
+                      // Not uploaded, not running, no error → small upload button
+                      return (
+                        <button onClick={() => uploadMediathekToYoutube(f)}
+                          title={`Auf YouTube hochladen (unlisted): ${f.name}`}
+                          style={{ background: 'none', border: '1px solid rgba(155,142,126,.3)', padding: '2px 4px', borderRadius: 3, display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>
+                          <YouTubeIcon size={16} lit={false} />
+                        </button>
+                      )
+                    })()}
                     {f.duration ? <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmtDuration(f.duration)}</span> : null}
                     <span style={{ color: C.faint, fontSize: 11, flexShrink: 0 }}>{fmt(f.size)}</span>
                     <button onClick={() => startStream(f.name)} disabled={switching}
