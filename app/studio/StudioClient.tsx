@@ -1074,9 +1074,10 @@ export default function StudioClient() {
                       if (medLive) {
                         return (
                           <span title={`YouTube-Upload läuft: ${ym?.progress || '0%'}`}
-                            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#C8834E', fontWeight: 600 }}>
+                            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#C8834E', fontWeight: 700 }}>
+                            <span aria-hidden>⬆</span>
                             <YouTubeIcon size={16} lit={false} />
-                            <span>⬆ {ym?.progress || '0%'}</span>
+                            <span>YT {ym?.progress || '0%'}</span>
                           </span>
                         )
                       }
@@ -1089,21 +1090,26 @@ export default function StudioClient() {
                           </a>
                         )
                       }
-                      if (medErr) {
-                        return (
-                          <button onClick={() => uploadMediathekToYoutube(f)}
-                            title={`Upload fehlgeschlagen: ${ym?.error || 'Fehler'} — erneut versuchen`}
-                            style={{ background: 'none', border: '1px solid rgba(163,80,80,.3)', padding: '2px 4px', borderRadius: 3, display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>
-                            <YouTubeIcon size={16} lit={false} />
-                          </button>
-                        )
-                      }
-                      // Not uploaded, not running, no error → small upload button
+                      const errTitle = medErr ? `Upload fehlgeschlagen: ${ym?.error || 'Fehler'} — erneut versuchen` : undefined
                       return (
                         <button onClick={() => uploadMediathekToYoutube(f)}
-                          title={`Auf YouTube hochladen (unlisted): ${f.name}`}
-                          style={{ background: 'none', border: '1px solid rgba(155,142,126,.3)', padding: '2px 4px', borderRadius: 3, display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>
-                          <YouTubeIcon size={16} lit={false} />
+                          title={errTitle ?? `Auf YouTube hochladen (unlisted): ${f.name}`}
+                          aria-label="Auf YouTube hochladen"
+                          className="yt-mediathek-upload-btn"
+                          style={{
+                            flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4,
+                            padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
+                            background: medErr ? 'rgba(163,80,80,.12)' : 'rgba(211,188,118,.18)',
+                            border: `1px solid ${medErr ? 'rgba(163,80,80,.5)' : 'rgba(211,188,118,.55)'}`,
+                            color: medErr ? '#A35050' : '#6B5D4F',
+                            fontSize: 10, fontWeight: 700, lineHeight: 1,
+                            transition: 'background .15s, border-color .15s',
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = medErr ? 'rgba(163,80,80,.22)' : 'rgba(211,188,118,.32)' }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = medErr ? 'rgba(163,80,80,.12)' : 'rgba(211,188,118,.18)' }}>
+                          <span aria-hidden style={{ fontSize: 11, lineHeight: 1 }}>↑</span>
+                          <YouTubeIcon size={14} lit={false} />
+                          <span>YouTube</span>
                         </button>
                       )
                     })()}
