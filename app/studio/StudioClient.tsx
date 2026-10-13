@@ -1514,7 +1514,7 @@ export default function StudioClient() {
       </div>
 
       {/* GDrive Browser */}
-      <GDriveBrowser cardStyle={card} labelStyle={label} btnSmall={btnSmall} API={API} onAdded={loadFiles} />
+      <GDriveBrowser cardStyle={card} labelStyle={label} btnSmall={btnSmall} API={API} onAdded={loadFiles} ytDeleted={ytDeleted} />
     </div>
   )
 }
@@ -1571,12 +1571,13 @@ function GDriveLazyThumb({ name, API }: { name: string; API: string }) {
   )
 }
 
-function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
+function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded, ytDeleted }: {
   cardStyle: React.CSSProperties
   labelStyle: React.CSSProperties
   btnSmall: (v?: 'gold' | 'danger' | 'ghost') => React.CSSProperties
   API: string
   onAdded: () => void
+  ytDeleted: Record<string, true>
 }) {
   const [open, setOpen] = React.useState(false)
   const [months, setMonths] = React.useState(2)
@@ -1828,16 +1829,20 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                         // Treat as "uploaded" if either the persistent registry says so
                         // OR an in-flight poll just saw status=done with a video_id.
                         const pollDone = y?.status === 'done' && !!y.video_id
-                        const lit = !!f.yt_uploaded || pollDone
-                        const liveUrl = f.yt_url || y?.url || (y?.video_id ? `https://youtu.be/${y.video_id}` : undefined)
                         const liveVideoId = f.yt_video_id || y?.video_id
+                        // If YouTube says this video_id is gone, drop it from "lit" so the
+                        // user gets a red badge instead of a stale green link.
+                        const isYtDeleted = !!liveVideoId && ytDeleted[liveVideoId] === true
+                        const lit = (!!f.yt_uploaded || pollDone) && !isYtDeleted
+                        const liveUrl = f.yt_url || y?.url || (y?.video_id ? `https://youtu.be/${y.video_id}` : undefined)
                         const shortUrl = ((liveUrl ?? '').replace('https://youtu.be/', '') || liveVideoId || '')
                         const isMarking = markForm?.name === f.name
                         const ytBtnBase = { ...btnSmall('gold'), padding: '4px 10px', fontSize: 11, color: '#2C2416' }
+                        const ytBtnRed = { ...btnSmall('danger'), padding: '4px 10px', fontSize: 11 }
                         return (
                           <div style={{ marginTop: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <YouTubeIcon size={22} lit={lit} title={lit ? `Auf YouTube: ${shortUrl}` : 'Noch nicht auf YouTube'} />
+                              <YouTubeIcon size={22} lit={lit} title={lit ? `Auf YouTube: ${shortUrl}` : isYtDeleted ? `Auf YouTube gelöscht/privat: ${liveVideoId}` : 'Noch nicht auf YouTube'} />
                               {isLive ? (
                                 <>
                                   <span style={{ fontSize: 11, fontWeight: 600, color: '#C8834E', flex: 1 }}>⬆ YT {y?.progress || '0%'}</span>
@@ -1861,6 +1866,14 @@ function GDriveBrowser({ cardStyle, labelStyle, btnSmall, API, onAdded }: {
                                     ✓ YouTube: {shortUrl}
                                   </a>
                                   <button onClick={() => uploadToYoutube(f)} style={ytBtnBase} title="Erneut hochladen">↻ Erneut</button>
+                                </>
+                              ) : isYtDeleted ? (
+                                <>
+                                  <span style={{ fontSize: 11, color: '#A35050', flex: 1, fontWeight: 600 }}
+                                    title={`Auf YouTube gelöscht oder privat: ${liveVideoId}`}>
+                                    ✗ gelöscht
+                                  </span>
+                                  <button onClick={() => uploadToYoutube(f)} style={ytBtnRed} title="Erneut auf YouTube hochladen">↻ Erneut</button>
                                 </>
                               ) : (
                                 <>
