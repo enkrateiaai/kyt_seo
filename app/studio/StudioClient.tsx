@@ -1538,6 +1538,7 @@ export default function StudioClient() {
 
 // ── Webinar panel ────────────────────────────────────────────────────────────
 type WebinarState = {
+  id: string
   filename: string
   title: string
   description: string
@@ -1566,6 +1567,15 @@ function fmtWindow(starts?: string | null, ends?: string | null): string {
   return `${s} → ${e}`
 }
 
+function webinarPhaseOf(w: WebinarState, nowMs: number): { text: string; color: string; bg: string } {
+  const s = w.startsAt ? Date.parse(w.startsAt) : NaN
+  const e = w.endsAt ? Date.parse(w.endsAt) : NaN
+  if (Number.isFinite(s) && nowMs < s) return { text: 'Startet später', color: C.orange, bg: '#FDF4EE' }
+  if (Number.isFinite(e) && nowMs > e) return { text: 'Beendet', color: C.faint, bg: C.bg }
+  if (Number.isFinite(s)) return { text: 'Läuft jetzt', color: C.green, bg: C.greenLight }
+  return { text: 'Ohne Zeitlimit', color: C.faint, bg: C.bg }
+}
+
 function WebinarPanel({
   API, files, cardStyle, labelStyle, btnPrimary, btnSmall, inputStyle,
   flash, onUpload, uploading,
@@ -1581,7 +1591,8 @@ function WebinarPanel({
   onUpload: (file: File) => void
   uploading: boolean
 }) {
-  const [cfg, setCfg] = useState<WebinarState | null>(null)
+  const [items, setItems] = useState<WebinarState[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [filename, setFilename] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -1594,28 +1605,34 @@ function WebinarPanel({
   const load = useCallback(async () => {
     try {
       const res = await fetch(`${API}/webinar`, { cache: 'no-store' })
-      if (!res.ok) return
-      const data = await res.json()
-      const w: WebinarState | null = data?.webinar ?? null
-      setCfg(w)
-      if (w) {
-        setFilename(w.filename)
-        setTitle(w.title ?? '')
-        setDescription(w.description ?? '')
-        setStartsAt(isoToLocalInput(w.startsAt))
-        setEndsAt(isoToLocalInput(w.endsAt))
-      } else {
-        setFilename('')
-        setTitle('')
-        setDescription('')
-        setStartsAt('')
-        setEndsAt('')
+      if (res.ok) {
+        const data = await res.json()
+        const list: WebinarState[] = Array.isArray(data?.webinars) ? data.webinars : []
+        setItems(list)
       }
     } catch { /* Studio nicht erreichbar */ }
     setLoaded(true)
   }, [API])
 
   useEffect(() => { load() }, [load])
+
+  const resetForm = () => {
+    setEditingId(null)
+    setFilename('')
+    setTitle('')
+    setDescription('')
+    setStartsAt('')
+    setEndsAt('')
+  }
+
+  const startEdit = (w: WebinarState) => {
+    setEditingId(w.id)
+    setFilename(w.filename)
+    setTitle(w.title ?? '')
+    setDescription(w.description ?? '')
+    setStartsAt(isoToLocalInput(w.startsAt))
+    setEndsAt(isoToLocalInput(w.endsAt))
+  }
 
   const save = async () => {
     if (!filename) { flash('Bitte ein Video auswählen'); return }
@@ -1625,16 +1642,18 @@ function WebinarPanel({
     }
     setBusy(true)
     try {
-      const res = await fetch(`${API}/webinar`, {
-        method: 'POST',
+      const body = {
+        filename,
+        title: title || undefined,
+        description: description || undefined,
+        startsAt: startsAt ? new Date(startsAt).toISOString() : '',
+        endsAt: endsAt ? new Date(endsAt).toISOString() : '',
+      }
+      const url = editingId ? `${API}/webinar/${encodeURIComponent(editingId)}` : `${API}/webinar`
+      const res = await fetch(url, {
+        method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename,
-          title: title || undefined,
-          description: description || undefined,
-          startsAt: startsAt ? new Date(startsAt).toISOString() : '',
-          endsAt: endsAt ? new Date(endsAt).toISOString() : '',
-        }),
+        body: JSON.stringify(body),
       })
       const text = await res.text()
       if (!res.ok) {
@@ -1642,7 +1661,8 @@ function WebinarPanel({
         try { msg = JSON.parse(text).error ?? text } catch { /* plain text */ }
         flash(`Webinar speichern fehlgeschlagen: ${msg}`)
       } else {
-        flash('Webinar gespeichert', true)
+        flash(editingId ? 'Webinar aktualisiert' : 'Webinar eingeplant', true)
+        resetForm()
         load()
       }
     } catch {
@@ -1652,13 +1672,14 @@ function WebinarPanel({
     }
   }
 
-  const clear = async () => {
-    if (!confirm('Webinar entfernen? Die Seite /webinar zeigt dann wieder "kein Webinar".')) return
+  const remove = async (w: WebinarState) => {
+    if (!confirm(`Webinar „${w.title || w.filename}" entfernen?`)) return
     setBusy(true)
     try {
-      const res = await fetch(`${API}/webinar`, { method: 'DELETE' })
+      const res = await fetch(`${API}/webinar/${encodeURIComponent(w.id)}`, { method: 'DELETE' })
       if (!res.ok) { flash('Entfernen fehlgeschlagen'); return }
       flash('Webinar entfernt', true)
+      if (editingId === w.id) resetForm()
       load()
     } catch {
       flash('Entfernen fehlgeschlagen: Netzwerkfehler')
@@ -1667,131 +1688,165 @@ function WebinarPanel({
     }
   }
 
-  const phase = (() => {
-    if (!cfg || !cfg.startsAt) return null
-    const now = Date.now()
-    const s = Date.parse(cfg.startsAt)
-    const e = cfg.endsAt ? Date.parse(cfg.endsAt) : NaN
-    if (Number.isNaN(s)) return null
-    if (now < s) return { text: 'Startet später', color: C.orange, bg: '#FDF4EE' }
-    if (Number.isFinite(e) && now > e) return { text: 'Beendet', color: C.faint, bg: C.bg }
-    return { text: 'Läuft jetzt', color: C.green, bg: C.greenLight }
-  })()
+  const now = Date.now()
 
   return (
     <div style={{ ...cardStyle }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <span style={{ ...labelStyle, marginBottom: 0 }}>Webinar</span>
-        {phase && (
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: phase.color, background: phase.bg, border: `1px solid ${phase.color}`, borderRadius: 3, padding: '2px 7px' }}>
-            {phase.text}
-          </span>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <span style={{ ...labelStyle, marginBottom: 0 }}>Webinar ({items.length})</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <a href="/webinar" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
             Seite öffnen ↗
           </a>
-          {cfg && (
-            <button style={btnSmall('danger')} onClick={clear} disabled={busy}>
-              Entfernen
-            </button>
-          )}
+          <button style={btnSmall('gold')} onClick={resetForm} disabled={busy}>
+            + Neues Webinar
+          </button>
+          <button style={btnSmall('ghost')} onClick={load} disabled={busy}>Neu laden</button>
         </div>
       </div>
 
       <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.7 }}>
-        Das Video läuft auf der öffentlichen Seite <strong>/webinar</strong> nur innerhalb des eingestellten Zeitfensters
-        (vor dem Start und nach dem Ende wird nichts ausgeliefert).
+        Das Video läuft auf der öffentlichen Seite <strong>/webinar</strong> nur innerhalb des eingestellten
+        Zeitfensters (vor dem Start und nach dem Ende wird nichts ausgeliefert). Mehrere Webinare sind parallel
+        planbar.
       </p>
 
-      {cfg && (
-        <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, padding: 12, marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{cfg.title || cfg.filename}</div>
-          <div style={{ fontSize: 11, color: C.muted }}>Datei: {cfg.filename}</div>
-          <div style={{ fontSize: 11, color: C.muted }}>Zeitfenster: {fmtWindow(cfg.startsAt, cfg.endsAt)}</div>
-          {cfg.duration > 0 && (
-            <div style={{ fontSize: 11, color: C.muted }}>Länge: {fmtDuration(cfg.duration)}</div>
-          )}
+      {/* Scheduled list */}
+      {items.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+          {items.map(w => {
+            const ph = webinarPhaseOf(w, now)
+            const isEditing = editingId === w.id
+            return (
+              <div
+                key={w.id}
+                style={{
+                  border: `1px solid ${isEditing ? C.goldDark : C.border}`,
+                  borderRadius: 6,
+                  background: isEditing ? '#F5EDD8' : C.bg,
+                  padding: 12,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, flex: 1, minWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {w.title || w.filename}
+                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: ph.color, background: ph.bg, border: `1px solid ${ph.color}`, borderRadius: 3, padding: '2px 7px' }}>
+                    {ph.text}
+                  </span>
+                  <button style={btnSmall(isEditing ? 'gold' : 'ghost')} onClick={() => (isEditing ? resetForm() : startEdit(w))} disabled={busy}>
+                    {isEditing ? 'Abbrechen' : 'Bearbeiten'}
+                  </button>
+                  <button style={btnSmall('danger')} onClick={() => remove(w)} disabled={busy}>
+                    Löschen
+                  </button>
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>
+                  {fmtWindow(w.startsAt, w.endsAt)} · {w.filename}
+                  {w.duration > 0 ? ` · ${fmtDuration(w.duration)}` : ''}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {loaded && items.length === 0 && (
+        <div style={{ color: C.faint, fontSize: 13, marginBottom: 16 }}>
+          Noch kein Webinar geplant — unten ein neues anlegen.
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-        <div style={{ gridColumn: '1 / -1' }}>
-          <span style={labelStyle}>Video</span>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <select
-              value={filename}
-              onChange={e => setFilename(e.target.value)}
-              style={{ ...inputStyle, flex: '1 1 260px', minWidth: 0 }}
-            >
-              <option value="">— Video aus der Mediathek wählen —</option>
-              {files.map(f => (
-                <option key={f.name} value={f.name}>
-                  {f.name}{f.duration ? ` · ${fmtDuration(f.duration)}` : ''}
-                </option>
-              ))}
-            </select>
-            <button style={btnSmall('gold')} onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              {uploading ? 'Lädt…' : 'Video hochladen'}
-            </button>
+      {/* Form */}
+      <div
+        style={{
+          border: `1px solid ${editingId ? C.goldDark : C.border}`,
+          borderRadius: 6,
+          padding: 14,
+          background: editingId ? '#F5EDD8' : 'transparent',
+        }}
+      >
+        <span style={{ ...labelStyle, marginBottom: 12 }}>
+          {editingId ? 'Webinar bearbeiten' : 'Neues Webinar planen'}
+        </span>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <span style={labelStyle}>Video</span>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <select
+                value={filename}
+                onChange={e => setFilename(e.target.value)}
+                style={{ ...inputStyle, flex: '1 1 260px', minWidth: 0 }}
+              >
+                <option value="">— Video aus der Mediathek wählen —</option>
+                {files.map(f => (
+                  <option key={f.name} value={f.name}>
+                    {f.name}{f.duration ? ` · ${fmtDuration(f.duration)}` : ''}
+                  </option>
+                ))}
+              </select>
+              <button style={btnSmall('gold')} onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                {uploading ? 'Lädt…' : 'Video hochladen'}
+              </button>
+              <input
+                ref={fileInputRef} type="file" accept="video/*" style={{ display: 'none' }}
+                onChange={e => {
+                  const f = e.target.files?.[0]
+                  if (f) onUpload(f)
+                  e.target.value = ''
+                }}
+              />
+            </div>
+            {files.length === 0 && (
+              <p style={{ fontSize: 11, color: C.faint, margin: '8px 0 0' }}>
+                Noch keine Dateien vorhanden — lade zuerst ein Video hoch.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <span style={labelStyle}>Start</span>
             <input
-              ref={fileInputRef} type="file" accept="video/*" style={{ display: 'none' }}
-              onChange={e => {
-                const f = e.target.files?.[0]
-                if (f) onUpload(f)
-                e.target.value = ''
-              }}
+              type="datetime-local" value={startsAt} onChange={e => setStartsAt(e.target.value)}
+              style={{ ...inputStyle, width: '100%' }}
             />
           </div>
-          {files.length === 0 && (
-            <p style={{ fontSize: 11, color: C.faint, margin: '8px 0 0' }}>
-              Noch keine Dateien vorhanden — lade zuerst ein Video hoch.
-            </p>
+
+          <div>
+            <span style={labelStyle}>Ende (optional)</span>
+            <input
+              type="datetime-local" value={endsAt} onChange={e => setEndsAt(e.target.value)}
+              style={{ ...inputStyle, width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <span style={labelStyle}>Titel (optional)</span>
+            <input
+              type="text" value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="z. B. Kriya des Monats"
+              style={{ ...inputStyle, width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <span style={labelStyle}>Beschreibung (optional)</span>
+            <input
+              type="text" value={description} onChange={e => setDescription(e.target.value)}
+              placeholder="Kurzbeschreibung für die Seite"
+              style={{ ...inputStyle, width: '100%' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+          <button style={btnPrimary()} onClick={save} disabled={busy || !loaded}>
+            {busy ? 'Speichert…' : editingId ? 'Änderungen speichern' : 'Webinar einplanen'}
+          </button>
+          {editingId && (
+            <button style={btnSmall('ghost')} onClick={resetForm} disabled={busy}>Abbrechen</button>
           )}
         </div>
-
-        <div>
-          <span style={labelStyle}>Start</span>
-          <input
-            type="datetime-local" value={startsAt} onChange={e => setStartsAt(e.target.value)}
-            style={{ ...inputStyle, width: '100%' }}
-          />
-        </div>
-
-        <div>
-          <span style={labelStyle}>Ende (optional)</span>
-          <input
-            type="datetime-local" value={endsAt} onChange={e => setEndsAt(e.target.value)}
-            style={{ ...inputStyle, width: '100%' }}
-          />
-        </div>
-
-        <div>
-          <span style={labelStyle}>Titel (optional)</span>
-          <input
-            type="text" value={title} onChange={e => setTitle(e.target.value)}
-            placeholder="z. B. Kriya des Monats"
-            style={{ ...inputStyle, width: '100%' }}
-          />
-        </div>
-
-        <div>
-          <span style={labelStyle}>Beschreibung (optional)</span>
-          <input
-            type="text" value={description} onChange={e => setDescription(e.target.value)}
-            placeholder="Kurzbeschreibung für die Seite"
-            style={{ ...inputStyle, width: '100%' }}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-        <button style={btnPrimary()} onClick={save} disabled={busy || !loaded}>
-          {busy ? 'Speichert…' : 'Webinar speichern'}
-        </button>
-        {cfg && (
-          <button style={btnSmall('ghost')} onClick={load} disabled={busy}>Neu laden</button>
-        )}
       </div>
     </div>
   )

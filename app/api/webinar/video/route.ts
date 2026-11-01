@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import http from 'http'
 import { Readable } from 'stream'
-import { STUDIO_BASE, STUDIO_TOKEN, fetchWebinarConfig, webinarPhase } from '@/lib/webinar'
+import {
+  STUDIO_BASE,
+  STUDIO_TOKEN,
+  fetchWebinars,
+  pickLiveWebinar,
+  webinarPhase,
+} from '@/lib/webinar'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 const PASS_THROUGH = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'last-modified']
 
-// Streams the webinar video from the studio. Only the currently configured
-// webinar file can be requested, and only while the webinar window is open.
+// Streams the webinar video from the studio. Only a scheduled webinar can be
+// requested, and only while its own time window is open.
 export async function GET(request: NextRequest) {
-  const webinar = await fetchWebinarConfig()
+  const now = Date.now()
+  const webinars = await fetchWebinars()
+
+  const requestedId = request.nextUrl.searchParams.get('id')
+  const webinar = requestedId
+    ? webinars.find((w) => w.id === requestedId) ?? null
+    : pickLiveWebinar(webinars, now)
+
   if (!webinar) {
     return NextResponse.json({ error: 'Kein Webinar konfiguriert' }, { status: 404 })
   }
 
-  const phase = webinarPhase(webinar, Date.now())
+  const phase = webinarPhase(webinar, now)
   if (phase !== 'live') {
     return NextResponse.json(
       { error: phase === 'before' ? 'Webinar hat noch nicht begonnen' : 'Webinar ist beendet' },

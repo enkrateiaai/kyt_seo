@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { hasClerkServerConfig } from '@/lib/authConfig'
 import { getViewerUser, isAdminUser } from '@/lib/memberAccess'
-import { STUDIO_BASE, STUDIO_TOKEN, fetchWebinarConfig, webinarPhase } from '@/lib/webinar'
+import {
+  STUDIO_BASE,
+  STUDIO_TOKEN,
+  fetchWebinars,
+  pickLiveWebinar,
+  pickNextWebinar,
+} from '@/lib/webinar'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,14 +25,23 @@ async function requireAdmin(): Promise<NextResponse | null> {
 
 // Public: the webinar page itself is not protected.
 export async function GET() {
-  const webinar = await fetchWebinarConfig()
+  const now = Date.now()
+  const webinars = await fetchWebinars()
+  const live = pickLiveWebinar(webinars, now)
+  const next = pickNextWebinar(webinars, now)
   return NextResponse.json(
-    { webinar, phase: webinarPhase(webinar, Date.now()), serverNow: Date.now() },
+    {
+      webinars,
+      active: live,
+      next,
+      phase: live ? 'live' : next ? 'before' : 'none',
+      serverNow: now,
+    },
     { headers: { 'cache-control': 'no-store, max-age=0' } },
   )
 }
 
-// Admin: set the webinar (video + time window).
+// Admin: schedule a new webinar.
 export async function POST(request: NextRequest) {
   const denied = await requireAdmin()
   if (denied) return denied
@@ -59,7 +74,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Admin: clear the webinar.
+// Admin: remove all scheduled webinars.
 export async function DELETE() {
   const denied = await requireAdmin()
   if (denied) return denied

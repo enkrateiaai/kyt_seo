@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import type { WebinarConfig, WebinarPhase } from '@/lib/webinar'
+import React, { useEffect, useRef, useState } from 'react'
+import type { WebinarConfig } from '@/lib/webinar'
 
 const C = {
   surface: '#FDFBF8',
@@ -9,12 +9,8 @@ const C = {
   text: '#2C2416',
   muted: '#6B5D4F',
   faint: '#9B8E7E',
-  gold: '#D3BC76',
   goldDark: '#B89A4A',
-  green: '#4A7C59',
-  greenLight: '#EDF5F0',
   red: '#A35050',
-  redLight: '#FAF0F0',
 }
 
 const DATE_FMT = new Intl.DateTimeFormat('de-DE', {
@@ -41,41 +37,58 @@ function fmtCountdown(ms: number) {
   return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':')
 }
 
-function phaseOf(cfg: WebinarConfig | null, nowMs: number): WebinarPhase {
-  if (!cfg || !cfg.filename) return 'none'
-  const starts = cfg.startsAt ? Date.parse(cfg.startsAt) : NaN
-  if (!Number.isFinite(starts)) return 'live'
-  if (nowMs < starts) return 'before'
-  const ends = cfg.endsAt ? Date.parse(cfg.endsAt) : NaN
-  if (Number.isFinite(ends) && nowMs > ends) return 'after'
-  return 'live'
+function isLive(w: WebinarConfig, nowMs: number) {
+  const starts = w.startsAt ? Date.parse(w.startsAt) : NaN
+  if (!Number.isFinite(starts)) return true
+  if (nowMs < starts) return false
+  const ends = w.endsAt ? Date.parse(w.endsAt) : NaN
+  if (Number.isFinite(ends) && nowMs > ends) return false
+  return true
+}
+
+function isUpcoming(w: WebinarConfig, nowMs: number) {
+  const starts = w.startsAt ? Date.parse(w.startsAt) : NaN
+  return Number.isFinite(starts) && nowMs < starts
 }
 
 export default function WebinarPlayer({
-  initialWebinar,
-  initialPhase,
+  initialWebinars,
+  initialActive,
+  initialNext,
 }: {
-  initialWebinar: WebinarConfig | null
-  initialPhase: WebinarPhase
+  initialWebinars: WebinarConfig[]
+  initialActive: WebinarConfig | null
+  initialNext: WebinarConfig | null
 }) {
-  const [webinar, setWebinar] = useState<WebinarConfig | null>(initialWebinar)
-  const [phase, setPhase] = useState<WebinarPhase>(initialPhase)
+  const [webinars, setWebinars] = useState<WebinarConfig[]>(initialWebinars)
+  const [active, setActive] = useState<WebinarConfig | null>(initialActive)
+  const [next, setNext] = useState<WebinarConfig | null>(initialNext)
   const [now, setNow] = useState(() => Date.now())
   const [muted, setMuted] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // Keep the clock in sync so the window opens and closes on time.
+  // Clock: the window opens and closes on time, even without a reload.
   useEffect(() => {
     const t = setInterval(() => {
       const current = Date.now()
       setNow(current)
-      setPhase((prev) => {
-        const next = phaseOf(webinar, current)
-        return next === prev ? prev : next
+      setActive((prev) => {
+        const live = webinars.filter((w) => isLive(w, current))
+        if (live.length === 0) return null
+        live.sort(
+          (a, b) => (Date.parse(b.startsAt ?? '') || 0) - (Date.parse(a.startsAt ?? '') || 0),
+        )
+        return live[0]
+      })
+      setNext((prev) => {
+        const upcoming = webinars
+          .filter((w) => isUpcoming(w, current))
+          .sort((a, b) => (Date.parse(a.startsAt ?? '') || 0) - (Date.parse(b.startsAt ?? '') || 0))
+        return upcoming[0] ?? null
       })
     }, 1000)
     return () => clearInterval(t)
-  }, [webinar])
+  }, [webinars])
 
   // Pick up config changes made in the studio without a reload.
   useEffect(() => {
@@ -84,10 +97,15 @@ export default function WebinarPlayer({
       try {
         const res = await fetch('/api/webinar', { cache: 'no-store' })
         if (!res.ok) return
-        const data = (await res.json()) as { webinar?: WebinarConfig | null; phase?: WebinarPhase }
+        const data = (await res.json()) as {
+          webinars?: WebinarConfig[]
+          active?: WebinarConfig | null
+          next?: WebinarConfig | null
+        }
         if (cancelled) return
-        if (data.webinar) setWebinar(data.webinar)
-        setPhase((prev) => (data.phase && data.phase !== prev ? data.phase : prev))
+        if (Array.isArray(data.webinars)) setWebinars(data.webinars)
+        if (data.active !== undefined) setActive(data.active)
+        if (data.next !== undefined) setNext(data.next)
       } catch {
         /* keep the last known state */
       }
@@ -102,21 +120,10 @@ export default function WebinarPlayer({
 
   // Hard stop: the video must not keep playing past the end of the window.
   useEffect(() => {
-    if (phase !== 'live' && videoRef.current && !videoRef.current.paused) {
+    if (!active && videoRef.current && !videoRef.current.paused) {
       videoRef.current.pause()
     }
-  }, [phase])
-
-  const startsAt = webinar?.startsAt ? Date.parse(webinar.startsAt) : NaN
-  const endsAt = webinar?.endsAt ? Date.parse(webinar.endsAt) : NaN
-
-  const stopVideo = useCallback(() => {
-    const el = videoRef.current
-    if (el) {
-      el.pause()
-      el.currentTime = 0
-    }
-  }, [])
+  }, [active])
 
   const panelStyle: React.CSSProperties = {
     background: C.surface,
@@ -126,7 +133,9 @@ export default function WebinarPlayer({
     textAlign: 'center',
   }
 
-  if (phase === 'none' || !webinar) {
+  const others = webinars.filter((w) => w.id !== active?.id && w.id !== next?.id)
+
+  if (!active && !next) {
     return (
       <div style={panelStyle}>
         <div style={{ fontSize: 30, marginBottom: 12 }}>◷</div>
@@ -144,12 +153,18 @@ export default function WebinarPlayer({
         <p style={{ color: C.muted, fontSize: 14, margin: 0, lineHeight: 1.7 }}>
           Sobald ein Webinar angesetzt ist, erscheint hier der Stream mit Start- und Endzeit.
         </p>
+        {others.length > 0 ? (
+          <p style={{ color: C.faint, fontSize: 12, margin: '14px 0 0' }}>
+            {others.length} weitere(s) Webinar(s) geplant.
+          </p>
+        ) : null}
       </div>
     )
   }
 
-  if (phase === 'before') {
-    const remaining = startsAt - now
+  if (!active && next) {
+    const startsAt = next.startsAt ? Date.parse(next.startsAt) : NaN
+    const endsAt = next.endsAt ? Date.parse(next.endsAt) : NaN
     return (
       <div style={panelStyle}>
         <div style={{ fontSize: 30, marginBottom: 12 }}>◷</div>
@@ -162,7 +177,7 @@ export default function WebinarPlayer({
             color: C.text,
           }}
         >
-          {webinar.title}
+          {next.title}
         </h2>
         <p style={{ color: C.muted, fontSize: 14, margin: '0 0 22px', lineHeight: 1.7 }}>
           Das Webinar startet am{' '}
@@ -185,45 +200,24 @@ export default function WebinarPlayer({
             fontWeight: 600,
           }}
         >
-          {fmtCountdown(remaining)}
+          {fmtCountdown(startsAt - now)}
         </div>
         <p style={{ color: C.faint, fontSize: 12, marginTop: 10, marginBottom: 0 }}>
           Die Seite bleibt offen – der Stream startet automatisch.
         </p>
+        {others.length > 0 ? (
+          <p style={{ color: C.faint, fontSize: 12, margin: '14px 0 0' }}>
+            {others.length} weitere(s) Webinar(s) geplant.
+          </p>
+        ) : null}
       </div>
     )
   }
 
-  if (phase === 'after') {
-    return (
-      <div style={panelStyle}>
-        <div style={{ fontSize: 30, marginBottom: 12 }}>✓</div>
-        <h2
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 26,
-            fontWeight: 400,
-            margin: '0 0 8px',
-            color: C.text,
-          }}
-        >
-          {webinar.title}
-        </h2>
-        <p style={{ color: C.muted, fontSize: 14, margin: 0, lineHeight: 1.7 }}>
-          Das Webinar ist beendet
-          {Number.isFinite(endsAt) ? (
-            <>
-              {' '}
-              – es lief am {DATE_FMT.format(new Date(endsAt))} bis {TIME_FMT.format(new Date(endsAt))}.
-            </>
-          ) : null}
-          .
-        </p>
-      </div>
-    )
-  }
+  // A webinar is live.
+  const startsAt = active?.startsAt ? Date.parse(active.startsAt) : NaN
+  const endsAt = active?.endsAt ? Date.parse(active.endsAt) : NaN
 
-  // phase === 'live'
   return (
     <div
       style={{
@@ -236,13 +230,19 @@ export default function WebinarPlayer({
     >
       <video
         ref={videoRef}
-        key={webinar.filename}
-        src="/api/webinar/video"
+        key={active?.id}
+        src={`/api/webinar/video?id=${encodeURIComponent(active?.id ?? '')}`}
         controls
         autoPlay
         playsInline
         muted={muted}
-        onEnded={stopVideo}
+        onEnded={() => {
+          const el = videoRef.current
+          if (el) {
+            el.pause()
+            el.currentTime = 0
+          }
+        }}
         style={{ width: '100%', display: 'block', aspectRatio: '16 / 9', background: '#000' }}
       />
       <div
@@ -325,15 +325,29 @@ export default function WebinarPlayer({
         }}
       >
         <div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{webinar.title}</div>
-          {webinar.description ? (
-            <div style={{ fontSize: 13, color: C.muted, marginTop: 3 }}>{webinar.description}</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{active?.title}</div>
+          {active?.description ? (
+            <div style={{ fontSize: 13, color: C.muted, marginTop: 3 }}>{active.description}</div>
           ) : null}
         </div>
         <div style={{ fontSize: 12, color: C.faint, textAlign: 'right' }}>
           {Number.isFinite(startsAt) ? `Seit ${DATE_FMT.format(new Date(startsAt))}` : null}
         </div>
       </div>
+      {next ? (
+        <div
+          style={{
+            background: C.surface,
+            borderTop: `1px solid ${C.border}`,
+            padding: '10px 18px',
+            fontSize: 12,
+            color: C.muted,
+          }}
+        >
+          Nächstes Webinar: <strong style={{ color: C.text }}>{next.title}</strong> am{' '}
+          {DATE_FMT.format(new Date(Date.parse(next.startsAt ?? '')))}
+        </div>
+      ) : null}
     </div>
   )
 }
