@@ -1511,10 +1511,288 @@ export default function StudioClient() {
             </>
           )}
         </div>
+
+        {/* Webinar */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <WebinarPanel
+            API={API}
+            files={files}
+            cardStyle={card}
+            labelStyle={label}
+            btnPrimary={btnPrimary}
+            btnSmall={btnSmall}
+            inputStyle={inputStyle}
+            flash={flash}
+            onUpload={(f) => doUpload(f)}
+            uploading={uploading}
+          />
+        </div>
       </div>
 
       {/* GDrive Browser */}
       <GDriveBrowser cardStyle={card} labelStyle={label} btnSmall={btnSmall} API={API} onAdded={loadFiles} ytDeleted={ytDeleted} />
+    </div>
+  )
+}
+
+
+// ── Webinar panel ────────────────────────────────────────────────────────────
+type WebinarState = {
+  filename: string
+  title: string
+  description: string
+  startsAt: string | null
+  endsAt: string | null
+  duration: number
+  updatedAt: string | null
+}
+
+function isoToLocalInput(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function fmtWindow(starts?: string | null, ends?: string | null): string {
+  const opts: Intl.DateTimeFormatOptions = {
+    weekday: 'short', day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin',
+  }
+  const fmt = new Intl.DateTimeFormat('de-DE', opts)
+  const s = starts ? fmt.format(new Date(starts)) : '—'
+  const e = ends ? fmt.format(new Date(ends)) : '—'
+  return `${s} → ${e}`
+}
+
+function WebinarPanel({
+  API, files, cardStyle, labelStyle, btnPrimary, btnSmall, inputStyle,
+  flash, onUpload, uploading,
+}: {
+  API: string
+  files: FileEntry[]
+  cardStyle: React.CSSProperties
+  labelStyle: React.CSSProperties
+  btnPrimary: (danger?: boolean) => React.CSSProperties
+  btnSmall: (variant?: 'gold' | 'danger' | 'ghost') => React.CSSProperties
+  inputStyle: React.CSSProperties
+  flash: (m: string, persist?: boolean) => void
+  onUpload: (file: File) => void
+  uploading: boolean
+}) {
+  const [cfg, setCfg] = useState<WebinarState | null>(null)
+  const [filename, setFilename] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [startsAt, setStartsAt] = useState('')
+  const [endsAt, setEndsAt] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/webinar`, { cache: 'no-store' })
+      if (!res.ok) return
+      const data = await res.json()
+      const w: WebinarState | null = data?.webinar ?? null
+      setCfg(w)
+      if (w) {
+        setFilename(w.filename)
+        setTitle(w.title ?? '')
+        setDescription(w.description ?? '')
+        setStartsAt(isoToLocalInput(w.startsAt))
+        setEndsAt(isoToLocalInput(w.endsAt))
+      } else {
+        setFilename('')
+        setTitle('')
+        setDescription('')
+        setStartsAt('')
+        setEndsAt('')
+      }
+    } catch { /* Studio nicht erreichbar */ }
+    setLoaded(true)
+  }, [API])
+
+  useEffect(() => { load() }, [load])
+
+  const save = async () => {
+    if (!filename) { flash('Bitte ein Video auswählen'); return }
+    if (!startsAt) { flash('Bitte eine Startzeit setzen'); return }
+    if (endsAt && new Date(endsAt).getTime() <= new Date(startsAt).getTime()) {
+      flash('Endzeit muss nach der Startzeit liegen'); return
+    }
+    setBusy(true)
+    try {
+      const res = await fetch(`${API}/webinar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename,
+          title: title || undefined,
+          description: description || undefined,
+          startsAt: startsAt ? new Date(startsAt).toISOString() : '',
+          endsAt: endsAt ? new Date(endsAt).toISOString() : '',
+        }),
+      })
+      const text = await res.text()
+      if (!res.ok) {
+        let msg = text
+        try { msg = JSON.parse(text).error ?? text } catch { /* plain text */ }
+        flash(`Webinar speichern fehlgeschlagen: ${msg}`)
+      } else {
+        flash('Webinar gespeichert', true)
+        load()
+      }
+    } catch {
+      flash('Webinar speichern fehlgeschlagen: Netzwerkfehler')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const clear = async () => {
+    if (!confirm('Webinar entfernen? Die Seite /webinar zeigt dann wieder "kein Webinar".')) return
+    setBusy(true)
+    try {
+      const res = await fetch(`${API}/webinar`, { method: 'DELETE' })
+      if (!res.ok) { flash('Entfernen fehlgeschlagen'); return }
+      flash('Webinar entfernt', true)
+      load()
+    } catch {
+      flash('Entfernen fehlgeschlagen: Netzwerkfehler')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const phase = (() => {
+    if (!cfg || !cfg.startsAt) return null
+    const now = Date.now()
+    const s = Date.parse(cfg.startsAt)
+    const e = cfg.endsAt ? Date.parse(cfg.endsAt) : NaN
+    if (Number.isNaN(s)) return null
+    if (now < s) return { text: 'Startet später', color: C.orange, bg: '#FDF4EE' }
+    if (Number.isFinite(e) && now > e) return { text: 'Beendet', color: C.faint, bg: C.bg }
+    return { text: 'Läuft jetzt', color: C.green, bg: C.greenLight }
+  })()
+
+  return (
+    <div style={{ ...cardStyle }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <span style={{ ...labelStyle, marginBottom: 0 }}>Webinar</span>
+        {phase && (
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: phase.color, background: phase.bg, border: `1px solid ${phase.color}`, borderRadius: 3, padding: '2px 7px' }}>
+            {phase.text}
+          </span>
+        )}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <a href="/webinar" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
+            Seite öffnen ↗
+          </a>
+          {cfg && (
+            <button style={btnSmall('danger')} onClick={clear} disabled={busy}>
+              Entfernen
+            </button>
+          )}
+        </div>
+      </div>
+
+      <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.7 }}>
+        Das Video läuft auf der öffentlichen Seite <strong>/webinar</strong> nur innerhalb des eingestellten Zeitfensters
+        (vor dem Start und nach dem Ende wird nichts ausgeliefert).
+      </p>
+
+      {cfg && (
+        <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, padding: 12, marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{cfg.title || cfg.filename}</div>
+          <div style={{ fontSize: 11, color: C.muted }}>Datei: {cfg.filename}</div>
+          <div style={{ fontSize: 11, color: C.muted }}>Zeitfenster: {fmtWindow(cfg.startsAt, cfg.endsAt)}</div>
+          {cfg.duration > 0 && (
+            <div style={{ fontSize: 11, color: C.muted }}>Länge: {fmtDuration(cfg.duration)}</div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <span style={labelStyle}>Video</span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <select
+              value={filename}
+              onChange={e => setFilename(e.target.value)}
+              style={{ ...inputStyle, flex: '1 1 260px', minWidth: 0 }}
+            >
+              <option value="">— Video aus der Mediathek wählen —</option>
+              {files.map(f => (
+                <option key={f.name} value={f.name}>
+                  {f.name}{f.duration ? ` · ${fmtDuration(f.duration)}` : ''}
+                </option>
+              ))}
+            </select>
+            <button style={btnSmall('gold')} onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+              {uploading ? 'Lädt…' : 'Video hochladen'}
+            </button>
+            <input
+              ref={fileInputRef} type="file" accept="video/*" style={{ display: 'none' }}
+              onChange={e => {
+                const f = e.target.files?.[0]
+                if (f) onUpload(f)
+                e.target.value = ''
+              }}
+            />
+          </div>
+          {files.length === 0 && (
+            <p style={{ fontSize: 11, color: C.faint, margin: '8px 0 0' }}>
+              Noch keine Dateien vorhanden — lade zuerst ein Video hoch.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <span style={labelStyle}>Start</span>
+          <input
+            type="datetime-local" value={startsAt} onChange={e => setStartsAt(e.target.value)}
+            style={{ ...inputStyle, width: '100%' }}
+          />
+        </div>
+
+        <div>
+          <span style={labelStyle}>Ende (optional)</span>
+          <input
+            type="datetime-local" value={endsAt} onChange={e => setEndsAt(e.target.value)}
+            style={{ ...inputStyle, width: '100%' }}
+          />
+        </div>
+
+        <div>
+          <span style={labelStyle}>Titel (optional)</span>
+          <input
+            type="text" value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="z. B. Kriya des Monats"
+            style={{ ...inputStyle, width: '100%' }}
+          />
+        </div>
+
+        <div>
+          <span style={labelStyle}>Beschreibung (optional)</span>
+          <input
+            type="text" value={description} onChange={e => setDescription(e.target.value)}
+            placeholder="Kurzbeschreibung für die Seite"
+            style={{ ...inputStyle, width: '100%' }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+        <button style={btnPrimary()} onClick={save} disabled={busy || !loaded}>
+          {busy ? 'Speichert…' : 'Webinar speichern'}
+        </button>
+        {cfg && (
+          <button style={btnSmall('ghost')} onClick={load} disabled={busy}>Neu laden</button>
+        )}
+      </div>
     </div>
   )
 }
