@@ -6,6 +6,7 @@ import {
   STUDIO_BASE,
   STUDIO_TOKEN,
   fetchWebinars,
+  fetchWebinarCta,
   pickLiveWebinar,
   pickNextWebinar,
 } from '@/lib/webinar'
@@ -27,11 +28,13 @@ async function requireAdmin(): Promise<NextResponse | null> {
 export async function GET() {
   const now = Date.now()
   const webinars = await fetchWebinars()
+  const cta = await fetchWebinarCta()
   const live = pickLiveWebinar(webinars, now)
   const next = pickNextWebinar(webinars, now)
   return NextResponse.json(
     {
       webinars,
+      cta,
       active: live,
       next,
       phase: live ? 'live' : next ? 'before' : 'none',

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { auth } from '@clerk/nextjs/server'
 import SiteHeader from '@/app/components/SiteHeader'
-import { fetchWebinars, pickLiveWebinar, pickNextWebinar } from '@/lib/webinar'
+import { fetchWebinars, fetchWebinarCta, pickLiveWebinar, pickNextWebinar } from '@/lib/webinar'
 import WebinarPlayer from './WebinarPlayer'
 
 export const metadata = {
@@ -23,6 +23,7 @@ export default async function WebinarPage() {
 
   const now = Date.now()
   const webinars = await fetchWebinars()
+  const cta = await fetchWebinarCta()
   const active = pickLiveWebinar(webinars, now)
   const next = pickNextWebinar(webinars, now)
 
@@ -60,6 +61,7 @@ export default async function WebinarPage() {
             initialWebinars={webinars}
             initialActive={active}
             initialNext={next}
+            initialCta={cta}
           />
 
           <p

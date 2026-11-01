@@ -17,6 +17,12 @@ export type WebinarConfig = {
   updatedAt: string | null
 }
 
+// Optional call-to-action below the video (e.g. a Calendly booking link).
+export type WebinarCta = {
+  url: string
+  label: string
+}
+
 export type WebinarPhase = 'none' | 'before' | 'live' | 'after'
 
 export function webinarPhase(cfg: WebinarConfig | null, nowMs: number): WebinarPhase {
@@ -58,5 +64,22 @@ export async function fetchWebinars(): Promise<WebinarConfig[]> {
     return Array.isArray(data?.webinars) ? data.webinars : []
   } catch {
     return []
+  }
+}
+
+export async function fetchWebinarCta(): Promise<WebinarCta | null> {
+  try {
+    const res = await fetch(`${STUDIO_BASE}/api/webinar`, {
+      cache: 'no-store',
+      headers: { Authorization: `Bearer ${STUDIO_TOKEN}`, Accept: 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { cta?: WebinarCta | null }
+    const cta = data?.cta
+    if (!cta || typeof cta.url !== 'string' || !cta.url) return null
+    return { url: cta.url, label: typeof cta.label === 'string' ? cta.label : '' }
+  } catch {
+    return null
   }
 }

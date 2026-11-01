@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import type { WebinarConfig } from '@/lib/webinar'
+import type { WebinarConfig, WebinarCta } from '@/lib/webinar'
 
 const C = {
   surface: '#FDFBF8',
@@ -51,20 +51,49 @@ function isUpcoming(w: WebinarConfig, nowMs: number) {
   return Number.isFinite(starts) && nowMs < starts
 }
 
+// Call-to-action below the video (e.g. "Termin buchen" -> Calendly).
+function CtaBox({ cta }: { cta: WebinarCta }) {
+  return (
+    <div style={{ marginTop: 18, textAlign: 'center' }}>
+      <a
+        href={cta.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-block',
+          background: '#B89A4A',
+          color: '#2C2416',
+          fontSize: 15,
+          fontWeight: 600,
+          letterSpacing: '0.04em',
+          padding: '13px 30px',
+          borderRadius: 999,
+          textDecoration: 'none',
+        }}
+      >
+        {cta.label || 'Termin buchen'}
+      </a>
+    </div>
+  )
+}
+
 export default function WebinarPlayer({
   initialWebinars,
   initialActive,
   initialNext,
+  initialCta,
 }: {
   initialWebinars: WebinarConfig[]
   initialActive: WebinarConfig | null
   initialNext: WebinarConfig | null
+  initialCta?: WebinarCta | null
 }) {
   const [webinars, setWebinars] = useState<WebinarConfig[]>(initialWebinars)
   const [active, setActive] = useState<WebinarConfig | null>(initialActive)
   const [next, setNext] = useState<WebinarConfig | null>(initialNext)
   const [now, setNow] = useState(() => Date.now())
   const [muted, setMuted] = useState(true)
+  const [cta, setCta] = useState<WebinarCta | null>(initialCta ?? null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Clock: the window opens and closes on time, even without a reload.
@@ -101,11 +130,13 @@ export default function WebinarPlayer({
           webinars?: WebinarConfig[]
           active?: WebinarConfig | null
           next?: WebinarConfig | null
+          cta?: WebinarCta | null
         }
         if (cancelled) return
         if (Array.isArray(data.webinars)) setWebinars(data.webinars)
         if (data.active !== undefined) setActive(data.active)
         if (data.next !== undefined) setNext(data.next)
+        if (data.cta !== undefined) setCta(data.cta)
       } catch {
         /* keep the last known state */
       }
@@ -137,6 +168,7 @@ export default function WebinarPlayer({
 
   if (!active && !next) {
     return (
+      <>
       <div style={panelStyle}>
         <div style={{ fontSize: 30, marginBottom: 12 }}>◷</div>
         <h2
@@ -159,6 +191,8 @@ export default function WebinarPlayer({
           </p>
         ) : null}
       </div>
+      {cta ? <CtaBox cta={cta} /> : null}
+      </>
     )
   }
 
@@ -166,6 +200,7 @@ export default function WebinarPlayer({
     const startsAt = next.startsAt ? Date.parse(next.startsAt) : NaN
     const endsAt = next.endsAt ? Date.parse(next.endsAt) : NaN
     return (
+      <>
       <div style={panelStyle}>
         <div style={{ fontSize: 30, marginBottom: 12 }}>◷</div>
         <h2
@@ -211,6 +246,8 @@ export default function WebinarPlayer({
           </p>
         ) : null}
       </div>
+      {cta ? <CtaBox cta={cta} /> : null}
+      </>
     )
   }
 
@@ -219,6 +256,7 @@ export default function WebinarPlayer({
   const endsAt = active?.endsAt ? Date.parse(active.endsAt) : NaN
 
   return (
+    <>
     <div
       style={{
         background: '#000',
@@ -349,5 +387,7 @@ export default function WebinarPlayer({
         </div>
       ) : null}
     </div>
+    {cta ? <CtaBox cta={cta} /> : null}
+    </>
   )
 }
