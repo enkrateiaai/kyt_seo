@@ -23,6 +23,9 @@ jobs:
 
   build:
     needs: typecheck
+    # Staging-Images werden auf enkra gebaut (nativ, arm64, ~1 min).
+    # Dieser QEMU-Build auf x86-Runnern dauert 30-60 min - nur als Fallback.
+    if: ${{ vars.USE_GITHUB_ACTIONS_BUILD == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
