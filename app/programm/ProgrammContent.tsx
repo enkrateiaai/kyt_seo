@@ -102,7 +102,7 @@ const WEEKDAYS_DE_SHORT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 // Aktuelles Thema: Miracle Morning
 const KRIYA_TITLE = 'Miracle Morning'
 const KRIYA_SUBTITLE = 'Tanzen, Yoga, Entspannung, Beten, Mantra und Stille'
-const KRIYA_START_ISO = '2026-09-16'
+const KRIYA_START_ISO = '2026-10-17'
 const KRIYA_END_ISO = '2026-10-25'
 const KRIYA_TOTAL_DAYS = 40
 const KRIYA_START = parseISODate(KRIYA_START_ISO)
