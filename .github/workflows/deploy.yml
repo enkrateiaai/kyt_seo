@@ -1,4 +1,9 @@
-name: Nightly production build
+# Produktions-Builds laufen auf enkra (Apple Silicon, arm64, nativ, ~1 min):
+#   ssh host 'cd /Users/enkra/kyt_seo_build && ./kyt-build-on-enkra.sh all'
+# Dieser Workflow emuliert linux/arm64 per QEMU auf x86-Runnern (30-60 min) und
+# blockiert dabei den OpenClaw-Agenten. Er ist nur noch Fallback und laeuft
+# nur, wenn die Repo-Variable USE_GITHUB_ACTIONS_BUILD auf 'true' gesetzt ist.
+name: CI typecheck (Fallback-Build nur mit USE_GITHUB_ACTIONS_BUILD=true)
 
 on:
   workflow_dispatch:
@@ -21,6 +26,8 @@ jobs:
 
   build-and-deploy:
     needs: typecheck
+    # Fallback. Normalfall: Build + Deploy laeuft auf enkra.
+    if: ${{ vars.USE_GITHUB_ACTIONS_BUILD == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
