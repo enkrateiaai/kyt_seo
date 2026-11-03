@@ -10,7 +10,7 @@ const C = {
 
 /**
  * Catherine-Scheitterlein-Foto mit gracefulm Platzhalter.
- * Datei: public/soulpath/katja.jpg
+ * Datei: public/soulpath/catherine.jpg
  */
 export default function SoulPathPhoto() {
   const [failed, setFailed] = useState(false)
@@ -27,8 +27,8 @@ export default function SoulPathPhoto() {
       {!failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src="/soulpath/katja.jpg"
-          alt="Katja Scheitterlein, Soul Path Coach"
+          src="/soulpath/catherine.jpg"
+          alt="Catherine Scheitterlein, Soul Path Coach"
           onError={() => setFailed(true)}
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
@@ -44,7 +44,7 @@ export default function SoulPathPhoto() {
             Dein Foto
           </span>
           <span style={{ fontSize: 13, opacity: 0.7, lineHeight: 1.6 }}>
-            Platzhalter: public/soulpath/katja.jpg
+            Platzhalter: public/soulpath/catherine.jpg
           </span>
         </div>
       )}
