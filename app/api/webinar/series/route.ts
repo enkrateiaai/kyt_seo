@@ -9,6 +9,7 @@ import {
   SeriesConfig,
   buildSeriesSlots,
   normalizeTimes,
+  planSeriesSlots,
   zonedDayKey,
 } from '@/lib/webinarSeries'
 
@@ -170,33 +171,16 @@ export async function POST(request: NextRequest) {
   const desired = buildSeriesSlots(config, now)
 
   const existing = await fetchWebinars()
-  const existingByStart = new Map<string, WebinarConfig>()
-  for (const item of existing) {
-    if (item.filename !== filename || !item.startsAt) continue
-    existingByStart.set(Date.parse(item.startsAt) ? new Date(item.startsAt).toISOString() : item.startsAt, item)
-  }
+  const plan = planSeriesSlots(desired, existing, filename, now)
 
-  const keepIds: string[] = []
+  const keepIds: string[] = plan.keep.map((item) => item.id)
   const created: string[] = []
   const removed: string[] = []
   const errors: string[] = []
 
-  // 1. Keep the slots that already sit exactly on a desired start time.
-  const reused = new Set<string>()
-  for (const slot of desired) {
-    const match = existingByStart.get(slot.startsAt)
-    if (!match) continue
-    keepIds.push(match.id)
-    reused.add(slot.startsAt)
-    existingByStart.delete(slot.startsAt)
-  }
-
-  // 2. Everything else with the same video that is still in the future is
-  //    replaced by the series - that is how a single manual slot becomes
-  //    part of the daily series.
-  for (const item of existingByStart.values()) {
-    const startMs = item.startsAt ? Date.parse(item.startsAt) : 0
-    if (!Number.isFinite(startMs) || startMs <= now) continue
+  // All future slots with the same video that are not part of the series are
+  // replaced - that is how a single manual slot becomes part of the series.
+  for (const item of plan.remove) {
     try {
       await studioDelete(item.id)
       removed.push(item.id)
@@ -205,9 +189,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 3. Create what is missing.
-  for (const slot of desired) {
-    if (reused.has(slot.startsAt)) continue
+  // Create what is missing.
+  for (const slot of plan.create) {
     try {
       const createdItem = await studioCreate({
         filename,

@@ -9,6 +9,8 @@
 // The helpers here are pure (no env vars, no network) so the same logic runs
 // on the server and in the browser.
 
+import { WebinarConfig } from './webinarSchedule'
+
 export const SERIES_TIME_ZONE = 'Europe/Berlin'
 
 export type SeriesConfig = {
@@ -201,4 +203,57 @@ export function slotDayKeys(slots: { startsAt: string | null }[]): string[] {
     if (!keys.includes(key)) keys.push(key)
   }
   return keys.sort()
+}
+
+// ── Planung ────────────────────────────────────────────────────────────────
+
+export type SeriesPlan = {
+  /** Existing slots that stay exactly as they are. */
+  keep: WebinarConfig[]
+  /** Slots that have to be created. */
+  create: SeriesSlot[]
+  /** Existing future slots with the same video that the series replaces. */
+  remove: WebinarConfig[]
+}
+
+// Works out what has to happen so the schedule matches the series:
+// slots on the right time stay, missing ones are created and other future
+// slots with the same video are replaced.
+export function planSeriesSlots(
+  desired: SeriesSlot[],
+  existing: WebinarConfig[],
+  filename: string,
+  nowMs: number,
+): SeriesPlan {
+  const byStart = new Map<string, WebinarConfig>()
+  for (const item of existing) {
+    if (item.filename !== filename || !item.startsAt) continue
+    const ms = Date.parse(item.startsAt)
+    if (!Number.isFinite(ms)) continue
+    byStart.set(new Date(ms).toISOString(), item)
+  }
+
+  const keep: WebinarConfig[] = []
+  const create: SeriesSlot[] = []
+  const used = new Set<string>()
+
+  for (const slot of desired) {
+    const hit = byStart.get(slot.startsAt)
+    if (hit && !used.has(hit.id)) {
+      used.add(hit.id)
+      keep.push(hit)
+    } else {
+      create.push(slot)
+    }
+  }
+
+  const remove: WebinarConfig[] = []
+  for (const item of byStart.values()) {
+    if (used.has(item.id)) continue
+    const ms = item.startsAt ? Date.parse(item.startsAt) : NaN
+    if (!Number.isFinite(ms) || ms <= nowMs) continue
+    remove.push(item)
+  }
+
+  return { keep, create, remove }
 }

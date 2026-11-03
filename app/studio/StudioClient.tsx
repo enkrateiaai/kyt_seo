@@ -1537,6 +1537,9 @@ export default function StudioClient() {
 
 
 // ── Webinar panel ────────────────────────────────────────────────────────────
+// Faellt der Horizont der Serie auf weniger als diese Tage, fuellt das
+// Studio beim Oeffnen automatisch nach.
+const TOP_UP_AFTER_MS = 3 * 24 * 60 * 60 * 1000
 type WebinarState = {
   id: string
   filename: string
@@ -1685,7 +1688,30 @@ function WebinarPanel({
     [copyText],
   )
 
+  // Laeuft der Horizont der Serie bald aus, wird automatisch nachgefuellt -
+  // so bleiben die taeglichen Termine ohne Zutun laufend.
+  const autoTopUp = useCallback(async () => {
+    try {
+      const res = await fetch('/api/webinar/series', { cache: 'no-store' })
+      if (!res.ok) return
+      const data = await res.json()
+      if (!data?.config) return
+      const horizonMs = data?.horizon ? Date.parse(data.horizon) : 0
+      if (!Number.isFinite(horizonMs) || horizonMs >= Date.now() + TOP_UP_AFTER_MS) return
+      const topUp = await fetch('/api/webinar/series', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      if (!topUp.ok) return
+      const done = await topUp.json().catch(() => ({}))
+      flash(`Termine automatisch aufgefüllt (${Number(done.total) || 0} Termine)`, true)
+      load()
+    } catch { /* Nachschub optional */ }
+  }, [flash, load])
+
   useEffect(() => { load(); loadSeries() }, [load, loadSeries])
+  useEffect(() => { autoTopUp() }, [autoTopUp])
 
   const resetForm = () => {
     setEditingId(null)
@@ -2021,7 +2047,8 @@ function WebinarPanel({
         <p style={{ fontSize: 12, color: C.muted, margin: '0 0 14px', lineHeight: 1.7 }}>
           Ein Video, mehrere Uhrzeiten pro Tag. Jeder Termin ist ein eigener Slot mit eigenem
           Link. Auf der Anmeldeseite (<strong>/webinar-anmeldung</strong>) werden die nächsten
-          7 Tage angezeigt. Vorhandene Termine mit demselben Video werden dabei ersetzt.
+          7 Tage angezeigt. Vorhandene Termine mit demselben Video werden dabei ersetzt -
+          auch solche ausserhalb des gewaehlten Zeitraums.
         </p>
 
         {seriesStatus.configured ? (
