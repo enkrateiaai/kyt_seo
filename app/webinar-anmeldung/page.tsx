@@ -2,7 +2,7 @@ import Link from 'next/link'
 import '../webinar/webinar-ui.css'
 import AnmeldungClient from './AnmeldungClient'
 import { fetchWebinarSnapshot, pickUpcomingSlots } from '@/lib/webinar'
-import { formatSlotDate } from '@/lib/webinarMail'
+import { SERIES_TIME_ZONE, zonedDayKey, zonedTimeLabel } from '@/lib/webinarSeries'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,15 +34,53 @@ const C = {
   white: '#FFFFFF',
 }
 
+// How many days of appointments are shown.
+const VISIBLE_DAYS = 7
+
+const dayFormatter = new Intl.DateTimeFormat('de-DE', {
+  timeZone: SERIES_TIME_ZONE,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+})
+
 export default async function WebinarAnmeldungPage() {
   // The slots come from the same studio schedule the webinar page uses.
   const { webinars, serverNow } = await fetchWebinarSnapshot()
-  const slots = pickUpcomingSlots(webinars, serverNow).map((slot) => ({
-    id: slot.id,
-    title: slot.title || 'Soul Path Webinar',
-    when: formatSlotDate(slot.startsAt),
-    startsAt: slot.startsAt,
-  }))
+  const upcoming = pickUpcomingSlots(webinars, serverNow)
+
+  // Only the next seven days - and only the first seven calendar days that
+  // actually have appointments.
+  const dayKeys: string[] = []
+  for (const slot of upcoming) {
+    if (!slot.startsAt) continue
+    const key = zonedDayKey(Date.parse(slot.startsAt))
+    if (!dayKeys.includes(key)) dayKeys.push(key)
+  }
+  const visibleKeys = dayKeys.slice(0, VISIBLE_DAYS)
+
+  const todayKey = zonedDayKey(serverNow)
+  const tomorrowKey = zonedDayKey(serverNow + 24 * 60 * 60 * 1000)
+
+  const days = visibleKeys.map((key) => {
+    const slots = upcoming
+      .filter((slot) => slot.startsAt && zonedDayKey(Date.parse(slot.startsAt)) === key)
+      .map((slot) => ({
+        id: slot.id,
+        title: slot.title || 'Soul Path Webinar',
+        time: slot.startsAt ? zonedTimeLabel(Date.parse(slot.startsAt)) : '--:--',
+        startsAt: slot.startsAt,
+      }))
+    const representative = slots.find((slot) => slot.startsAt)?.startsAt ?? null
+    return {
+      key,
+      label: representative ? dayFormatter.format(new Date(representative)) : key,
+      relative: key === todayKey ? 'Heute' : key === tomorrowKey ? 'Morgen' : '',
+      slots,
+    }
+  })
+
+  const slotCount = days.reduce((sum, day) => sum + day.slots.length, 0)
 
   return (
     <div style={{ fontFamily: "'Jost', system-ui, sans-serif", color: C.deepBrown, background: C.warmWhite }}>
@@ -50,7 +88,7 @@ export default async function WebinarAnmeldungPage() {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500;600&display=swap');
       `}</style>
 
-      <section style={{ background: `linear-gradient(180deg, ${C.cream} 0%, ${C.warmWhite} 100%)`, padding: '76px 20px 52px' }}>
+      <section style={{ background: `linear-gradient(180deg, ${C.cream} 0%, ${C.warmWhite} 100%)`, padding: '76px 20px 48px' }}>
         <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
           <p
             style={{
@@ -81,8 +119,8 @@ export default async function WebinarAnmeldungPage() {
         </div>
       </section>
 
-      <section style={{ background: C.white, padding: '64px 20px 76px' }}>
-        {slots.length === 0 ? (
+      <section style={{ background: C.white, padding: '52px 20px 76px' }}>
+        {days.length === 0 ? (
           <div style={{ maxWidth: 620, margin: '0 auto', textAlign: 'center' }}>
             <p
               style={{
@@ -100,14 +138,16 @@ export default async function WebinarAnmeldungPage() {
             </Link>
           </div>
         ) : (
-          <AnmeldungClient slots={slots} />
+          <AnmeldungClient days={days} />
         )}
       </section>
 
       <section style={{ background: C.cream, padding: '56px 20px' }}>
         <div style={{ maxWidth: 620, margin: '0 auto', textAlign: 'center' }}>
           <p style={{ fontSize: 14, lineHeight: 1.8, color: C.muted, margin: '0 0 18px' }}>
-            Du möchtest mehr über Soul Path erfahren?
+            {slotCount > 0
+              ? `${slotCount} Termine in den nächsten ${days.length} ${days.length === 1 ? 'Tag' : 'Tagen'} - jeder mit eigenem Link.`
+              : 'Du möchtest mehr über Soul Path erfahren?'}
           </p>
           <Link
             href="/webinar"

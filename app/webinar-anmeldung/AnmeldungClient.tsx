@@ -1,12 +1,23 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 type Slot = {
   id: string
   title: string
-  when: string
+  /** 'HH:MM' in Europe/Berlin */
+  time: string
   startsAt: string | null
+}
+
+type Day = {
+  /** 'YYYY-MM-DD' in Europe/Berlin */
+  key: string
+  /** 'Mittwoch, 4. November' */
+  label: string
+  /** 'Heute' / 'Morgen' / '' */
+  relative: string
+  slots: Slot[]
 }
 
 const C = {
@@ -22,30 +33,25 @@ const C = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export default function AnmeldungClient({ slots }: { slots: Slot[] }) {
-  const [step, setStep] = useState<'email' | 'slot' | 'done'>('email')
+export default function AnmeldungClient({ days }: { days: Day[] }) {
   const [email, setEmail] = useState('')
   const [slotId, setSlotId] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [link, setLink] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
 
-  const chosen = slots.find((slot) => slot.id === slotId) ?? null
+  const allSlots = useMemo(() => days.flatMap((day) => day.slots), [days])
+  const chosen = allSlots.find((slot) => slot.id === slotId) ?? null
+  const chosenDay = days.find((day) => day.slots.some((slot) => slot.id === slotId)) ?? null
 
-  const submitEmail = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     const value = email.trim()
     if (!EMAIL_RE.test(value)) {
       setError('Bitte gib eine gültige E-Mail-Adresse ein.')
       return
     }
-    setError(null)
-    setSlotId(slots[0]?.id ?? '')
-    setStep('slot')
-  }
-
-  const submitSlot = async (event: React.FormEvent) => {
-    event.preventDefault()
     if (!slotId) {
       setError('Bitte wähle einen Termin aus.')
       return
@@ -56,7 +62,7 @@ export default function AnmeldungClient({ slots }: { slots: Slot[] }) {
       const res = await fetch('/api/webinar/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), slotId }),
+        body: JSON.stringify({ email: value, slotId }),
       })
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean
@@ -68,7 +74,7 @@ export default function AnmeldungClient({ slots }: { slots: Slot[] }) {
         return
       }
       setLink(data.link ?? null)
-      setStep('done')
+      setDone(true)
     } catch {
       setError('Die Anmeldung hat nicht geklappt. Bitte versuche es erneut.')
     } finally {
@@ -76,162 +82,166 @@ export default function AnmeldungClient({ slots }: { slots: Slot[] }) {
     }
   }
 
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: 12,
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-    color: C.warmBrown,
-    marginBottom: 10,
-    fontWeight: 500,
-  }
-
   const inputStyle: React.CSSProperties = {
     width: '100%',
     boxSizing: 'border-box',
-    background: C.white,
     border: `1px solid ${C.sand}`,
-    borderRadius: 8,
-    padding: '15px 18px',
+    borderRadius: 10,
+    background: C.white,
+    padding: '15px 16px',
     fontSize: 16,
+    fontFamily: 'inherit',
     color: C.deepBrown,
-    fontFamily: "'Jost', system-ui, sans-serif",
     outline: 'none',
   }
 
   return (
-    <div style={{ maxWidth: 620, margin: '0 auto' }}>
-      {step === 'email' ? (
-        <form onSubmit={submitEmail} noValidate>
-          <label htmlFor="webinar-email" style={labelStyle}>
-            Deine E-Mail-Adresse
-          </label>
-          <input
-            id="webinar-email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="deine@email.de"
-            style={inputStyle}
-          />
-          <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.7, margin: '14px 0 26px' }}>
-            Wir schicken dir deinen Termin-Link per Mail. Der Stream ist nur während des
-            Termins abrufbar - dein Link gilt genau für den Slot, den du auswählst.
-          </p>
-          {error ? (
-            <p role="alert" style={{ color: '#A4402F', fontSize: 14, margin: '0 0 20px' }}>
-              {error}
-            </p>
-          ) : null}
-          <button type="submit" className="kyt-btn kyt-btn--primary" disabled={slots.length === 0}>
-            Weiter zu den Terminen
-          </button>
-        </form>
-      ) : null}
-
-      {step === 'slot' ? (
-        <form onSubmit={submitSlot} noValidate>
-          <p style={{ color: C.muted, fontSize: 13, margin: '0 0 22px', lineHeight: 1.7 }}>
-            Angemeldet als <strong style={{ color: C.warmBrown }}>{email.trim()}</strong>
-          </p>
-          <label style={labelStyle}>Wähle deinen Termin</label>
-          <div style={{ display: 'grid', gap: 12, marginBottom: 26 }}>
-            {slots.map((slot) => {
-              const active = slot.id === slotId
-              return (
-                <label
-                  key={slot.id}
-                  style={{
-                    display: 'flex',
-                    gap: 14,
-                    alignItems: 'center',
-                    background: active ? '#FBF4E4' : C.white,
-                    border: `1px solid ${active ? C.terracotta : C.sand}`,
-                    borderRadius: 10,
-                    padding: '16px 18px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="webinar-slot"
-                    value={slot.id}
-                    checked={active}
-                    onChange={() => setSlotId(slot.id)}
-                    style={{ accentColor: C.terracotta, width: 18, height: 18, flexShrink: 0 }}
-                  />
-                  <span style={{ minWidth: 0 }}>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontFamily: "'Cormorant Garamond', serif",
-                        fontSize: 21,
-                        lineHeight: 1.35,
-                        color: C.deepBrown,
-                      }}
-                    >
-                      {slot.title}
-                    </span>
-                    <span style={{ display: 'block', fontSize: 14, color: C.warmBrown, marginTop: 3 }}>
-                      {slot.when}
-                    </span>
-                  </span>
-                </label>
-              )
-            })}
-          </div>
-          {error ? (
-            <p role="alert" style={{ color: '#A4402F', fontSize: 14, margin: '0 0 20px' }}>
-              {error}
-            </p>
-          ) : null}
-          <div className="kyt-btn-row" style={{ justifyContent: 'flex-start' }}>
-            <button type="submit" className="kyt-btn kyt-btn--primary" disabled={busy || !slotId}>
-              {busy ? 'Wird angemeldet…' : 'Termin anmelden'}
-            </button>
-            <button
-              type="button"
-              className="kyt-btn kyt-btn--ghost"
-              onClick={() => {
-                setError(null)
-                setStep('email')
-              }}
-            >
-              E-Mail ändern
-            </button>
-          </div>
-        </form>
-      ) : null}
-
-      {step === 'done' ? (
-        <div>
+    <div style={{ maxWidth: 980, margin: '0 auto' }}>
+      {done ? (
+        <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto' }}>
           <p
             style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: 'clamp(24px, 4vw, 32px)',
-              lineHeight: 1.3,
-              color: C.deepBrown,
-              margin: '0 0 14px',
+              fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(24px, 4vw, 32px)',
+              color: C.deepBrown, margin: '0 0 14px', lineHeight: 1.3,
             }}
           >
             Du bist angemeldet.
           </p>
-          <p style={{ fontSize: 16, lineHeight: 1.8, color: C.warmBrown, margin: '0 0 8px' }}>
-            {chosen ? `${chosen.title} · ${chosen.when}` : null}
-          </p>
+          {chosen && chosenDay ? (
+            <p style={{ fontSize: 16, lineHeight: 1.8, color: C.warmBrown, margin: '0 0 8px' }}>
+              {chosen.title} · {chosenDay.label} um {chosen.time} Uhr
+            </p>
+          ) : null}
           <p style={{ fontSize: 15, lineHeight: 1.8, color: C.muted, margin: '0 0 26px' }}>
-            Die Bestätigung ist unterwegs an {email.trim()}. Der Link in der Mail öffnet deinen
-            Termin - das Video ist nur während des Termins verfügbar.
+            Die Bestätigung ist unterwegs an {email.trim()}. Dein persönlicher Link öffnet
+            genau diesen Termin - das Video ist nur während der Spielzeit abrufbar.
           </p>
           {link ? (
-            <a href={link} className="kyt-btn kyt-btn--primary">
-              Termin öffnen
-            </a>
+            <div className="kyt-btn-row">
+              <a href={link} className="kyt-btn kyt-btn--primary">
+                Termin öffnen
+              </a>
+              <button
+                type="button"
+                className="kyt-btn kyt-btn--secondary"
+                onClick={() => {
+                  setDone(false)
+                  setLink(null)
+                }}
+              >
+                Weiteren Termin wählen
+              </button>
+            </div>
           ) : null}
         </div>
-      ) : null}
+      ) : (
+        <form onSubmit={submit} noValidate>
+          <div
+            style={{
+              background: C.white,
+              border: `1px solid ${C.sand}`,
+              borderRadius: 14,
+              padding: '22px 22px 24px',
+              marginBottom: 30,
+            }}
+          >
+            <label
+              htmlFor="webinar-email"
+              style={{
+                display: 'block', fontSize: 12, fontWeight: 700, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: C.warmBrown, marginBottom: 10,
+              }}
+            >
+              Deine E-Mail-Adresse
+            </label>
+            <input
+              id="webinar-email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="deine@email.de"
+              style={inputStyle}
+            />
+            <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.7, margin: '12px 0 0' }}>
+              Wir schicken dir deinen Termin-Link per Mail. Der Link gilt genau für den
+              Termin, den du auswählst.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+              gap: 12, flexWrap: 'wrap', marginBottom: 16,
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(24px, 3.5vw, 32px)',
+                fontWeight: 400, color: C.deepBrown, margin: 0,
+              }}
+            >
+              Wähle deinen Termin
+            </h2>
+            <span style={{ fontSize: 13, color: C.muted }}>
+              {days.length} {days.length === 1 ? 'Tag' : 'Tage'} ·{' '}
+              {allSlots.length} Termine
+            </span>
+          </div>
+
+          <div className="kyt-slot-days">
+            {days.map((day) => (
+              <div key={day.key} className="kyt-slot-day">
+                <div className="kyt-slot-day-head">
+                  <span className="kyt-slot-day-label">{day.label}</span>
+                  {day.relative ? (
+                    <span className="kyt-slot-day-relative">{day.relative}</span>
+                  ) : null}
+                </div>
+                <div className="kyt-slot-list">
+                  {day.slots.map((slot) => {
+                    const active = slot.id === slotId
+                    return (
+                      <label
+                        key={slot.id}
+                        className={`kyt-slot${active ? ' is-selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="webinar-slot"
+                          value={slot.id}
+                          checked={active}
+                          onChange={() => setSlotId(slot.id)}
+                        />
+                        <span className="kyt-slot-time">{slot.time}</span>
+                        <span className="kyt-slot-title">{slot.title}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {error ? (
+            <p role="alert" style={{ color: '#A4402F', fontSize: 14, margin: '20px 0 0' }}>
+              {error}
+            </p>
+          ) : null}
+
+          <div className="kyt-btn-row" style={{ justifyContent: 'flex-start', marginTop: 26 }}>
+            <button type="submit" className="kyt-btn kyt-btn--primary" disabled={busy || !slotId}>
+              {busy ? 'Wird angemeldet…' : 'Termin anmelden'}
+            </button>
+          </div>
+          <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.7, margin: '14px 0 0' }}>
+            {chosen
+              ? `Dein Termin: ${chosenDay?.label} um ${chosen.time} Uhr`
+              : 'Wähle oben einen Termin aus, dann geht die Anmeldung raus.'}
+          </p>
+        </form>
+      )}
     </div>
   )
 }

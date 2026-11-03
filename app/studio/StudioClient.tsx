@@ -1603,6 +1603,40 @@ function WebinarPanel({
   const [loaded, setLoaded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // ── Serie: ein Video, mehrere Uhrzeiten, jeden Tag ─────────────────────
+  const [mode, setMode] = useState<'single' | 'daily'>('single')
+  const [seriesFilename, setSeriesFilename] = useState('')
+  const [seriesTitle, setSeriesTitle] = useState('')
+  const [seriesTimes, setSeriesTimes] = useState<string[]>(['10:00', '14:00', '18:00'])
+  const [seriesDays, setSeriesDays] = useState(14)
+  const [seriesWindow, setSeriesWindow] = useState(60)
+  const [seriesStatus, setSeriesStatus] = useState<{
+    count: number
+    horizon: string | null
+    configured: boolean
+  }>({ count: 0, horizon: null, configured: false })
+
+  const loadSeries = useCallback(async () => {
+    try {
+      const res = await fetch('/api/webinar/series', { cache: 'no-store' })
+      if (!res.ok) return
+      const data = await res.json()
+      const cfg = data?.config ?? null
+      setSeriesStatus({
+        count: Number(data?.count) || 0,
+        horizon: data?.horizon ?? null,
+        configured: Boolean(cfg),
+      })
+      if (cfg) {
+        setSeriesFilename(cfg.filename ?? '')
+        setSeriesTitle(cfg.title ?? '')
+        setSeriesTimes(Array.isArray(cfg.times) && cfg.times.length ? cfg.times : ['10:00', '14:00', '18:00'])
+        setSeriesDays(Number(cfg.days) || 14)
+        setSeriesWindow(Number(cfg.windowMinutes) || 60)
+      }
+    } catch { /* Serie optional */ }
+  }, [])
+
   const load = useCallback(async () => {
     try {
       const res = await fetch(`${API}/webinar`, { cache: 'no-store' })
@@ -1651,7 +1685,7 @@ function WebinarPanel({
     [copyText],
   )
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(); loadSeries() }, [load, loadSeries])
 
   const resetForm = () => {
     setEditingId(null)
@@ -1726,6 +1760,64 @@ function WebinarPanel({
   }
 
   const now = Date.now()
+
+  const seriesAction = async (action: 'generate' | 'fill' | 'delete') => {
+    setBusy(true)
+    try {
+      if (action === 'delete') {
+        const res = await fetch('/api/webinar/series', { method: 'DELETE' })
+        if (!res.ok) { flash('Serie konnte nicht gelöscht werden'); return }
+        const data = await res.json().catch(() => ({}))
+        flash(`Serie gelöscht (${Number(data?.removed) || 0} Termine)`, true)
+        setSeriesStatus({ count: 0, horizon: null, configured: false })
+        load()
+        return
+      }
+
+      const body = action === 'generate'
+        ? {
+            filename: seriesFilename,
+            title: seriesTitle,
+            times: seriesTimes,
+            days: seriesDays,
+            windowMinutes: seriesWindow,
+          }
+        : {}
+      const res = await fetch('/api/webinar/series', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json().catch(() => ({})) as {
+        ok?: boolean
+        created?: number
+        removed?: number
+        total?: number
+        error?: string
+        errors?: string[]
+      }
+      if (!res.ok) {
+        flash(`Serie fehlgeschlagen: ${data.error ?? res.status}`)
+        return
+      }
+      const created = Number(data.created) || 0
+      const removed = Number(data.removed) || 0
+      const total = Number(data.total) || 0
+      const problems = Array.isArray(data.errors) ? data.errors.length : 0
+      flash(
+        problems > 0
+          ? `Serie erstellt: ${total} Termine, ${problems} Fehler`
+          : `Serie erstellt: ${total} Termine (${created} neu, ${removed} ersetzt)`,
+        true,
+      )
+      await loadSeries()
+      load()
+    } catch {
+      flash('Serie fehlgeschlagen: Netzwerkfehler')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div style={{ ...cardStyle }}>
@@ -1815,7 +1907,21 @@ function WebinarPanel({
         </div>
       )}
 
-      {/* Form */}
+      {/* Modus: einzelner Termin oder tägliche Serie */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        <button style={btnSmall(mode === 'single' ? 'gold' : 'ghost')} onClick={() => setMode('single')} disabled={busy}>
+          Einzeltermin
+        </button>
+        <button
+          style={btnSmall(mode === 'daily' ? 'gold' : 'ghost')}
+          onClick={() => { setMode('daily'); loadSeries() }}
+          disabled={busy}
+        >
+          Tägliche Termine (3× pro Tag)
+        </button>
+      </div>
+
+      {mode === 'single' ? (
       <div
         style={{
           border: `1px solid ${editingId ? C.goldDark : C.border}`,
@@ -1907,6 +2013,148 @@ function WebinarPanel({
           )}
         </div>
       </div>
+      ) : (
+      /* ── Serie: ein Video, mehrere Uhrzeiten, jeden Tag ───────────────── */
+      <div style={{ border: `1px solid ${C.border}`, borderRadius: 6, padding: 14 }}>
+        <span style={{ ...labelStyle, marginBottom: 12 }}>Tägliche Termine</span>
+
+        <p style={{ fontSize: 12, color: C.muted, margin: '0 0 14px', lineHeight: 1.7 }}>
+          Ein Video, mehrere Uhrzeiten pro Tag. Jeder Termin ist ein eigener Slot mit eigenem
+          Link. Auf der Anmeldeseite (<strong>/webinar-anmeldung</strong>) werden die nächsten
+          7 Tage angezeigt. Vorhandene Termine mit demselben Video werden dabei ersetzt.
+        </p>
+
+        {seriesStatus.configured ? (
+          <p style={{ fontSize: 12, color: C.muted, margin: '0 0 14px', lineHeight: 1.7 }}>
+            Aktuell geplant: <strong style={{ color: C.text }}>{seriesStatus.count}</strong> Termine
+            {seriesStatus.horizon
+              ? <> · bis {fmtWindow(seriesStatus.horizon, seriesStatus.horizon).split(' → ')[0]}</>
+              : null}
+          </p>
+        ) : null}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <span style={labelStyle}>Video</span>
+            <select
+              value={seriesFilename}
+              onChange={e => setSeriesFilename(e.target.value)}
+              style={{ ...inputStyle, width: '100%' }}
+            >
+              <option value="">— Video aus der Mediathek wählen —</option>
+              {files.map(f => (
+                <option key={f.name} value={f.name}>
+                  {f.name}{f.duration ? ` · ${fmtDuration(f.duration)}` : ''}
+                </option>
+              ))}
+            </select>
+            {files.length === 0 && (
+              <p style={{ fontSize: 11, color: C.faint, margin: '8px 0 0' }}>
+                Noch keine Dateien vorhanden — lade zuerst ein Video hoch.
+              </p>
+            )}
+          </div>
+
+          <div style={{ gridColumn: '1 / -1' }}>
+            <span style={labelStyle}>Uhrzeiten (Europe/Berlin)</span>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {seriesTimes.map((t, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="time"
+                    value={t}
+                    onChange={e => {
+                      const next = [...seriesTimes]
+                      next[idx] = e.target.value
+                      setSeriesTimes(next)
+                    }}
+                    style={{ ...inputStyle, width: 132 }}
+                  />
+                  {seriesTimes.length > 1 && (
+                    <button
+                      style={btnSmall('danger')}
+                      onClick={() => setSeriesTimes(seriesTimes.filter((_, i) => i !== idx))}
+                      disabled={busy}
+                      title="Diesen Termin entfernen"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              {seriesTimes.length < 6 && (
+                <button
+                  style={btnSmall('ghost')}
+                  onClick={() => setSeriesTimes([...seriesTimes, '20:00'])}
+                  disabled={busy}
+                >
+                  + Uhrzeit
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <span style={labelStyle}>Tage im Voraus</span>
+            <input
+              type="number"
+              min={1}
+              max={60}
+              value={seriesDays}
+              onChange={e => setSeriesDays(Math.max(1, Math.min(60, Number(e.target.value) || 14)))}
+              style={{ ...inputStyle, width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <span style={labelStyle}>Sichtfenster (Minuten)</span>
+            <input
+              type="number"
+              min={1}
+              max={600}
+              value={seriesWindow}
+              onChange={e => setSeriesWindow(Math.max(1, Math.min(600, Number(e.target.value) || 60)))}
+              style={{ ...inputStyle, width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <span style={labelStyle}>Titel (optional)</span>
+            <input
+              type="text"
+              value={seriesTitle}
+              onChange={e => setSeriesTitle(e.target.value)}
+              placeholder="z. B. Soul Path Webinar"
+              style={{ ...inputStyle, width: '100%' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+          <button style={btnPrimary()} onClick={() => seriesAction('generate')} disabled={busy || !seriesFilename}>
+            {busy ? 'Speichert…' : 'Termine erzeugen'}
+          </button>
+          <button
+            style={btnSmall('gold')}
+            onClick={() => seriesAction('fill')}
+            disabled={busy || !seriesStatus.configured}
+            title="Erzeugt die fehlenden Termine bis zum Ende des Zeitraums neu"
+          >
+            Auffüllen
+          </button>
+          <button
+            style={btnSmall('danger')}
+            onClick={() => {
+              if (!confirm('Alle Termine der Serie löschen?')) return
+              seriesAction('delete')
+            }}
+            disabled={busy || !seriesStatus.configured}
+          >
+            Serie löschen
+          </button>
+        </div>
+      </div>
+      )}
     </div>
   )
 }
