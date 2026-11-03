@@ -309,11 +309,18 @@ export default function SoulPathVideo({
           >
             {ctaLabel}
           </a>
-          <a href="/webinar-anmeldung" className="kyt-btn kyt-btn--secondary">
-            Termin anmelden
-          </a>
         </div>
-        <p style={{ color: C.muted, fontSize: 13, margin: '18px 0 0', lineHeight: 1.7 }}>
+        <p style={{ color: C.muted, fontSize: 14, margin: '16px 0 0', lineHeight: 1.8 }}>
+          Wenn du noch nicht gebucht hast, dann{' '}
+          <a
+            href="/webinar-anmeldung"
+            style={{ color: C.warmBrown, textDecoration: 'underline' }}
+          >
+            hier anmelden
+          </a>
+          .
+        </p>
+        <p style={{ color: C.muted, fontSize: 13, margin: '14px 0 0', lineHeight: 1.7 }}>
           30 Minuten · Persönlich · Unverbindlich – mit mir persönlich
         </p>
       </div>

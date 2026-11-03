@@ -327,11 +327,18 @@ export default async function SoulPathPage({ slotId }: { slotId?: string }) {
             >
               {ctaLabel}
             </a>
-            <a href="/webinar-anmeldung" className="kyt-btn kyt-btn--secondary">
-              Termin anmelden
-            </a>
           </div>
-          <p style={{ color: '#B9A995', fontSize: 14, margin: '20px 0 0', lineHeight: 1.7 }}>
+          <p style={{ color: '#B9A995', fontSize: 14, margin: '16px 0 0', lineHeight: 1.8 }}>
+            Wenn du noch nicht gebucht hast, dann{' '}
+            <a
+              href="/webinar-anmeldung"
+              style={{ color: '#E2C898', textDecoration: 'underline' }}
+            >
+              hier anmelden
+            </a>
+            .
+          </p>
+          <p style={{ color: '#B9A995', fontSize: 14, margin: '16px 0 0', lineHeight: 1.7 }}>
             30 Minuten · Persönlich · Unverbindlich – mit mir persönlich
           </p>
         </div>
