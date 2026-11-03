@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import SoulPathVideo from './SoulPathVideo'
+import SoulPathPhoto from './SoulPathPhoto'
 
 export const metadata = {
   title: 'Soul Path Webinar – Kundalini Yoga Tribe',
@@ -254,43 +255,7 @@ export default function SoulPathPage() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           }}
         >
-          <div
-            style={{
-              aspectRatio: '4 / 5', width: '100%', maxWidth: 380, margin: '0 auto',
-              borderRadius: 10, overflow: 'hidden', position: 'relative',
-              background: `linear-gradient(160deg, ${C.sand} 0%, ${C.terracotta} 100%)`,
-              border: `1px solid ${C.sand}`,
-            }}
-          >
-            {/* Platzhalter für Catherines Foto — Datei: public/soulpath/katja.jpg */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/soulpath/katja.jpg"
-              alt="Katja Scheitterlein, Soul Path Coach"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              onError={(e) => {
-                const el = e.currentTarget
-                el.style.display = 'none'
-                const ph = el.parentElement?.querySelector('[data-ph]') as HTMLElement | null
-                if (ph) ph.style.display = 'flex'
-              }}
-            />
-            <div
-              data-ph
-              style={{
-                position: 'absolute', inset: 0, display: 'none', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: 10,
-                color: C.warmBrown, textAlign: 'center', padding: 24,
-              }}
-            >
-              <span style={{ fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
-                Dein Foto
-              </span>
-              <span style={{ fontSize: 13, opacity: 0.7, lineHeight: 1.6 }}>
-                Platzhalter: public/soulpath/katja.jpg
-              </span>
-            </div>
-          </div>
+          <SoulPathPhoto />
 
           <div>
             <h2
