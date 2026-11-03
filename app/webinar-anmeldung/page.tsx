@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import '../webinar/webinar-ui.css'
 import AnmeldungClient from './AnmeldungClient'
 import { fetchWebinarSnapshot, pickUpcomingSlots } from '@/lib/webinar'
 import { formatSlotDate } from '@/lib/webinarMail'
@@ -94,14 +95,7 @@ export default async function WebinarAnmeldungPage() {
             <p style={{ fontSize: 16, lineHeight: 1.8, color: C.muted, margin: '0 0 26px' }}>
               Schau bald wieder vorbei - neue Termine werden hier angekündigt.
             </p>
-            <Link
-              href="/webinar"
-              style={{
-                display: 'inline-block', background: C.terracotta, color: C.deepBrown,
-                fontSize: 16, fontWeight: 600, textDecoration: 'none',
-                padding: '16px 38px', borderRadius: 999,
-              }}
-            >
+            <Link href="/webinar" className="kyt-btn kyt-btn--secondary">
               Zur Webinar-Seite
             </Link>
           </div>

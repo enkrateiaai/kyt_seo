@@ -99,19 +99,6 @@ export default function AnmeldungClient({ slots }: { slots: Slot[] }) {
     outline: 'none',
   }
 
-  const primaryButton: React.CSSProperties = {
-    background: C.terracotta,
-    color: C.deepBrown,
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: 16,
-    fontWeight: 600,
-    letterSpacing: '0.03em',
-    padding: '16px 38px',
-    borderRadius: 999,
-    fontFamily: "'Jost', system-ui, sans-serif",
-  }
-
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
       {step === 'email' ? (
@@ -138,7 +125,7 @@ export default function AnmeldungClient({ slots }: { slots: Slot[] }) {
               {error}
             </p>
           ) : null}
-          <button type="submit" style={primaryButton} disabled={slots.length === 0}>
+          <button type="submit" className="kyt-btn kyt-btn--primary" disabled={slots.length === 0}>
             Weiter zu den Terminen
           </button>
         </form>
@@ -200,24 +187,16 @@ export default function AnmeldungClient({ slots }: { slots: Slot[] }) {
               {error}
             </p>
           ) : null}
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button type="submit" style={primaryButton} disabled={busy || !slotId}>
+          <div className="kyt-btn-row" style={{ justifyContent: 'flex-start' }}>
+            <button type="submit" className="kyt-btn kyt-btn--primary" disabled={busy || !slotId}>
               {busy ? 'Wird angemeldet…' : 'Termin anmelden'}
             </button>
             <button
               type="button"
+              className="kyt-btn kyt-btn--ghost"
               onClick={() => {
                 setError(null)
                 setStep('email')
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: C.muted,
-                fontSize: 14,
-                textDecoration: 'underline',
-                fontFamily: "'Jost', system-ui, sans-serif",
               }}
             >
               E-Mail ändern
@@ -247,20 +226,7 @@ export default function AnmeldungClient({ slots }: { slots: Slot[] }) {
             Termin - das Video ist nur während des Termins verfügbar.
           </p>
           {link ? (
-            <a
-              href={link}
-              style={{
-                display: 'inline-block',
-                background: C.terracotta,
-                color: C.deepBrown,
-                fontSize: 16,
-                fontWeight: 600,
-                letterSpacing: '0.03em',
-                textDecoration: 'none',
-                padding: '16px 38px',
-                borderRadius: 999,
-              }}
-            >
+            <a href={link} className="kyt-btn kyt-btn--primary">
               Termin öffnen
             </a>
           ) : null}

@@ -152,10 +152,8 @@ export default function SoulPathVideo({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 14,
     color: C.warmWhite,
     textAlign: 'center',
-    padding: 28,
   }
 
   return (
@@ -164,8 +162,8 @@ export default function SoulPathVideo({
         {phase === 'live' && live ? (
           /* ── Video: nur im geplanten Zeitfenster, direkt aus dem Studio ── */
           videoFailed ? (
-            <div style={noticeStyle}>
-              <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+            <div className="kyt-webinar-notice" style={noticeStyle}>
+              <span className="kyt-webinar-notice-eyebrow">
                 Ladefehler
               </span>
               <span
@@ -176,18 +174,15 @@ export default function SoulPathVideo({
               >
                 Das Video konnte nicht geladen werden.
               </span>
-              <span style={{ fontSize: 13, opacity: 0.75, maxWidth: 440, lineHeight: 1.7 }}>
+              <span className="kyt-webinar-notice-text" style={{ opacity: 0.75, maxWidth: 440 }}>
                 Bitte versuche es gleich noch einmal.
               </span>
               <button
                 type="button"
+                className="kyt-btn kyt-btn--primary"
                 onClick={() => {
                   setFailedId(null)
                   setAttempt((value) => value + 1)
-                }}
-                style={{
-                  background: C.terracotta, color: C.deepBrown, border: 'none', cursor: 'pointer',
-                  fontSize: 14, fontWeight: 600, padding: '11px 26px', borderRadius: 999,
                 }}
               >
                 Erneut versuchen
@@ -207,13 +202,13 @@ export default function SoulPathVideo({
           )
         ) : phase === 'before' && next ? (
           /* ── Noch nicht gestartet ── */
-          <div style={noticeStyle}>
-            <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+          <div className="kyt-webinar-notice" style={noticeStyle}>
+            <span className="kyt-webinar-notice-eyebrow">
               Startet bald
             </span>
             <span
               style={{
-                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
+                fontFamily: "'Cormorant Garamond', serif",
                 fontWeight: 400, lineHeight: 1.3, maxWidth: 520,
               }}
             >
@@ -227,73 +222,67 @@ export default function SoulPathVideo({
                 ) : null}
               </span>
             ) : null}
-            <span style={{ fontSize: 13, opacity: 0.72, maxWidth: 440, lineHeight: 1.7 }}>
+            <span className="kyt-webinar-notice-text" style={{ opacity: 0.72, maxWidth: 440 }}>
               Das Video wird erst zum geplanten Termin freigeschaltet und ist danach nur noch
               während der Laufzeit abrufbar.
             </span>
           </div>
         ) : phase === 'after' ? (
           /* ── Beendet ── */
-          <div style={noticeStyle}>
-            <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+          <div className="kyt-webinar-notice" style={noticeStyle}>
+            <span className="kyt-webinar-notice-eyebrow">
               Beendet
             </span>
             <span
               style={{
-                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
+                fontFamily: "'Cormorant Garamond', serif",
                 fontWeight: 400, lineHeight: 1.3, maxWidth: 520,
               }}
             >
               Dieses Webinar ist vorbei.
             </span>
-            <span style={{ fontSize: 13, opacity: 0.72, maxWidth: 440, lineHeight: 1.7 }}>
+            <span className="kyt-webinar-notice-text" style={{ opacity: 0.72, maxWidth: 440 }}>
               Das Video stand nur während des Termins zur Verfügung. Sprich mich gern an -
               unten kannst du ein Kennenlerngespräch buchen.
             </span>
           </div>
         ) : slotMissing ? (
           /* ── Der verlinkte Termin existiert nicht (mehr) ── */
-          <div style={noticeStyle}>
-            <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+          <div className="kyt-webinar-notice" style={noticeStyle}>
+            <span className="kyt-webinar-notice-eyebrow">
               Termin nicht verfügbar
             </span>
             <span
               style={{
-                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
+                fontFamily: "'Cormorant Garamond', serif",
                 fontWeight: 400, lineHeight: 1.3, maxWidth: 520,
               }}
             >
               Dieser Termin gibt es nicht (mehr)
             </span>
-            <span style={{ fontSize: 13, opacity: 0.72, maxWidth: 440, lineHeight: 1.7 }}>
+            <span className="kyt-webinar-notice-text" style={{ opacity: 0.72, maxWidth: 440 }}>
               Der Link ist abgelaufen oder der Termin wurde verschoben. Wähle auf der
               Anmeldeseite einfach einen neuen Termin.
             </span>
-            <a
-              href="/webinar-anmeldung"
-              style={{
-                background: C.terracotta, color: C.deepBrown, textDecoration: 'none',
-                fontSize: 14, fontWeight: 600, padding: '11px 26px', borderRadius: 999,
-              }}
-            >
+            <a href="/webinar-anmeldung" className="kyt-btn kyt-btn--primary">
               Termin wählen
             </a>
           </div>
         ) : (
           /* ── Kein Webinar geplant ── */
-          <div style={noticeStyle}>
-            <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+          <div className="kyt-webinar-notice" style={noticeStyle}>
+            <span className="kyt-webinar-notice-eyebrow">
               Kein Termin
             </span>
             <span
               style={{
-                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
+                fontFamily: "'Cormorant Garamond', serif",
                 fontWeight: 400, lineHeight: 1.3, maxWidth: 520,
               }}
             >
               Hier wird dein Webinar erscheinen
             </span>
-            <span style={{ fontSize: 13, opacity: 0.72, maxWidth: 440, lineHeight: 1.7 }}>
+            <span className="kyt-webinar-notice-text" style={{ opacity: 0.72, maxWidth: 440 }}>
               Sobald ein Termin mit Video im Studio geplant ist, erscheint der Player hier -
               ausserhalb der Spielzeit nicht.
             </span>
@@ -311,26 +300,21 @@ export default function SoulPathVideo({
       ) : null}
 
       <div style={{ textAlign: 'center', marginTop: 26 }}>
-        <a
-          href={ctaUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-block', background: C.terracotta, color: C.deepBrown,
-            fontSize: 16, fontWeight: 600, letterSpacing: '0.03em', textDecoration: 'none',
-            padding: '16px 38px', borderRadius: 999,
-          }}
-        >
-          {ctaLabel}
-        </a>
-        <p style={{ color: C.muted, fontSize: 13, margin: '16px 0 0', lineHeight: 1.7 }}>
-          30 Minuten · Persönlich · Unverbindlich – mit mir persönlich
-        </p>
-        <p style={{ color: C.muted, fontSize: 13, margin: '12px 0 0', lineHeight: 1.7 }}>
-          Noch keinen Termin?{' '}
-          <a href="/webinar-anmeldung" style={{ color: C.warmBrown, textDecoration: 'underline' }}>
-            Hier anmelden
+        <div className="kyt-btn-row">
+          <a
+            href={ctaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="kyt-btn kyt-btn--primary"
+          >
+            {ctaLabel}
           </a>
+          <a href="/webinar-anmeldung" className="kyt-btn kyt-btn--secondary">
+            Termin anmelden
+          </a>
+        </div>
+        <p style={{ color: C.muted, fontSize: 13, margin: '18px 0 0', lineHeight: 1.7 }}>
+          30 Minuten · Persönlich · Unverbindlich – mit mir persönlich
         </p>
       </div>
     </div>

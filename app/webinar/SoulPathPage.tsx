@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import './webinar-ui.css'
 import SoulPathVideo from './SoulPathVideo'
 import SoulPathPhoto from './SoulPathPhoto'
 import { fetchWebinarSnapshot } from '@/lib/webinar'
@@ -317,18 +318,19 @@ export default async function SoulPathPage({ slotId }: { slotId?: string }) {
             dir steckt und wie Soul Path oder die Soul-Path-KI-Plattform dich auf deinem Weg
             unterstützen kann.
           </p>
-          <a
-            href={ctaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-block', background: C.terracotta, color: C.deepBrown,
-              fontSize: 16, fontWeight: 600, letterSpacing: '0.03em', textDecoration: 'none',
-              padding: '17px 40px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            }}
-          >
-            {ctaLabel}
-          </a>
+          <div className="kyt-btn-row">
+            <a
+              href={ctaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="kyt-btn kyt-btn--primary"
+            >
+              {ctaLabel}
+            </a>
+            <a href="/webinar-anmeldung" className="kyt-btn kyt-btn--secondary">
+              Termin anmelden
+            </a>
+          </div>
           <p style={{ color: '#B9A995', fontSize: 14, margin: '20px 0 0', lineHeight: 1.7 }}>
             30 Minuten · Persönlich · Unverbindlich – mit mir persönlich
           </p>
