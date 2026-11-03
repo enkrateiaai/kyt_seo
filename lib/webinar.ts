@@ -16,6 +16,8 @@ import {
   pickLiveWebinar,
   pickNextWebinar,
   pickLatestWebinar,
+  pickUpcomingSlots,
+  findSlotById,
 } from './webinarSchedule'
 
 export type { WebinarConfig, WebinarCta, WebinarPhase, WebinarWindow }
@@ -25,6 +27,8 @@ export {
   pickLiveWebinar,
   pickNextWebinar,
   pickLatestWebinar,
+  pickUpcomingSlots,
+  findSlotById,
 }
 
 export const STUDIO_BASE = process.env.STUDIO_API_URL ?? 'http://100.117.19.15:3500'
@@ -74,4 +78,20 @@ export async function fetchWebinarSnapshot(): Promise<WebinarSnapshot> {
   const [webinars, cta] = await Promise.all([fetchWebinars(), fetchWebinarCta()])
   const serverNow = Date.now()
   return { webinars, cta, serverNow }
+}
+
+export const SITE_URL = (process.env.SITE_URL?.trim() || 'https://kundaliniyogatribe.de').replace(/\/+$/, '')
+
+// The webinar page for one specific slot. The slot id decides what happens,
+// the start time rides along as a readable hint.
+export function buildSlotLink(slot: WebinarConfig): string {
+  const url = new URL(`${SITE_URL}/webinar`)
+  url.searchParams.set('slot', slot.id)
+  if (slot.startsAt) url.searchParams.set('t', slot.startsAt)
+  return url.toString()
+}
+
+// The public registration page.
+export function buildRegistrationLink(): string {
+  return `${SITE_URL}/webinar-anmeldung`
 }

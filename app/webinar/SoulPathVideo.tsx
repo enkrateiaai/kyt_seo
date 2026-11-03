@@ -3,9 +3,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   WebinarConfig,
+  findSlotById,
   pickLatestWebinar,
   pickLiveWebinar,
   pickNextWebinar,
+  webinarPhase,
   webinarWindow,
 } from '@/lib/webinarSchedule'
 
@@ -50,11 +52,13 @@ export default function SoulPathVideo({
   serverNow,
   ctaUrl,
   ctaLabel,
+  slotId,
 }: {
   webinars: WebinarConfig[]
   serverNow: number
   ctaUrl: string
   ctaLabel: string
+  slotId?: string
 }) {
   const [webinars, setWebinars] = useState<WebinarConfig[]>(initialWebinars)
   // Starts at the server timestamp so the first render matches the HTML the
@@ -94,16 +98,36 @@ export default function SoulPathVideo({
     return () => clearInterval(timer)
   }, [refresh])
 
-  const live = pickLiveWebinar(webinars, nowMs)
-  const next = pickNextWebinar(webinars, nowMs)
-  const latest = pickLatestWebinar(webinars, nowMs)
-  const phase: 'live' | 'before' | 'after' | 'none' = live
-    ? 'live'
-    : next
-      ? 'before'
-      : latest
-        ? 'after'
-        : 'none'
+  // With a slot id the page is pinned to exactly that slot. Without one it
+  // shows whatever is currently running.
+  const slot = slotId ? findSlotById(webinars, slotId) : null
+  const slotMissing = Boolean(slotId) && !slot
+
+  const live = slot
+    ? webinarPhase(slot, nowMs) === 'live'
+      ? slot
+      : null
+    : pickLiveWebinar(webinars, nowMs)
+  const next = slot
+    ? webinarPhase(slot, nowMs) === 'before'
+      ? slot
+      : null
+    : pickNextWebinar(webinars, nowMs)
+  const latest = slot
+    ? webinarPhase(slot, nowMs) === 'after'
+      ? slot
+      : null
+    : pickLatestWebinar(webinars, nowMs)
+
+  const phase: 'live' | 'before' | 'after' | 'none' = slotMissing
+    ? 'none'
+    : live
+      ? 'live'
+      : next
+        ? 'before'
+        : latest
+          ? 'after'
+          : 'none'
 
   const liveWindow = webinarWindow(live)
   const nextWindow = webinarWindow(next)
@@ -227,6 +251,34 @@ export default function SoulPathVideo({
               unten kannst du ein Kennenlerngespräch buchen.
             </span>
           </div>
+        ) : slotMissing ? (
+          /* ── Der verlinkte Termin existiert nicht (mehr) ── */
+          <div style={noticeStyle}>
+            <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+              Termin nicht verfügbar
+            </span>
+            <span
+              style={{
+                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
+                fontWeight: 400, lineHeight: 1.3, maxWidth: 520,
+              }}
+            >
+              Dieser Termin gibt es nicht (mehr)
+            </span>
+            <span style={{ fontSize: 13, opacity: 0.72, maxWidth: 440, lineHeight: 1.7 }}>
+              Der Link ist abgelaufen oder der Termin wurde verschoben. Wähle auf der
+              Anmeldeseite einfach einen neuen Termin.
+            </span>
+            <a
+              href="/webinar-anmeldung"
+              style={{
+                background: C.terracotta, color: C.deepBrown, textDecoration: 'none',
+                fontSize: 14, fontWeight: 600, padding: '11px 26px', borderRadius: 999,
+              }}
+            >
+              Termin wählen
+            </a>
+          </div>
         ) : (
           /* ── Kein Webinar geplant ── */
           <div style={noticeStyle}>
@@ -273,6 +325,12 @@ export default function SoulPathVideo({
         </a>
         <p style={{ color: C.muted, fontSize: 13, margin: '16px 0 0', lineHeight: 1.7 }}>
           30 Minuten · Persönlich · Unverbindlich – mit mir persönlich
+        </p>
+        <p style={{ color: C.muted, fontSize: 13, margin: '12px 0 0', lineHeight: 1.7 }}>
+          Noch keinen Termin?{' '}
+          <a href="/webinar-anmeldung" style={{ color: C.warmBrown, textDecoration: 'underline' }}>
+            Hier anmelden
+          </a>
         </p>
       </div>
     </div>

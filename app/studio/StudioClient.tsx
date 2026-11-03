@@ -1592,6 +1592,7 @@ function WebinarPanel({
   uploading: boolean
 }) {
   const [items, setItems] = useState<WebinarState[]>([])
+  const [registrations, setRegistrations] = useState<Record<string, number>>({})
   const [editingId, setEditingId] = useState<string | null>(null)
   const [filename, setFilename] = useState('')
   const [title, setTitle] = useState('')
@@ -1609,10 +1610,46 @@ function WebinarPanel({
         const data = await res.json()
         const list: WebinarState[] = Array.isArray(data?.webinars) ? data.webinars : []
         setItems(list)
+
+        // Anmeldungen pro Slot (kommt aus dem Redis der Website).
+        const counts: Record<string, number> = {}
+        await Promise.all(
+          list.map(async (w) => {
+            try {
+              const r = await fetch(`/api/webinar/${encodeURIComponent(w.id)}`, { cache: 'no-store' })
+              if (r.ok) {
+                const d = await r.json()
+                counts[w.id] = Number(d?.registrations) || 0
+              }
+            } catch { /* Zaehler optional */ }
+          }),
+        )
+        setRegistrations(counts)
       }
     } catch { /* Studio nicht erreichbar */ }
     setLoaded(true)
   }, [API])
+
+  const copyText = useCallback(
+    async (text: string, label: string) => {
+      try {
+        await navigator.clipboard.writeText(text)
+        flash(`${label} kopiert`, true)
+      } catch {
+        flash('Kopieren nicht moeglich', true)
+      }
+    },
+    [flash],
+  )
+
+  const copySlotLink = useCallback(
+    (w: WebinarState) => {
+      const origin = window.location.origin
+      const t = w.startsAt ? `&t=${encodeURIComponent(w.startsAt)}` : ''
+      copyText(`${origin}/webinar?slot=${encodeURIComponent(w.id)}${t}`, 'Termin-Link')
+    },
+    [copyText],
+  )
 
   useEffect(() => { load() }, [load])
 
@@ -1695,6 +1732,9 @@ function WebinarPanel({
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <span style={{ ...labelStyle, marginBottom: 0 }}>Webinar ({items.length})</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <a href="/webinar-anmeldung" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
+            Anmeldung öffnen ↗
+          </a>
           <a href="/webinar" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
             Seite öffnen ↗
           </a>
@@ -1705,10 +1745,14 @@ function WebinarPanel({
         </div>
       </div>
 
-      <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.7 }}>
+      <p style={{ fontSize: 12, color: C.muted, margin: '0 0 10px', lineHeight: 1.7 }}>
         Das Video läuft auf der öffentlichen Seite <strong>/webinar</strong> nur innerhalb des eingestellten
-        Zeitfensters (vor dem Start und nach dem Ende wird nichts ausgeliefert). Mehrere Webinare sind parallel
-        planbar.
+        Zeitfensters (vor dem Start und nach dem Ende wird nichts ausgeliefert). Jeder Eintrag ist ein
+        Termin-Slot; mehrere Slots mit demselben Video sind parallel planbar.
+      </p>
+      <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.7 }}>
+        Über <strong>/webinar-anmeldung</strong> können sich Leute für einen Slot anmelden und
+        bekommen per Mail einen Link, der genau auf diesen Termin zeigt.
       </p>
 
       {/* Scheduled list */}
@@ -1744,6 +1788,21 @@ function WebinarPanel({
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>
                   {fmtWindow(w.startsAt, w.endsAt)} · {w.filename}
                   {w.duration > 0 ? ` · ${fmtDuration(w.duration)}` : ''}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, color: C.muted }}>
+                    Anmeldungen: <strong style={{ color: C.text }}>{registrations[w.id] ?? 0}</strong>
+                  </span>
+                  <button style={btnSmall('ghost')} onClick={() => copySlotLink(w)} disabled={busy}>
+                    Termin-Link kopieren
+                  </button>
+                  <button
+                    style={btnSmall('ghost')}
+                    onClick={() => copyText(`${window.location.origin}/webinar-anmeldung`, 'Anmelde-Link')}
+                    disabled={busy}
+                  >
+                    Anmelde-Link kopieren
+                  </button>
                 </div>
               </div>
             )

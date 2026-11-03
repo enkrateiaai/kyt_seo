@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { hasClerkServerConfig } from '@/lib/authConfig'
 import { getViewerUser, isAdminUser } from '@/lib/memberAccess'
 import { STUDIO_BASE, STUDIO_TOKEN } from '@/lib/webinar'
+import redis from '@/lib/redis'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,25 @@ async function requireAdmin(): Promise<NextResponse | null> {
   const user = await getViewerUser()
   if (!isAdminUser(user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   return null
+}
+
+// Admin: one slot including how many people registered for it.
+export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdmin()
+  if (denied) return denied
+
+  const { id } = await context.params
+  let registrations = 0
+  try {
+    registrations = await redis.scard(`webinar:reg:slots:${id}`)
+  } catch {
+    registrations = 0
+  }
+
+  return NextResponse.json(
+    { id, registrations },
+    { headers: { 'cache-control': 'no-store, max-age=0' } },
+  )
 }
 
 // Admin: update a scheduled webinar.

@@ -11,6 +11,8 @@ const STATIC_PAGES: MetadataRoute.Sitemap = [
   { url: `${BASE}/glossar`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
   { url: `${BASE}/videos`, lastModified: new Date(), changeFrequency: 'weekly',  priority: 0.9 },
   { url: `${BASE}/mantras`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+  { url: `${BASE}/webinar`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+  { url: `${BASE}/webinar-anmeldung`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
   { url: `${BASE}/impressum`,  lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
   { url: `${BASE}/datenschutz`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
 ]

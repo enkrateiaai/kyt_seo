@@ -94,3 +94,17 @@ export function pickLatestWebinar(list: WebinarConfig[], nowMs: number): Webinar
     .sort((a, b) => (Date.parse(b.startsAt ?? '') || 0) - (Date.parse(a.startsAt ?? '') || 0))
   return past[0] ?? null
 }
+
+// All slots that have not started yet, soonest first. These are the slots
+// people can pick on the registration page.
+export function pickUpcomingSlots(list: WebinarConfig[], nowMs: number): WebinarConfig[] {
+  return list
+    .filter((w) => webinarPhase(w, nowMs) === 'before')
+    .sort((a, b) => (Date.parse(a.startsAt ?? '') || 0) - (Date.parse(b.startsAt ?? '') || 0))
+}
+
+// One slot by its id.
+export function findSlotById(list: WebinarConfig[], id: string): WebinarConfig | null {
+  if (!id) return null
+  return list.find((w) => w.id === id) ?? null
+}

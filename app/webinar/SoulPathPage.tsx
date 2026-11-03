@@ -73,9 +73,10 @@ const expectations = [
   'Meine Vision hinter Soul Path.',
 ]
 
-export default async function SoulPathPage() {
+export default async function SoulPathPage({ slotId }: { slotId?: string }) {
   // The schedule is the single source of truth: the page shows the video of
   // the webinar that is currently scheduled and playable, and nothing else.
+  // With a slot id the page is pinned to exactly that slot.
   const { webinars, cta, serverNow } = await fetchWebinarSnapshot()
 
   const ctaUrl =
@@ -86,6 +87,10 @@ export default async function SoulPathPage() {
 
   return (
     <div style={{ fontFamily: "'Jost', system-ui, sans-serif", color: C.deepBrown, background: C.warmWhite }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500;600&display=swap');
+      `}</style>
+
       {/* ── Skip link (a11y) ── */}
       <a
         href="#main"
@@ -134,6 +139,7 @@ export default async function SoulPathPage() {
             serverNow={serverNow}
             ctaUrl={ctaUrl}
             ctaLabel={ctaLabel}
+            slotId={slotId}
           />
 
           <p style={{ fontSize: 13, color: C.muted, margin: '18px 0 0', lineHeight: 1.7 }}>
