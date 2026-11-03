@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import '../webinar/webinar-ui.css'
+import './webinar-anmeldung.css'
 import AnmeldungClient from './AnmeldungClient'
 import { fetchWebinarSnapshot, pickUpcomingSlots } from '@/lib/webinar'
 import { SERIES_TIME_ZONE, zonedDayKey, zonedTimeLabel } from '@/lib/webinarSeries'
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: 'Webinar anmelden – Soul Path | Kundalini Yoga Tribe',
   description:
-    'Wähle deinen Termin für das Soul Path Webinar. Nach der Anmeldung bekommst du deinen persönlichen Link - das Video ist nur während des Termins verfügbar.',
+    'Wähle deinen Termin für das Soul Path Webinar. Nach der Anmeldung bekommst du deinen persönlichen Link per Mail - das Video ist nur während des Termins verfügbar.',
   keywords: 'Soul Path, Webinar anmelden, Soul Business, KI Plattform Coaching',
   alternates: { canonical: 'https://kundaliniyogatribe.de/webinar-anmeldung' },
   openGraph: {
@@ -22,27 +22,31 @@ export const metadata = {
   robots: { index: true, follow: true },
 }
 
-const C = {
-  cream: '#F5F0E8',
-  warmWhite: '#FAF7F2',
-  sand: '#E8DDD0',
-  gold: '#C9A96E',
-  terracotta: '#D3BC76',
-  deepBrown: '#2A1F1A',
-  warmBrown: '#4A3728',
-  muted: '#8A7B72',
-  white: '#FFFFFF',
-}
-
 // How many days of appointments are shown.
 const VISIBLE_DAYS = 7
 
 const dayFormatter = new Intl.DateTimeFormat('de-DE', {
   timeZone: SERIES_TIME_ZONE,
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+})
+
+const fullFormatter = new Intl.DateTimeFormat('de-DE', {
+  timeZone: SERIES_TIME_ZONE,
   weekday: 'long',
   day: 'numeric',
   month: 'long',
+  year: 'numeric',
 })
+
+// 'Mi., 4. Nov.' -> 'Mi 4. Nov'
+function compactDay(date: Date): string {
+  const formatted = dayFormatter.format(date)
+  const [weekday, rest] = formatted.split(', ')
+  if (!rest) return formatted
+  return `${weekday.replace(/\.$/, '')} ${rest.replace(/\.$/, '')}`
+}
 
 export default async function WebinarAnmeldungPage() {
   // The slots come from the same studio schedule the webinar page uses.
@@ -74,102 +78,94 @@ export default async function WebinarAnmeldungPage() {
     const representative = slots.find((slot) => slot.startsAt)?.startsAt ?? null
     return {
       key,
-      label: representative ? dayFormatter.format(new Date(representative)) : key,
+      label: representative ? compactDay(new Date(representative)) : key,
+      full: representative ? fullFormatter.format(new Date(representative)) : key,
       relative: key === todayKey ? 'Heute' : key === tomorrowKey ? 'Morgen' : '',
       slots,
     }
   })
 
   const slotCount = days.reduce((sum, day) => sum + day.slots.length, 0)
+  const hasSlots = slotCount > 0
+
+  // The length of the video is the length of the live window.
+  const durationSeconds = upcoming.reduce(
+    (max, slot) => (slot.duration > max ? slot.duration : max),
+    0,
+  )
+  const durationMinutes = durationSeconds > 0 ? Math.round(durationSeconds / 60) : 0
+
+  const facts: string[] = []
+  if (durationMinutes > 0) {
+    facts.push(`Das Webinar dauert rund ${durationMinutes} Minuten.`)
+  }
+  facts.push('Live, keine Aufzeichnung – der Link öffnet das Video nur während des Termins.')
+  facts.push('Alle Uhrzeiten in Berliner Zeit.')
+  facts.push('Wir verschicken nur den Termin-Link, nichts weiter.')
 
   return (
-    <div style={{ fontFamily: "'Jost', system-ui, sans-serif", color: C.deepBrown, background: C.warmWhite }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500;600&display=swap');
-      `}</style>
+    <div className="anm">
+      <div className="anm-top">
+        <span className="anm-top-brand">Kundalini Yoga Tribe</span>
+        <span className="anm-top-page">Soul Path Webinar</span>
+      </div>
 
-      <section style={{ background: `linear-gradient(180deg, ${C.cream} 0%, ${C.warmWhite} 100%)`, padding: '76px 20px 48px' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
-          <p
-            style={{
-              fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase',
-              color: C.warmBrown, margin: '0 0 20px', fontWeight: 500,
-            }}
-          >
-            Soul Path Webinar
-          </p>
-          <h1
-            style={{
-              fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(32px, 5vw, 52px)',
-              fontWeight: 400, lineHeight: 1.18, margin: '0 auto 22px', maxWidth: 700,
-            }}
-          >
-            Sichere dir deinen Termin
+      <main className="anm-main">
+        <div className="anm-intro">
+          <h1 className="anm-title">
+            {hasSlots ? 'Wähle deinen Termin' : 'Webinar anmelden'}
           </h1>
-          <p
-            style={{
-              fontSize: 'clamp(16px, 2.2vw, 18px)', color: C.warmBrown,
-              maxWidth: 620, margin: '0 auto', fontWeight: 300, lineHeight: 1.8,
-            }}
-          >
-            Gib deine E-Mail-Adresse ein, wähle deinen Termin und erhalte deinen
-            persönlichen Link. Das Video ist ausschließlich während des geplanten Termins
-            abrufbar.
+          <p className="anm-lead">
+            {hasSlots ? (
+              <>
+                Das Soul Path Webinar läuft live und nur während der geplanten Spielzeit.
+                Trag deine E-Mail ein und wähle eine Uhrzeit – den Zugangslink bekommst
+                du per Mail.
+              </>
+            ) : (
+              <>
+                Das Soul Path Webinar läuft live und nur während der geplanten Spielzeit.
+                Sobald der nächste Termin feststeht, kannst du dich hier anmelden.
+              </>
+            )}
+          </p>
+
+          <ul className="anm-facts">
+            {facts.map((fact) => (
+              <li key={fact}>{fact}</li>
+            ))}
+          </ul>
+
+          <p className="anm-more">
+            Noch Fragen? <Link href="/webinar">Zur Webinar-Seite</Link>
           </p>
         </div>
-      </section>
 
-      <section style={{ background: C.white, padding: '52px 20px 76px' }}>
-        {days.length === 0 ? (
-          <div style={{ maxWidth: 620, margin: '0 auto', textAlign: 'center' }}>
-            <p
-              style={{
-                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(24px, 4vw, 32px)',
-                color: C.deepBrown, margin: '0 0 14px', lineHeight: 1.3,
-              }}
-            >
-              Aktuell ist kein Termin geplant
-            </p>
-            <p style={{ fontSize: 16, lineHeight: 1.8, color: C.muted, margin: '0 0 26px' }}>
-              Schau bald wieder vorbei - neue Termine werden hier angekündigt.
-            </p>
-            <Link href="/webinar" className="kyt-btn kyt-btn--secondary">
-              Zur Webinar-Seite
-            </Link>
-          </div>
-        ) : (
-          <AnmeldungClient days={days} />
-        )}
-      </section>
-
-      <section style={{ background: C.cream, padding: '56px 20px' }}>
-        <div style={{ maxWidth: 620, margin: '0 auto', textAlign: 'center' }}>
-          <p style={{ fontSize: 14, lineHeight: 1.8, color: C.muted, margin: '0 0 18px' }}>
-            {slotCount > 0
-              ? `${slotCount} Termine in den nächsten ${days.length} ${days.length === 1 ? 'Tag' : 'Tagen'} - jeder mit eigenem Link.`
-              : 'Du möchtest mehr über Soul Path erfahren?'}
-          </p>
-          <Link
-            href="/webinar"
-            style={{ color: C.warmBrown, fontSize: 14, textDecoration: 'underline' }}
-          >
-            Zur Webinar-Seite
-          </Link>
+        <div className="anm-col">
+          {days.length === 0 ? (
+            <div className="anm-empty">
+              <h2 className="anm-empty-title">Aktuell ist kein Termin geplant</h2>
+              <p className="anm-empty-text">
+                Schau bald wieder vorbei – neue Termine werden hier angekündigt.
+              </p>
+              <p className="anm-more">
+                <Link href="/webinar">Zur Webinar-Seite</Link>
+              </p>
+            </div>
+          ) : (
+            <AnmeldungClient days={days} />
+          )}
         </div>
-      </section>
+      </main>
 
-      <footer style={{ background: '#241A15', padding: '34px 20px', textAlign: 'center' }}>
-        <nav aria-label="Rechtliches" style={{ display: 'flex', gap: 26, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
-          <Link href="/impressum" style={{ color: '#C9BCAC', fontSize: 14, textDecoration: 'none' }}>
-            Impressum
-          </Link>
-          <Link href="/datenschutz" style={{ color: '#C9BCAC', fontSize: 14, textDecoration: 'none' }}>
-            Datenschutz
-          </Link>
-        </nav>
-        <p style={{ color: '#8A7B72', fontSize: 13, margin: 0, lineHeight: 1.7 }}>
-          © {new Date().getFullYear()} Soul Path · Kundalini Yoga Tribe
-        </p>
+      <footer className="anm-foot">
+        <div className="anm-foot-in">
+          <span>© {new Date().getFullYear()} Soul Path · Kundalini Yoga Tribe</span>
+          <nav aria-label="Rechtliches">
+            <Link href="/impressum">Impressum</Link>
+            <Link href="/datenschutz">Datenschutz</Link>
+          </nav>
+        </div>
       </footer>
     </div>
   )

@@ -1,0 +1,577 @@
+/* =============================================================
+   Anmeldeseite fuer das Soul Path Webinar.
+
+   Bewusst kein Landingpage-Muster: kein Hero-Band, kein
+   Karten-Raster, keine Grossbuchstaben-Etiketten. Stattdessen
+   eine ruhige Terminseite im Satzspiegel-Look - Papier,
+   Haarlinien, ein zweispaltiges Raster, flache Auswahlfelder.
+   ============================================================= */
+
+/* Die Schriften kommen wie auf der Webinar-Seite von Google Fonts -
+   das @import steht bewusst in der CSS-Datei, damit der Browser die
+   Fonts sofort beim Parsen des Stylesheets anfordert. */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500;600&display=swap');
+
+.anm {
+  --paper: #faf7f2;
+  --paper-2: #f4eee4;
+  --ink: #2a1f1a;
+  --ink-2: #4a3728;
+  --ink-3: #857567;
+  --line: #e4d9c9;
+  --line-2: #efe8dc;
+  --gold: #c9a96e;
+  --gold-2: #e2c898;
+  --danger: #a4402f;
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.anm *,
+.anm *::before,
+.anm *::after {
+  box-sizing: border-box;
+}
+
+.anm a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.anm a:hover {
+  color: var(--gold);
+}
+
+/* Die Schaltflaechen sind Links - sie duerfen aber nicht die Textlink-Farbe
+   der globalen .anm-a-Regel erben. */
+.anm a.anm-submit,
+.anm a.anm-btn-ghost {
+  text-decoration: none;
+}
+
+.anm a.anm-submit {
+  color: var(--paper);
+}
+
+.anm a.anm-submit:hover {
+  color: var(--paper);
+}
+
+.anm a.anm-btn-ghost {
+  color: var(--ink-2);
+}
+
+.anm a.anm-btn-ghost:hover {
+  color: var(--ink);
+}
+
+/* ── Kopfzeile ───────────────────────────────────────────────────────────── */
+.anm-top {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 26px 28px 20px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.anm-top-brand {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--ink-2);
+}
+
+.anm-top-page {
+  white-space: nowrap;
+}
+
+/* ── Raster ──────────────────────────────────────────────────────────────── */
+.anm-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 28px 104px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(36px, 6vw, 96px);
+  align-items: start;
+}
+
+/* ── Linke Spalte: Text ──────────────────────────────────────────────────── */
+.anm-intro {
+  position: sticky;
+  top: 32px;
+  padding-top: 16px;
+}
+
+.anm-title {
+  margin: 0 0 18px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(32px, 4.4vw, 50px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.anm-lead {
+  margin: 0 0 36px;
+  max-width: 40ch;
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+
+.anm-facts {
+  margin: 0 0 30px;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+  display: grid;
+  gap: 13px;
+}
+
+.anm-facts li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+
+.anm-facts li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 11px;
+  height: 1px;
+  background: var(--gold);
+}
+
+.anm-more {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--ink-3);
+}
+
+/* ── Rechte Spalte: Formular ─────────────────────────────────────────────── */
+.anm-form {
+  max-width: 620px;
+}
+
+.anm-field {
+  margin-bottom: 46px;
+}
+
+.anm-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.anm-input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--ink-3);
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 2px 12px;
+  font-family: inherit;
+  font-size: 18px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.18s ease;
+}
+
+.anm-input::placeholder {
+  color: #b8a99a;
+}
+
+.anm-input:hover {
+  border-bottom-color: var(--gold);
+}
+
+.anm-input:focus {
+  border-bottom-color: var(--ink);
+}
+
+.anm-hint {
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--ink-3);
+}
+
+/* ── Terminplan ──────────────────────────────────────────────────────────── */
+.anm-sched-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.anm-h2 {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(24px, 3vw, 30px);
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.anm-meta {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.anm-day {
+  display: grid;
+  grid-template-columns: 122px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.anm-day-date {
+  display: block;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 20px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.anm-day-rel {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--gold);
+}
+
+.anm-day-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.anm-slot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  min-height: 54px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: transparent;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 23px;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.anm-slot:hover {
+  border-color: var(--ink-3);
+  background: var(--paper-2);
+}
+
+.anm-slot input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.anm-slot:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.anm-slot.is-selected,
+.anm-slot.is-selected:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* ── Meldungen und Aktionen ──────────────────────────────────────────────── */
+.anm-error {
+  margin: 22px 0 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--danger);
+  font-size: 14px;
+  color: var(--danger);
+}
+
+.anm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.anm-submit {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 30px;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+}
+
+.anm-submit:hover:not(:disabled) {
+  background: #3d2c23;
+  border-color: #3d2c23;
+  color: var(--paper);
+}
+
+.anm a.anm-submit:hover:not(:disabled) {
+  background: #3d2c23;
+  border-color: #3d2c23;
+  color: var(--paper);
+}
+
+.anm-submit:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.anm-submit:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.anm-btn-ghost {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 14px 22px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.anm-btn-ghost:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.anm a.anm-btn-ghost:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.anm-btn-ghost:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.anm-summary {
+  margin: 14px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-3);
+}
+
+/* ── Bestaetigung ────────────────────────────────────────────────────────── */
+.anm-done {
+  max-width: 520px;
+  padding-top: 6px;
+}
+
+.anm-done-title {
+  margin: 0 0 14px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(26px, 3.4vw, 34px);
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.anm-done-slot {
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.anm-done-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--ink-3);
+}
+
+/* ── Leerer Zustand ──────────────────────────────────────────────────────── */
+.anm-empty {
+  max-width: 520px;
+}
+
+.anm-empty-title {
+  margin: 0 0 12px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(24px, 3.4vw, 32px);
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.anm-empty-text {
+  margin: 0 0 24px;
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: var(--ink-3);
+}
+
+/* ── Fusszeile ───────────────────────────────────────────────────────────── */
+.anm-foot {
+  border-top: 1px solid var(--line);
+  padding: 22px 28px 30px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.anm-foot-in {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 20px;
+}
+
+.anm-foot nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.anm-foot a {
+  color: var(--ink-2);
+}
+
+/* ── Mobil ───────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .anm-main {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 72px;
+  }
+
+  .anm-intro {
+    position: static;
+    padding-top: 4px;
+  }
+
+  .anm-lead {
+    max-width: none;
+  }
+
+  .anm-day {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .anm-top {
+    padding: 20px 20px 14px;
+    font-size: 12.5px;
+  }
+
+  .anm-top-brand {
+    font-size: 17px;
+  }
+
+  .anm-main {
+    padding: 0 20px 56px;
+  }
+
+  .anm-foot {
+    padding: 20px 20px 26px;
+  }
+
+  .anm-title {
+    margin-bottom: 14px;
+  }
+
+  .anm-lead {
+    margin-bottom: 28px;
+    font-size: 16px;
+  }
+
+  .anm-field {
+    margin-bottom: 38px;
+  }
+
+  .anm-slot {
+    min-width: 78px;
+    min-height: 52px;
+    padding: 10px 12px;
+    font-size: 21px;
+  }
+
+  .anm-actions {
+    margin-top: 26px;
+  }
+
+  .anm-submit,
+  .anm-btn-ghost {
+    width: 100%;
+  }
+}

@@ -13,22 +13,13 @@ type Slot = {
 type Day = {
   /** 'YYYY-MM-DD' in Europe/Berlin */
   key: string
-  /** 'Mittwoch, 4. November' */
+  /** 'Mi 4. Nov' */
   label: string
+  /** 'Mittwoch, 4. November 2026' */
+  full: string
   /** 'Heute' / 'Morgen' / '' */
   relative: string
   slots: Slot[]
-}
-
-const C = {
-  warmWhite: '#FAF7F2',
-  sand: '#E8DDD0',
-  gold: '#C9A96E',
-  terracotta: '#D3BC76',
-  deepBrown: '#2A1F1A',
-  warmBrown: '#4A3728',
-  muted: '#8A7B72',
-  white: '#FFFFFF',
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -82,166 +73,120 @@ export default function AnmeldungClient({ days }: { days: Day[] }) {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    boxSizing: 'border-box',
-    border: `1px solid ${C.sand}`,
-    borderRadius: 10,
-    background: C.white,
-    padding: '15px 16px',
-    fontSize: 16,
-    fontFamily: 'inherit',
-    color: C.deepBrown,
-    outline: 'none',
+  if (done) {
+    return (
+      <div className="anm-done">
+        <h2 className="anm-done-title">Dein Termin steht</h2>
+        {chosen && chosenDay ? (
+          <p className="anm-done-slot">
+            {chosen.title} · {chosenDay.label} um {chosen.time} Uhr
+          </p>
+        ) : null}
+        <p className="anm-done-text">
+          Der Link ist unterwegs an {email.trim()}. Er öffnet genau diesen Termin –
+          vorher und danach gibt es nichts zu schauen.
+        </p>
+        {link ? (
+          <div className="anm-actions">
+            <a href={link} className="anm-submit">
+              Termin öffnen
+            </a>
+            <button
+              type="button"
+              className="anm-btn-ghost"
+              onClick={() => {
+                setDone(false)
+                setLink(null)
+              }}
+            >
+              Weiteren Termin wählen
+            </button>
+          </div>
+        ) : null}
+      </div>
+    )
   }
 
   return (
-    <div style={{ maxWidth: 980, margin: '0 auto' }}>
-      {done ? (
-        <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto' }}>
-          <p
-            style={{
-              fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(24px, 4vw, 32px)',
-              color: C.deepBrown, margin: '0 0 14px', lineHeight: 1.3,
-            }}
-          >
-            Du bist angemeldet.
-          </p>
-          {chosen && chosenDay ? (
-            <p style={{ fontSize: 16, lineHeight: 1.8, color: C.warmBrown, margin: '0 0 8px' }}>
-              {chosen.title} · {chosenDay.label} um {chosen.time} Uhr
-            </p>
-          ) : null}
-          <p style={{ fontSize: 15, lineHeight: 1.8, color: C.muted, margin: '0 0 26px' }}>
-            Die Bestätigung ist unterwegs an {email.trim()}. Dein persönlicher Link öffnet
-            genau diesen Termin - das Video ist nur während der Spielzeit abrufbar.
-          </p>
-          {link ? (
-            <div className="kyt-btn-row">
-              <a href={link} className="kyt-btn kyt-btn--primary">
-                Termin öffnen
-              </a>
-              <button
-                type="button"
-                className="kyt-btn kyt-btn--secondary"
-                onClick={() => {
-                  setDone(false)
-                  setLink(null)
-                }}
-              >
-                Weiteren Termin wählen
-              </button>
+    <form className="anm-form" onSubmit={submit} noValidate>
+      <div className="anm-field">
+        <label className="anm-label" htmlFor="webinar-email">
+          Deine E-Mail-Adresse
+        </label>
+        <input
+          id="webinar-email"
+          className="anm-input"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="deine@email.de"
+        />
+        <p className="anm-hint">
+          Dorthin schicken wir den Link zu deinem Termin. Mehr bekommst du nicht.
+        </p>
+      </div>
+
+      <div className="anm-sched-head">
+        <h2 className="anm-h2">Termin wählen</h2>
+        <span className="anm-meta">
+          {days.length} {days.length === 1 ? 'Tag' : 'Tage'} · {allSlots.length}{' '}
+          {allSlots.length === 1 ? 'Termin' : 'Termine'}
+        </span>
+      </div>
+
+      <div className="anm-days">
+        {days.map((day) => (
+          <div key={day.key} className="anm-day">
+            <div>
+              <span className="anm-day-date" title={day.full}>
+                {day.label}
+              </span>
+              {day.relative ? <span className="anm-day-rel">{day.relative}</span> : null}
             </div>
-          ) : null}
-        </div>
-      ) : (
-        <form onSubmit={submit} noValidate>
-          <div
-            style={{
-              background: C.white,
-              border: `1px solid ${C.sand}`,
-              borderRadius: 14,
-              padding: '22px 22px 24px',
-              marginBottom: 30,
-            }}
-          >
-            <label
-              htmlFor="webinar-email"
-              style={{
-                display: 'block', fontSize: 12, fontWeight: 700, letterSpacing: '0.14em',
-                textTransform: 'uppercase', color: C.warmBrown, marginBottom: 10,
-              }}
-            >
-              Deine E-Mail-Adresse
-            </label>
-            <input
-              id="webinar-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="deine@email.de"
-              style={inputStyle}
-            />
-            <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.7, margin: '12px 0 0' }}>
-              Wir schicken dir deinen Termin-Link per Mail. Der Link gilt genau für den
-              Termin, den du auswählst.
-            </p>
+            <div className="anm-day-slots">
+              {day.slots.map((slot) => {
+                const active = slot.id === slotId
+                return (
+                  <label
+                    key={slot.id}
+                    className={`anm-slot${active ? ' is-selected' : ''}`}
+                    title={`${day.full} um ${slot.time} Uhr`}
+                  >
+                    <input
+                      type="radio"
+                      name="webinar-slot"
+                      value={slot.id}
+                      checked={active}
+                      onChange={() => setSlotId(slot.id)}
+                    />
+                    <span className="anm-slot-time">{slot.time}</span>
+                  </label>
+                )
+              })}
+            </div>
           </div>
+        ))}
+      </div>
 
-          <div
-            style={{
-              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-              gap: 12, flexWrap: 'wrap', marginBottom: 16,
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(24px, 3.5vw, 32px)',
-                fontWeight: 400, color: C.deepBrown, margin: 0,
-              }}
-            >
-              Wähle deinen Termin
-            </h2>
-            <span style={{ fontSize: 13, color: C.muted }}>
-              {days.length} {days.length === 1 ? 'Tag' : 'Tage'} ·{' '}
-              {allSlots.length} Termine
-            </span>
-          </div>
+      {error ? (
+        <p role="alert" className="anm-error">
+          {error}
+        </p>
+      ) : null}
 
-          <div className="kyt-slot-days">
-            {days.map((day) => (
-              <div key={day.key} className="kyt-slot-day">
-                <div className="kyt-slot-day-head">
-                  <span className="kyt-slot-day-label">{day.label}</span>
-                  {day.relative ? (
-                    <span className="kyt-slot-day-relative">{day.relative}</span>
-                  ) : null}
-                </div>
-                <div className="kyt-slot-list">
-                  {day.slots.map((slot) => {
-                    const active = slot.id === slotId
-                    return (
-                      <label
-                        key={slot.id}
-                        className={`kyt-slot${active ? ' is-selected' : ''}`}
-                      >
-                        <input
-                          type="radio"
-                          name="webinar-slot"
-                          value={slot.id}
-                          checked={active}
-                          onChange={() => setSlotId(slot.id)}
-                        />
-                        <span className="kyt-slot-time">{slot.time}</span>
-                        <span className="kyt-slot-title">{slot.title}</span>
-                      </label>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="anm-actions">
+        <button type="submit" className="anm-submit" disabled={busy || !slotId}>
+          {busy ? 'Wird angemeldet …' : 'Termin anmelden'}
+        </button>
+      </div>
 
-          {error ? (
-            <p role="alert" style={{ color: '#A4402F', fontSize: 14, margin: '20px 0 0' }}>
-              {error}
-            </p>
-          ) : null}
-
-          <div className="kyt-btn-row" style={{ justifyContent: 'flex-start', marginTop: 26 }}>
-            <button type="submit" className="kyt-btn kyt-btn--primary" disabled={busy || !slotId}>
-              {busy ? 'Wird angemeldet…' : 'Termin anmelden'}
-            </button>
-          </div>
-          <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.7, margin: '14px 0 0' }}>
-            {chosen
-              ? `Dein Termin: ${chosenDay?.label} um ${chosen.time} Uhr`
-              : 'Wähle oben einen Termin aus, dann geht die Anmeldung raus.'}
-          </p>
-        </form>
-      )}
-    </div>
+      <p className="anm-summary">
+        {chosen
+          ? `Dein Termin: ${chosenDay?.label} um ${chosen.time} Uhr`
+          : 'Wähle oben eine Uhrzeit, dann geht die Anmeldung raus.'}
+      </p>
+    </form>
   )
 }
