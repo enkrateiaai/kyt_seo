@@ -222,10 +222,6 @@ export default function SoulPathVideo({
                 ) : null}
               </span>
             ) : null}
-            <span className="kyt-webinar-notice-text" style={{ opacity: 0.72, maxWidth: 440 }}>
-              Das Video wird erst zum geplanten Termin freigeschaltet und ist danach nur noch
-              während der Laufzeit abrufbar.
-            </span>
           </div>
         ) : phase === 'after' ? (
           /* ── Beendet ── */
@@ -321,7 +317,7 @@ export default function SoulPathVideo({
           .
         </p>
         <p style={{ color: C.muted, fontSize: 13, margin: '14px 0 0', lineHeight: 1.7 }}>
-          30 Minuten · Persönlich · Unverbindlich – mit mir persönlich
+          30 Minuten · Persönlich · Unverbindlich
         </p>
       </div>
     </div>

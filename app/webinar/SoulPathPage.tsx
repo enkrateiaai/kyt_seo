@@ -339,7 +339,7 @@ export default async function SoulPathPage({ slotId }: { slotId?: string }) {
             .
           </p>
           <p style={{ color: '#B9A995', fontSize: 14, margin: '16px 0 0', lineHeight: 1.7 }}>
-            30 Minuten · Persönlich · Unverbindlich – mit mir persönlich
+            30 Minuten · Persönlich · Unverbindlich
           </p>
         </div>
       </section>
