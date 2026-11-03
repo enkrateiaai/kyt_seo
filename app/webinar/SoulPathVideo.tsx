@@ -1,6 +1,13 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  WebinarConfig,
+  pickLatestWebinar,
+  pickLiveWebinar,
+  pickNextWebinar,
+  webinarWindow,
+} from '@/lib/webinarSchedule'
 
 const C = {
   warmWhite: '#FAF7F2',
@@ -14,26 +21,94 @@ const C = {
   white: '#FFFFFF',
 }
 
-/**
- * Google-Drive-Video-ID. Leer = Platzhalter-Frame (Vorschau mit Hinweis).
- * Einsetzen, sobald Catherine das Webinar hochgeladen hat.
- */
-const GOOGLE_DRIVE_FILE_ID = process.env.NEXT_PUBLIC_SOULPATH_DRIVE_ID || ''
+// The schedule is refreshed in the background so the video appears when the
+// window opens and disappears when it closes - without a page reload.
+const REFRESH_MS = 30_000
+const TIME_ZONE = 'Europe/Berlin'
+
+const dateFormatter = new Intl.DateTimeFormat('de-DE', {
+  timeZone: TIME_ZONE,
+  dateStyle: 'full',
+  timeStyle: 'short',
+})
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return 'jetzt'
+  const totalMinutes = Math.floor(ms / 60_000)
+  const days = Math.floor(totalMinutes / (60 * 24))
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
+  const minutes = totalMinutes % 60
+  const parts: string[] = []
+  if (days > 0) parts.push(`${days} ${days === 1 ? 'Tag' : 'Tage'}`)
+  if (hours > 0) parts.push(`${hours} Std`)
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes} Min`)
+  return `in ${parts.join(', ')}`
+}
 
 export default function SoulPathVideo({
+  webinars: initialWebinars,
+  serverNow,
   ctaUrl,
   ctaLabel,
 }: {
+  webinars: WebinarConfig[]
+  serverNow: number
   ctaUrl: string
   ctaLabel: string
 }) {
-  // DSGVO: erst nach aktivem Klick wird der externe Player geladen.
-  const [consent, setConsent] = useState(false)
-  const [hasDriveVideo, setHasDriveVideo] = useState(false)
+  const [webinars, setWebinars] = useState<WebinarConfig[]>(initialWebinars)
+  // Starts at the server timestamp so the first render matches the HTML the
+  // server sent (no hydration mismatch) and the clock is right from the start.
+  const [nowMs, setNowMs] = useState(serverNow)
+  const [failedId, setFailedId] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  // Offset between the browser clock and the server clock. A ref, because it
+  // is not rendered - changing it must not trigger a render.
+  const clockOffset = useRef(0)
+
+  // The server clock is the reference, so a wrong client clock cannot open
+  // the window early or late.
+  useEffect(() => {
+    clockOffset.current = serverNow - Date.now()
+    const timer = setInterval(() => setNowMs(Date.now() + clockOffset.current), 1000)
+    return () => clearInterval(timer)
+  }, [serverNow])
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch('/api/webinar', { cache: 'no-store' })
+      if (!res.ok) return
+      const data = (await res.json()) as { webinars?: WebinarConfig[]; serverNow?: number }
+      if (Array.isArray(data?.webinars)) setWebinars(data.webinars)
+      if (typeof data?.serverNow === 'number') {
+        clockOffset.current = data.serverNow - Date.now()
+        setNowMs(Date.now() + clockOffset.current)
+      }
+    } catch {
+      // Keep the last known state.
+    }
+  }, [])
 
   useEffect(() => {
-    setHasDriveVideo(Boolean(GOOGLE_DRIVE_FILE_ID))
-  }, [])
+    const timer = setInterval(refresh, REFRESH_MS)
+    return () => clearInterval(timer)
+  }, [refresh])
+
+  const live = pickLiveWebinar(webinars, nowMs)
+  const next = pickNextWebinar(webinars, nowMs)
+  const latest = pickLatestWebinar(webinars, nowMs)
+  const phase: 'live' | 'before' | 'after' | 'none' = live
+    ? 'live'
+    : next
+      ? 'before'
+      : latest
+        ? 'after'
+        : 'none'
+
+  const liveWindow = webinarWindow(live)
+  const nextWindow = webinarWindow(next)
+  // The player failed for this webinar id - a new id starts fresh.
+  const videoFailed = live !== null && failedId === live.id
 
   const frameStyle: React.CSSProperties = {
     position: 'relative',
@@ -46,92 +121,144 @@ export default function SoulPathVideo({
     boxShadow: '0 24px 60px rgba(42,31,26,0.18)',
   }
 
+  const noticeStyle: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 14,
+    color: C.warmWhite,
+    textAlign: 'center',
+    padding: 28,
+  }
+
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       <div style={frameStyle}>
-        {!consent ? (
-          /* ── Platzhalter + Einwilligung ── */
-          <button
-            type="button"
-            onClick={() => setConsent(true)}
-            aria-label="Webinar-Video laden und abspielen"
-            style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%',
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', gap: 18, border: 'none', cursor: 'pointer',
-              background: 'transparent', color: C.warmWhite, padding: 24, textAlign: 'center',
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                width: 74, height: 74, borderRadius: '50%',
-                border: `1px solid ${C.goldLight}`, background: 'rgba(201,169,110,0.16)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
+        {phase === 'live' && live ? (
+          /* ── Video: nur im geplanten Zeitfenster, direkt aus dem Studio ── */
+          videoFailed ? (
+            <div style={noticeStyle}>
+              <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+                Ladefehler
+              </span>
               <span
                 style={{
-                  width: 0, height: 0, marginLeft: 5,
-                  borderTop: '11px solid transparent', borderBottom: '11px solid transparent',
-                  borderLeft: '18px solid #FAF7F2',
+                  fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
+                  fontWeight: 400, lineHeight: 1.3, maxWidth: 480,
                 }}
-              />
+              >
+                Das Video konnte nicht geladen werden.
+              </span>
+              <span style={{ fontSize: 13, opacity: 0.75, maxWidth: 440, lineHeight: 1.7 }}>
+                Bitte versuche es gleich noch einmal.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFailedId(null)
+                  setAttempt((value) => value + 1)
+                }}
+                style={{
+                  background: C.terracotta, color: C.deepBrown, border: 'none', cursor: 'pointer',
+                  fontSize: 14, fontWeight: 600, padding: '11px 26px', borderRadius: 999,
+                }}
+              >
+                Erneut versuchen
+              </button>
+            </div>
+          ) : (
+            <video
+              key={`${live.id}-${attempt}`}
+              controls
+              preload="metadata"
+              playsInline
+              onError={() => setFailedId(live.id)}
+              src={`/api/webinar/video?id=${encodeURIComponent(live.id)}`}
+              title={live.title || 'Webinar'}
+              style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
+            />
+          )
+        ) : phase === 'before' && next ? (
+          /* ── Noch nicht gestartet ── */
+          <div style={noticeStyle}>
+            <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+              Startet bald
             </span>
             <span
               style={{
                 fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
-                fontWeight: 400, lineHeight: 1.3,
+                fontWeight: 400, lineHeight: 1.3, maxWidth: 520,
               }}
             >
-              {hasDriveVideo
-                ? 'Webinar-Video abspielen'
-                : 'Dein 30-minütiges Webinar'}
+              {next.title || 'Dein Webinar'}
             </span>
-            <span style={{ fontSize: 13, opacity: 0.75, maxWidth: 420, lineHeight: 1.7 }}>
-              Mit einem Klick wird das Video von Google Drive geladen. Dabei werden Daten an
-              Google übertragen – Details in der Datenschutzerklärung.
+            {nextWindow.startsAt !== null ? (
+              <span style={{ fontSize: 15, opacity: 0.9, lineHeight: 1.7 }}>
+                {dateFormatter.format(new Date(nextWindow.startsAt))}
+                {nextWindow.startsAt > nowMs ? (
+                  <> · {formatCountdown(nextWindow.startsAt - nowMs)}</>
+                ) : null}
+              </span>
+            ) : null}
+            <span style={{ fontSize: 13, opacity: 0.72, maxWidth: 440, lineHeight: 1.7 }}>
+              Das Video wird erst zum geplanten Termin freigeschaltet und ist danach nur noch
+              während der Laufzeit abrufbar.
             </span>
-          </button>
-        ) : hasDriveVideo ? (
-          /* ── Embed nach Einwilligung ── */
-          <iframe
-            src={`https://drive.google.com/file/d/${GOOGLE_DRIVE_FILE_ID}/preview`}
-            title="Soul Path Webinar"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
-          />
-        ) : (
-          /* ── Platzhalter-Frame (kein Video hinterlegt) ── */
-          <div
-            style={{
-              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 14,
-              color: C.warmWhite, textAlign: 'center', padding: 28,
-            }}
-          >
+          </div>
+        ) : phase === 'after' ? (
+          /* ── Beendet ── */
+          <div style={noticeStyle}>
             <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
-              Platzhalter
+              Beendet
             </span>
             <span
               style={{
-                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(22px, 3.4vw, 32px)',
-                lineHeight: 1.3, maxWidth: 520,
+                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
+                fontWeight: 400, lineHeight: 1.3, maxWidth: 520,
               }}
             >
-              Hier wird dein 30-minütiges Webinar erscheinen
+              Dieses Webinar ist vorbei.
             </span>
-            <span style={{ fontSize: 13, opacity: 0.7, lineHeight: 1.7, maxWidth: 460 }}>
-              Das Video wird von Google Drive eingebettet. Sobald die Aufzeichnung hochgeladen
-              ist, erscheint der Player an dieser Stelle automatisch.
+            <span style={{ fontSize: 13, opacity: 0.72, maxWidth: 440, lineHeight: 1.7 }}>
+              Das Video stand nur während des Termins zur Verfügung. Sprich mich gern an -
+              unten kannst du ein Kennenlerngespräch buchen.
+            </span>
+          </div>
+        ) : (
+          /* ── Kein Webinar geplant ── */
+          <div style={noticeStyle}>
+            <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.8 }}>
+              Kein Termin
+            </span>
+            <span
+              style={{
+                fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(20px, 3vw, 28px)',
+                fontWeight: 400, lineHeight: 1.3, maxWidth: 520,
+              }}
+            >
+              Hier wird dein Webinar erscheinen
+            </span>
+            <span style={{ fontSize: 13, opacity: 0.72, maxWidth: 440, lineHeight: 1.7 }}>
+              Sobald ein Termin mit Video im Studio geplant ist, erscheint der Player hier -
+              ausserhalb der Spielzeit nicht.
             </span>
           </div>
         )}
       </div>
 
-      {/* CTA direkt unter dem Video */}
-      <div style={{ marginTop: 22, textAlign: 'center' }}>
+      {phase === 'live' && live ? (
+        <p style={{ color: C.muted, fontSize: 13, margin: '16px 0 0', lineHeight: 1.7 }}>
+          Das Webinar läuft gerade
+          {liveWindow.endsAt !== null
+            ? ` · noch bis ${dateFormatter.format(new Date(liveWindow.endsAt))}`
+            : ''}
+        </p>
+      ) : null}
+
+      <div style={{ textAlign: 'center', marginTop: 26 }}>
         <a
           href={ctaUrl}
           target="_blank"

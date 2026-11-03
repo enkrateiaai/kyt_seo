@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import SoulPathVideo from './SoulPathVideo'
 import SoulPathPhoto from './SoulPathPhoto'
+import { fetchWebinarSnapshot } from '@/lib/webinar'
 
 export const metadata = {
   title: 'Soul Path Webinar – Kundalini Yoga Tribe',
@@ -72,11 +73,16 @@ const expectations = [
   'Meine Vision hinter Soul Path.',
 ]
 
-export default function SoulPathPage() {
+export default async function SoulPathPage() {
+  // The schedule is the single source of truth: the page shows the video of
+  // the webinar that is currently scheduled and playable, and nothing else.
+  const { webinars, cta, serverNow } = await fetchWebinarSnapshot()
+
   const ctaUrl =
+    cta?.url ||
     process.env.NEXT_PUBLIC_SOULPATH_CTA_URL ||
     'https://calendly.com/soulpathai/soul-path-coaching-kostenloses-kennenlerngesprach'
-  const ctaLabel = 'Kostenloses Kennenlerngespräch buchen'
+  const ctaLabel = cta?.label || 'Kostenloses Kennenlerngespräch buchen'
 
   return (
     <div style={{ fontFamily: "'Jost', system-ui, sans-serif", color: C.deepBrown, background: C.warmWhite }}>
@@ -122,11 +128,16 @@ export default function SoulPathPage() {
             aufzubauen.
           </p>
 
-          {/* Video + CTA direkt darunter */}
-          <SoulPathVideo ctaUrl={ctaUrl} ctaLabel={ctaLabel} />
+          {/* Video + CTA direkt darunter - Video nur im geplanten Zeitfenster */}
+          <SoulPathVideo
+            webinars={webinars}
+            serverNow={serverNow}
+            ctaUrl={ctaUrl}
+            ctaLabel={ctaLabel}
+          />
 
           <p style={{ fontSize: 13, color: C.muted, margin: '18px 0 0', lineHeight: 1.7 }}>
-            30 Minuten Videoworkshop · jederzeit ansehen
+            Das Video ist ausschließlich während des geplanten Termins abrufbar.
           </p>
         </div>
       </section>
