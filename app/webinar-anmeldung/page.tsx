@@ -97,11 +97,10 @@ export default async function WebinarAnmeldungPage() {
 
   const facts: string[] = []
   if (durationMinutes > 0) {
-    facts.push(`Das Webinar dauert rund ${durationMinutes} Minuten.`)
+    facts.push(`Dauer: rund ${durationMinutes} Minuten`)
   }
-  facts.push('Live, keine Aufzeichnung – der Link öffnet das Video nur während des Termins.')
-  facts.push('Alle Uhrzeiten in Berliner Zeit.')
-  facts.push('Wir verschicken nur den Termin-Link, nichts weiter.')
+  facts.push('Live während des Termins, keine Aufzeichnung')
+  facts.push('Alle Zeiten in Berliner Zeit')
 
   return (
     <div className="anm">
@@ -111,37 +110,45 @@ export default async function WebinarAnmeldungPage() {
       </div>
 
       <main className="anm-main">
-        <div className="anm-intro">
-          <h1 className="anm-title">
-            {hasSlots ? 'Wähle deinen Termin' : 'Webinar anmelden'}
-          </h1>
-          <p className="anm-lead">
-            {hasSlots ? (
-              <>
-                Das Soul Path Webinar läuft live und nur während der geplanten Spielzeit.
-                Trag deine E-Mail ein und wähle eine Uhrzeit – den Zugangslink bekommst
-                du per Mail.
-              </>
-            ) : (
-              <>
-                Das Soul Path Webinar läuft live und nur während der geplanten Spielzeit.
-                Sobald der nächste Termin feststeht, kannst du dich hier anmelden.
-              </>
-            )}
-          </p>
+        {/* Linke Spalte: Einleitung und Hinweise. Auf dem Handy wird sie
+            aufgebrochen, damit das Formular direkt unter der Einleitung
+            steht (siehe .anm-left in der CSS-Datei). */}
+        <div className="anm-left">
+          <div className="anm-intro">
+            <h1 className="anm-title">
+              {hasSlots ? 'Wähle deinen Termin' : 'Webinar anmelden'}
+            </h1>
+            <p className="anm-lead">
+              {hasSlots ? (
+                <>
+                  Das Webinar läuft live und nur während der geplanten Spielzeit. Wähle
+                  eine Uhrzeit und trag deine E-Mail ein – den Zugangslink bekommst du
+                  per Mail.
+                </>
+              ) : (
+                <>
+                  Das Soul Path Webinar läuft live und nur während der geplanten
+                  Spielzeit. Sobald der nächste Termin feststeht, kannst du dich hier
+                  anmelden.
+                </>
+              )}
+            </p>
+          </div>
 
-          <ul className="anm-facts">
-            {facts.map((fact) => (
-              <li key={fact}>{fact}</li>
-            ))}
-          </ul>
+          <div className="anm-notes">
+            <ul className="anm-facts">
+              {facts.map((fact) => (
+                <li key={fact}>{fact}</li>
+              ))}
+            </ul>
 
-          <p className="anm-more">
-            Noch Fragen? <Link href="/webinar">Zur Webinar-Seite</Link>
-          </p>
+            <p className="anm-more">
+              Noch Fragen? <Link href="/webinar">Zur Webinar-Seite</Link>
+            </p>
+          </div>
         </div>
 
-        <div className="anm-col">
+        <div className="anm-form-wrap">
           {days.length === 0 ? (
             <div className="anm-empty">
               <h2 className="anm-empty-title">Aktuell ist kein Termin geplant</h2>

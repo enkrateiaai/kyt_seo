@@ -101,6 +101,9 @@
 }
 
 /* ── Raster ──────────────────────────────────────────────────────────────── */
+/* Links steht der Text (Intro + Hinweise), rechts das Formular.
+   Auf dem Handy wird die linke Spalte aufgebrochen, damit das Formular
+   direkt unter der Einleitung steht und die Hinweise darunter. */
 .anm-main {
   flex: 1;
   width: 100%;
@@ -108,16 +111,24 @@
   margin: 0 auto;
   padding: 0 28px 104px;
   display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-  gap: clamp(36px, 6vw, 96px);
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  grid-template-areas: 'left form';
+  column-gap: clamp(36px, 6vw, 92px);
   align-items: start;
+}
+
+.anm-left {
+  grid-area: left;
+  padding-top: 16px;
 }
 
 /* ── Linke Spalte: Text ──────────────────────────────────────────────────── */
 .anm-intro {
-  position: sticky;
-  top: 32px;
-  padding-top: 16px;
+  margin-bottom: 38px;
+}
+
+.anm-notes {
+  padding-bottom: 4px;
 }
 
 .anm-title {
@@ -131,7 +142,7 @@
 }
 
 .anm-lead {
-  margin: 0 0 36px;
+  margin: 0;
   max-width: 40ch;
   font-size: 17px;
   line-height: 1.75;
@@ -139,12 +150,12 @@
 }
 
 .anm-facts {
-  margin: 0 0 30px;
-  padding: 22px 0 0;
+  margin: 0 0 26px;
+  padding: 20px 0 0;
   border-top: 1px solid var(--line);
   list-style: none;
   display: grid;
-  gap: 13px;
+  gap: 12px;
 }
 
 .anm-facts li {
@@ -172,12 +183,16 @@
 }
 
 /* ── Rechte Spalte: Formular ─────────────────────────────────────────────── */
+.anm-form-wrap {
+  grid-area: form;
+}
+
 .anm-form {
   max-width: 620px;
 }
 
 .anm-field {
-  margin-bottom: 46px;
+  margin-bottom: 40px;
 }
 
 .anm-label {
@@ -226,10 +241,20 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 14px;
+  gap: 6px 16px;
   flex-wrap: wrap;
   padding-bottom: 14px;
+  margin-bottom: 20px;
   border-bottom: 1px solid var(--ink);
+}
+
+/* Der Terminplan sitzt in einem ruhigen Block - ohne Schatten, ohne
+   Verlauf, nur eine Haarlinie. */
+.anm-plan {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: #ffffff;
+  padding: 4px 22px;
 }
 
 .anm-h2 {
@@ -250,9 +275,13 @@
   display: grid;
   grid-template-columns: 122px minmax(0, 1fr);
   gap: 20px;
-  align-items: start;
-  padding: 22px 0;
+  align-items: center;
+  padding: 18px 0;
   border-bottom: 1px solid var(--line-2);
+}
+
+.anm-day:last-child {
+  border-bottom: 0;
 }
 
 .anm-day-date {
@@ -510,12 +539,28 @@
 @media (max-width: 900px) {
   .anm-main {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'intro'
+      'form'
+      'notes';
     padding-bottom: 72px;
   }
 
+  /* Die linke Spalte wird aufgeloest, damit Einleitung, Formular und
+     Hinweise in dieser Reihenfolge untereinander stehen. */
+  .anm-left {
+    display: contents;
+  }
+
   .anm-intro {
-    position: static;
+    grid-area: intro;
     padding-top: 4px;
+    margin-bottom: 34px;
+  }
+
+  .anm-notes {
+    grid-area: notes;
+    margin-top: 46px;
   }
 
   .anm-lead {
@@ -556,7 +601,11 @@
   }
 
   .anm-field {
-    margin-bottom: 38px;
+    margin-bottom: 34px;
+  }
+
+  .anm-plan {
+    padding: 2px 16px;
   }
 
   .anm-slot {

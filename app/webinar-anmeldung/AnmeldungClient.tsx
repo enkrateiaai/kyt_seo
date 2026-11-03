@@ -136,7 +136,8 @@ export default function AnmeldungClient({ days }: { days: Day[] }) {
         </span>
       </div>
 
-      <div className="anm-days">
+      <div className="anm-plan">
+        <div className="anm-days">
         {days.map((day) => (
           <div key={day.key} className="anm-day">
             <div>
@@ -168,6 +169,7 @@ export default function AnmeldungClient({ days }: { days: Day[] }) {
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       {error ? (
@@ -177,7 +179,7 @@ export default function AnmeldungClient({ days }: { days: Day[] }) {
       ) : null}
 
       <div className="anm-actions">
-        <button type="submit" className="anm-submit" disabled={busy || !slotId}>
+        <button type="submit" className="anm-submit" disabled={busy}>
           {busy ? 'Wird angemeldet …' : 'Termin anmelden'}
         </button>
       </div>
