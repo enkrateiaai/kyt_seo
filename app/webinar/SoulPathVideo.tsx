@@ -296,26 +296,22 @@ export default function SoulPathVideo({
       ) : null}
 
       <div style={{ textAlign: 'center', marginTop: 26 }}>
+        {/* Die Slot-Anmeldung ist die Hauptaktion: hier waehlt man den Termin
+            (11:00 / 15:00 / 20:00) und traegt sich ein. Calendly ist das
+            persoenliche Kennenlerngespraech und bleibt ein eigener Weg. */}
         <div className="kyt-btn-row">
+          <a href="/webinar-anmeldung" className="kyt-btn kyt-btn--primary">
+            Termin wählen & anmelden
+          </a>
           <a
             href={ctaUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="kyt-btn kyt-btn--primary"
+            className="kyt-btn kyt-btn--secondary"
           >
             {ctaLabel}
           </a>
         </div>
-        <p style={{ color: C.muted, fontSize: 14, margin: '16px 0 0', lineHeight: 1.8 }}>
-          Wenn du noch nicht gebucht hast, dann{' '}
-          <a
-            href="/webinar-anmeldung"
-            style={{ color: C.warmBrown, textDecoration: 'underline' }}
-          >
-            hier anmelden
-          </a>
-          .
-        </p>
         <p style={{ color: C.muted, fontSize: 13, margin: '14px 0 0', lineHeight: 1.7 }}>
           30 Minuten · Persönlich · Unverbindlich
         </p>
