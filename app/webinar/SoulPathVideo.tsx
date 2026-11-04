@@ -310,7 +310,7 @@ export default function SoulPathVideo({
           </a>
         </div>
         <p style={{ color: C.muted, fontSize: 14, margin: '16px 0 0', lineHeight: 1.8 }}>
-          Wenn du noch nicht gebucht hast, dann{ ' '}
+          Wenn du noch nicht gebucht hast, dann{' '}
           <a
             href="/webinar-anmeldung"
             style={{ color: C.warmBrown, textDecoration: 'underline' }}
