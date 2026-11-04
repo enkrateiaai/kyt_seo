@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import redis from '@/lib/redis'
 import { SITE_URL, buildSlotLink, fetchWebinars } from '@/lib/webinar'
-import { findSlotById, webinarPhase } from '@/lib/webinarSchedule'
+import { findSlotById, isBookableSlot, webinarPhase } from '@/lib/webinarSchedule'
 import { isResendConfigured, sendResendEmail } from '@/lib/resend'
 import { buildRegistrationMail } from '@/lib/webinarMail'
 
@@ -63,6 +63,14 @@ export async function POST(request: NextRequest) {
   if (webinarPhase(slot, Date.now()) !== 'before') {
     return NextResponse.json(
       { error: 'Dieser Termin ist nicht mehr buchbar. Bitte wähle einen anderen.' },
+      { status: 409 },
+    )
+  }
+  // Short-notice registrations are not accepted: a slot has to be at least
+  // two hours away, so people get a real chance to make it to the session.
+  if (!isBookableSlot(slot, Date.now())) {
+    return NextResponse.json(
+      { error: 'Dieser Termin startet in weniger als 2 Stunden und kann nicht mehr gebucht werden.' },
       { status: 409 },
     )
   }

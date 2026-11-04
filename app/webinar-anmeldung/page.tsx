@@ -99,7 +99,6 @@ export default async function WebinarAnmeldungPage() {
   if (durationMinutes > 0) {
     facts.push(`Dauer: rund ${durationMinutes} Minuten`)
   }
-  facts.push('Live während des Termins, keine Aufzeichnung')
   facts.push('Alle Zeiten in Berliner Zeit')
 
   return (

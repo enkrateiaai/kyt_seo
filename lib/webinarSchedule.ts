@@ -95,11 +95,29 @@ export function pickLatestWebinar(list: WebinarConfig[], nowMs: number): Webinar
   return past[0] ?? null
 }
 
-// All slots that have not started yet, soonest first. These are the slots
-// people can pick on the registration page.
+// A slot can only be booked if it starts at least this many minutes from now.
+// Short-notice registrations are not accepted, so people have a real chance
+// to make it to the session.
+export const BOOKING_LEAD_MINUTES = 120
+
+// The earliest start that may still be booked at the given moment.
+export function earliestBookableStart(nowMs: number): number {
+  return nowMs + BOOKING_LEAD_MINUTES * 60 * 1000
+}
+
+// True when the slot is still far enough away to be booked.
+export function isBookableSlot(cfg: WebinarConfig, nowMs: number): boolean {
+  if (webinarPhase(cfg, nowMs) !== 'before') return false
+  const { startsAt } = webinarWindow(cfg)
+  if (startsAt === null) return false
+  return startsAt >= earliestBookableStart(nowMs)
+}
+
+// All slots that people may pick on the registration page: not started yet
+// and at least BOOKING_LEAD_MINUTES away, soonest first.
 export function pickUpcomingSlots(list: WebinarConfig[], nowMs: number): WebinarConfig[] {
   return list
-    .filter((w) => webinarPhase(w, nowMs) === 'before')
+    .filter((w) => isBookableSlot(w, nowMs))
     .sort((a, b) => (Date.parse(a.startsAt ?? '') || 0) - (Date.parse(b.startsAt ?? '') || 0))
 }
 
