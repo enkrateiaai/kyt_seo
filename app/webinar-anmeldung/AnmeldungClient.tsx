@@ -25,6 +25,7 @@ type Day = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function AnmeldungClient({ days }: { days: Day[] }) {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [slotId, setSlotId] = useState('')
   const [busy, setBusy] = useState(false)
@@ -43,6 +44,11 @@ export default function AnmeldungClient({ days }: { days: Day[] }) {
       setError('Bitte gib eine gültige E-Mail-Adresse ein.')
       return
     }
+    const who = name.trim()
+    if (who.length < 2) {
+      setError('Bitte gib deinen Namen ein.')
+      return
+    }
     if (!slotId) {
       setError('Bitte wähle einen Termin aus.')
       return
@@ -53,7 +59,7 @@ export default function AnmeldungClient({ days }: { days: Day[] }) {
       const res = await fetch('/api/webinar/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: value, slotId }),
+        body: JSON.stringify({ email: value, slotId, name: who }),
       })
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean
@@ -109,6 +115,22 @@ export default function AnmeldungClient({ days }: { days: Day[] }) {
 
   return (
     <form className="anm-form" onSubmit={submit} noValidate>
+      <div className="anm-field">
+        <label className="anm-label" htmlFor="webinar-name">
+          Dein Name
+        </label>
+        <input
+          id="webinar-name"
+          className="anm-input"
+          type="text"
+          name="name"
+          autoComplete="given-name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Dein Name"
+        />
+      </div>
+
       <div className="anm-field">
         <label className="anm-label" htmlFor="webinar-email">
           Deine E-Mail-Adresse

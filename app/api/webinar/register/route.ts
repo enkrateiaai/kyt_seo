@@ -34,7 +34,7 @@ async function rateLimit(key: string, max: number): Promise<boolean> {
 }
 
 export async function POST(request: NextRequest) {
-  let body: { email?: unknown; slotId?: unknown }
+  let body: { email?: unknown; slotId?: unknown; name?: unknown }
   try {
     body = (await request.json()) as { email?: unknown; slotId?: unknown }
   } catch {
@@ -43,9 +43,15 @@ export async function POST(request: NextRequest) {
 
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
   const slotId = typeof body.slotId === 'string' ? body.slotId.trim() : ''
+  const rawName = typeof body.name === 'string' ? body.name.trim() : ''
+  // Keep the name short and printable - it is only shown in the reminder.
+  const name = rawName.replace(/\s+/g, ' ').slice(0, 80)
 
   if (!EMAIL_RE.test(email)) {
     return NextResponse.json({ error: 'Bitte gib eine gültige E-Mail-Adresse ein.' }, { status: 400 })
+  }
+  if (name.length < 2) {
+    return NextResponse.json({ error: 'Bitte gib deinen Namen ein.' }, { status: 400 })
   }
   if (!slotId) {
     return NextResponse.json({ error: 'Bitte wähle einen Termin aus.' }, { status: 400 })
@@ -95,6 +101,7 @@ export async function POST(request: NextRequest) {
   const metaKey = `webinar:reg:${slot.id}:${email}`
   const meta = JSON.stringify({
     email,
+    name,
     slotId: slot.id,
     title: slot.title,
     startsAt: slot.startsAt,
