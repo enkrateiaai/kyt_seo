@@ -4,6 +4,7 @@ import { hasClerkServerConfig } from '@/lib/authConfig'
 import { getViewerUser, isAdminUser } from '@/lib/memberAccess'
 import { STUDIO_BASE, STUDIO_TOKEN } from '@/lib/webinar'
 import redis from '@/lib/redis'
+import { listAttendees } from '@/lib/webinarAttendance'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,8 +32,11 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     registrations = 0
   }
 
+  // Who booked the slot, when they came in and how many watch right now.
+  const { attendees, liveViewers } = await listAttendees(id)
+
   return NextResponse.json(
-    { id, registrations },
+    { id, registrations, attendees, liveViewers },
     { headers: { 'cache-control': 'no-store, max-age=0' } },
   )
 }

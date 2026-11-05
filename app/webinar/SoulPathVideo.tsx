@@ -53,12 +53,14 @@ export default function SoulPathVideo({
   ctaUrl,
   ctaLabel,
   slotId,
+  token,
 }: {
   webinars: WebinarConfig[]
   serverNow: number
   ctaUrl: string
   ctaLabel: string
   slotId?: string
+  token?: string
 }) {
   const [webinars, setWebinars] = useState<WebinarConfig[]>(initialWebinars)
   // Starts at the server timestamp so the first render matches the HTML the
@@ -195,7 +197,9 @@ export default function SoulPathVideo({
               preload="metadata"
               playsInline
               onError={() => setFailedId(live.id)}
-              src={`/api/webinar/video?id=${encodeURIComponent(live.id)}`}
+              src={`/api/webinar/video?id=${encodeURIComponent(live.id)}${
+                token ? `&token=${encodeURIComponent(token)}` : ''
+              }`}
               title={live.title || 'Webinar'}
               style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
             />

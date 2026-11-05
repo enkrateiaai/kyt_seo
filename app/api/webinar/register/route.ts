@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import redis from '@/lib/redis'
-import { SITE_URL, buildSlotLink, fetchWebinars } from '@/lib/webinar'
+import { SITE_URL, buildPersonalSlotLink, fetchWebinars } from '@/lib/webinar'
 import { findSlotById, isBookableSlot, webinarPhase } from '@/lib/webinarSchedule'
 import { isResendConfigured, sendResendEmail } from '@/lib/resend'
 import { buildRegistrationMail } from '@/lib/webinarMail'
+import { getRegistration, mintToken, tokenKey } from '@/lib/webinarAttendance'
 
 export const dynamic = 'force-dynamic'
 
@@ -93,7 +94,11 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const link = buildSlotLink(slot)
+  // Every booking gets a personal token. It rides along in the link, so we can
+  // see later who watched the webinar and since when.
+  const existing = await getRegistration(slot.id, email)
+  const token = existing?.token?.trim() || mintToken()
+  const link = buildPersonalSlotLink(slot, token)
   const unsubToken = randomBytes(32).toString('hex')
   const unsubscribeUrl = `${SITE_URL}/api/unsubscribe?token=${unsubToken}`
 
@@ -105,11 +110,17 @@ export async function POST(request: NextRequest) {
     slotId: slot.id,
     title: slot.title,
     startsAt: slot.startsAt,
-    registeredAt: new Date().toISOString(),
+    registeredAt: existing?.registeredAt || new Date().toISOString(),
+    token,
   })
   try {
     await redis.sadd(`webinar:reg:slots:${slot.id}`, email)
     await redis.setex(metaKey, 60 * 60 * 24 * 90, meta)
+    await redis.setex(
+      tokenKey(token),
+      60 * 60 * 24 * 90,
+      JSON.stringify({ email, name, slotId: slot.id, startsAt: slot.startsAt ?? null }),
+    )
     await redis.setex(`unsub:${unsubToken}`, 60 * 60 * 24 * 365, email)
   } catch {
     // Redis is optional for the mail flow - a missing counter must not

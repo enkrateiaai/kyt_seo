@@ -8,6 +8,7 @@ import {
   pickLiveWebinar,
   webinarPhase,
 } from '@/lib/webinar'
+import { recordView } from '@/lib/webinarAttendance'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -40,6 +41,14 @@ export async function GET(request: NextRequest) {
   const target = new URL(`/api/files/${encodeURIComponent(webinar.filename)}/stream`, STUDIO_BASE + '/')
   const range = request.headers.get('range')
 
+  // Who is watching and since when. The token comes from the personal link,
+  // direct visitors are only counted.
+  const token = request.nextUrl.searchParams.get('token')?.trim() || null
+  const ip =
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    null
+
   const headers: Record<string, string> = { authorization: `Bearer ${STUDIO_TOKEN}` }
   if (range) headers.range = range
 
@@ -53,6 +62,10 @@ export async function GET(request: NextRequest) {
         headers,
       },
       (upstream) => {
+        // Only a video that really starts counts as attendance.
+        if ((upstream.statusCode ?? 500) < 400) {
+          void recordView(webinar.id, token, ip)
+        }
         const outHeaders = new Headers()
         for (const name of PASS_THROUGH) {
           const value = upstream.headers[name]

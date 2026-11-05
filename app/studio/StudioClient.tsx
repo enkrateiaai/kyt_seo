@@ -1715,6 +1715,28 @@ function webinarPhaseOf(w: WebinarState, nowMs: number): { text: string; color: 
   return { text: 'Ohne Zeitlimit', color: C.faint, bg: C.bg }
 }
 
+// One person who booked a webinar slot, with the time she came in.
+type WebinarAttendeeRow = {
+  email: string
+  name: string
+  registeredAt: string
+  joinedAt: string | null
+  lastSeenAt: string | null
+  watchedMinutes: number
+  live: boolean
+}
+
+function fmtClock(iso: string | null): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString('de-DE', {
+    timeZone: 'Europe/Berlin',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function WebinarPanel({
   API, files, cardStyle, labelStyle, btnPrimary, btnSmall, inputStyle,
   flash, onUpload, uploading,
@@ -1732,6 +1754,8 @@ function WebinarPanel({
 }) {
   const [items, setItems] = useState<WebinarState[]>([])
   const [registrations, setRegistrations] = useState<Record<string, number>>({})
+  const [attendees, setAttendees] = useState<Record<string, WebinarAttendeeRow[]>>({})
+  const [liveViewers, setLiveViewers] = useState<Record<string, number>>({})
   const [editingId, setEditingId] = useState<string | null>(null)
   const [filename, setFilename] = useState('')
   const [title, setTitle] = useState('')
@@ -1786,6 +1810,8 @@ function WebinarPanel({
 
         // Anmeldungen pro Slot (kommt aus dem Redis der Website).
         const counts: Record<string, number> = {}
+        const rows: Record<string, WebinarAttendeeRow[]> = {}
+        const live: Record<string, number> = {}
         await Promise.all(
           list.map(async (w) => {
             try {
@@ -1793,11 +1819,15 @@ function WebinarPanel({
               if (r.ok) {
                 const d = await r.json()
                 counts[w.id] = Number(d?.registrations) || 0
+                rows[w.id] = Array.isArray(d?.attendees) ? (d.attendees as WebinarAttendeeRow[]) : []
+                live[w.id] = Number(d?.liveViewers) || 0
               }
             } catch { /* Zaehler optional */ }
           }),
         )
         setRegistrations(counts)
+        setAttendees(rows)
+        setLiveViewers(live)
       }
     } catch { /* Studio nicht erreichbar */ }
     setLoaded(true)
@@ -1847,6 +1877,11 @@ function WebinarPanel({
   }, [flash, load])
 
   useEffect(() => { load(); loadSeries() }, [load, loadSeries])
+  // While a webinar runs, the attendee list and the viewer count change.
+  useEffect(() => {
+    const timer = setInterval(() => { load() }, 15_000)
+    return () => clearInterval(timer)
+  }, [load])
   useEffect(() => { autoTopUp() }, [autoTopUp])
 
   const resetForm = () => {
@@ -2047,6 +2082,11 @@ function WebinarPanel({
                   <span style={{ fontSize: 11, color: C.muted }}>
                     Anmeldungen: <strong style={{ color: C.text }}>{registrations[w.id] ?? 0}</strong>
                   </span>
+                  {liveViewers[w.id] ? (
+                    <span style={{ fontSize: 11, color: C.green, fontWeight: 700 }}>
+                      · schauen jetzt: {liveViewers[w.id]}
+                    </span>
+                  ) : null}
                   <button style={btnSmall('ghost')} onClick={() => copySlotLink(w)} disabled={busy}>
                     Termin-Link kopieren
                   </button>
@@ -2058,6 +2098,41 @@ function WebinarPanel({
                     Anmelde-Link kopieren
                   </button>
                 </div>
+                {(attendees[w.id]?.length ?? 0) > 0 && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      paddingTop: 8,
+                      borderTop: `1px solid ${C.border}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 3,
+                    }}
+                  >
+                    {attendees[w.id].map(a => (
+                      <div
+                        key={a.email}
+                        style={{
+                          fontSize: 11,
+                          color: a.live ? C.text : C.muted,
+                          display: 'flex',
+                          gap: 6,
+                          flexWrap: 'wrap',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>{a.name || a.email}</span>
+                        <span>
+                          {a.joinedAt ? `dabei seit ${fmtClock(a.joinedAt)}` : 'noch nicht dabei'}
+                        </span>
+                        {a.watchedMinutes > 0 ? <span>· {a.watchedMinutes} Min. geschaut</span> : null}
+                        {a.live ? (
+                          <span style={{ color: C.green, fontWeight: 700 }}>· schaut gerade</span>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}

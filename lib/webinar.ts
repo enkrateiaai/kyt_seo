@@ -91,6 +91,16 @@ export function buildSlotLink(slot: WebinarConfig): string {
   return url.toString()
 }
 
+// The personal link of one booking. The token identifies the person, so the
+// studio can show who came in and since when.
+export function buildPersonalSlotLink(slot: WebinarConfig, token: string): string {
+  const url = new URL(`${SITE_URL}/webinar`)
+  url.searchParams.set('slot', slot.id)
+  if (slot.startsAt) url.searchParams.set('t', slot.startsAt)
+  if (token) url.searchParams.set('token', token)
+  return url.toString()
+}
+
 // The public registration page.
 export function buildRegistrationLink(): string {
   return `${SITE_URL}/webinar-anmeldung`

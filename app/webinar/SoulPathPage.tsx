@@ -74,7 +74,7 @@ const expectations = [
   'Meine Vision hinter Soul Path.',
 ]
 
-export default async function SoulPathPage({ slotId }: { slotId?: string }) {
+export default async function SoulPathPage({ slotId, token }: { slotId?: string; token?: string }) {
   // The schedule is the single source of truth: the page shows the video of
   // the webinar that is currently scheduled and playable, and nothing else.
   // With a slot id the page is pinned to exactly that slot.
@@ -141,6 +141,7 @@ export default async function SoulPathPage({ slotId }: { slotId?: string }) {
             ctaUrl={ctaUrl}
             ctaLabel={ctaLabel}
             slotId={slotId}
+            token={token}
           />
 
           <p style={{ fontSize: 13, color: C.muted, margin: '18px 0 0', lineHeight: 1.7 }}>

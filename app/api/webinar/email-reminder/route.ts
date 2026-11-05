@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import redis from '@/lib/redis'
-import { STUDIO_TOKEN, buildSlotLink, fetchWebinars } from '@/lib/webinar'
+import { STUDIO_TOKEN, buildPersonalSlotLink, buildSlotLink, fetchWebinars } from '@/lib/webinar'
 import { WebinarConfig } from '@/lib/webinarSchedule'
 import { isResendConfigured, sendResendEmail } from '@/lib/resend'
 import { buildReminderMail } from '@/lib/webinarReminderMail'
+import { ensureToken, getRegistration } from '@/lib/webinarAttendance'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -156,8 +157,13 @@ export async function GET(request: NextRequest) {
         results.push({ slotId: slot.id, email, skipped: 'already sent' })
         continue
       }
-      const name = await registeredName(slot.id, email)
-      const mail = buildReminderMail({ slot, link, minutes, name })
+      const registration = await getRegistration(slot.id, email)
+      const name = registration?.name || (await registeredName(slot.id, email))
+      // Everyone gets the personal link of their own booking, so the studio
+      // can see who watched and since when.
+      const token = registration ? await ensureToken(slot.id, email, registration) : ''
+      const memberLink = token ? buildPersonalSlotLink(slot, token) : link
+      const mail = buildReminderMail({ slot, link: memberLink, minutes, name })
       if (dryRun) {
         results.push({ slotId: slot.id, email, name, dryRun: true, subject: mail.subject })
         continue
