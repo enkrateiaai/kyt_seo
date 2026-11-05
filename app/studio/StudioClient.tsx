@@ -152,20 +152,63 @@ function berlinToUTC(dateStr: string, hour: number, minute: number): Date {
 
 function buildSlots(): SlotDef[] {
   const slots: SlotDef[] = []
+  for (const day of buildDays(14)) {
+    slots.push({ date: day.date, label: day.label, slot: 1 })
+    slots.push({ date: day.date, label: day.label, slot: 2 })
+    // Sonntag: dritter Programmslot 20:30 (nur Sonntage).
+    if (day.dow === 0) slots.push({ date: day.date, label: day.label, slot: 3 })
+  }
+  return slots
+}
+
+// Die Kalendertage der Studio-Ansicht (heute + 13 Tage).
+function buildDays(count: number): { date: string; label: string; dow: number }[] {
   const now = new Date()
   const DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
   const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
-  for (let i = 0; i < 14; i++) {
+  const days: { date: string; label: string; dow: number }[] = []
+  for (let i = 0; i < count; i++) {
     const d = new Date(now); d.setDate(now.getDate() + i); d.setHours(0, 0, 0, 0)
-    const dateStr = localDateStr(d)
-    const dow = d.getDay()
-    const label = `${DAYS[dow]} ${d.getDate()} ${MONTHS[d.getMonth()]}`
-    slots.push({ date: dateStr, label, slot: 1 })
-    slots.push({ date: dateStr, label, slot: 2 })
-    // Sonntag: dritter Programmslot 20:30 (nur Sonntage).
-    if (dow === 0) slots.push({ date: dateStr, label, slot: 3 })
+    days.push({ date: localDateStr(d), label: `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`, dow: d.getDay() })
   }
-  return slots
+  return days
+}
+
+// Ist an diesem Tag abends schon etwas geplant? Dann wird der
+// Sonntags-Live-Slot nicht automatisch angelegt.
+function hasEveningJob(date: string, jobs: ScheduledJob[]): boolean {
+  const dayStart = berlinToUTC(date, 0, 0).getTime()
+  const dayEnd = berlinToUTC(date, 23, 59).getTime()
+  const eveningStart = berlinToUTC(date, 18, 0).getTime()
+  return jobs.some(j => {
+    const t = new Date(j.datetime).getTime()
+    return t >= dayStart && t <= dayEnd && t >= eveningStart
+  })
+}
+
+// Merkt sich je Sonntag, was mit dem Live-Standard passiert ist:
+// 'live' = selbst angelegt, 'set' = vom User belegt, 'off' = vom User geloescht.
+const SUNDAY_LIVE_KEY = 'kyt-sunday-live-slots-v1'
+type SundayLiveState = Record<string, 'live' | 'set' | 'off'>
+
+function loadSundayLiveState(): SundayLiveState {
+  try { return JSON.parse(localStorage.getItem(SUNDAY_LIVE_KEY) ?? '{}') } catch { return {} }
+}
+
+function saveSundayLiveState(state: SundayLiveState) {
+  try { localStorage.setItem(SUNDAY_LIVE_KEY, JSON.stringify(state)) } catch {}
+}
+
+function markSundayLive(date: string, value: 'live' | 'set' | 'off') {
+  const state = loadSundayLiveState()
+  if (state[date] === value) return
+  state[date] = value
+  saveSundayLiveState(state)
+}
+
+// Das Datum (Europe/Berlin) eines Zeitstempels als 'YYYY-MM-DD'.
+function berlinDayKey(ms: number): string {
+  return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' })
 }
 
 // Wie weit ein Job von der Slot-Zeit abweichen darf, damit er dem Slot 3
@@ -332,6 +375,7 @@ export default function StudioClient() {
     return m
   }, [files])
   const [status, setStatus] = useState<StreamStatus>({ running: false, scheduled: [] })
+  const [statusLoaded, setStatusLoaded] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadPct, setUploadPct] = useState(0)
   const [msg, setMsg] = useState('')
@@ -537,9 +581,46 @@ export default function StudioClient() {
   const loadStatus = useCallback(async () => {
     try {
       const r = await fetch(`${API}/stream/status`)
-      if (r.ok) { setStatus(await r.json()); setStatusError(false) } else setStatusError(true)
+      if (r.ok) { setStatus(await r.json()); setStatusError(false); setStatusLoaded(true) } else setStatusError(true)
     } catch { setStatusError(true) }
   }, [])
+
+  // Sonntags-Slot 3 (20:30) ist standardmaessig "live". Beim Oeffnen des
+  // Studios wird der Live-Slot automatisch angelegt, wenn dort abends noch
+    // nichts geplant ist - ein Video aus der Mediathek ersetzt ihn jederzeit.
+  const sundayEnsuringRef = useRef(false)
+
+  const postLiveJob = useCallback(async (utcDate: Date): Promise<boolean> => {
+    try {
+      const r = await fetch(`${API}/stream/schedule`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'live', streamKey: 'live', datetime: utcDate.toISOString() }),
+      })
+      return r.ok
+    } catch { return false }
+  }, [])
+
+  const ensureSundayLiveSlots = useCallback(async () => {
+    if (!statusLoaded) return
+    if (sundayEnsuringRef.current) return
+    sundayEnsuringRef.current = true
+    try {
+      const state = loadSundayLiveState()
+      let changed = false
+      for (const day of buildDays(14).filter(d => d.dow === 0)) {
+        if (state[day.date]) continue
+        const t = defaultSlotTime(day.date, 3)
+        const [hh, mm] = t.split(':').map(Number)
+        const utcDate = berlinToUTC(day.date, hh, mm)
+        if (utcDate.getTime() < Date.now()) continue
+        if (hasEveningJob(day.date, status.scheduled)) { state[day.date] = 'set'; changed = true; continue }
+        if (await postLiveJob(utcDate)) { state[day.date] = 'live'; changed = true }
+      }
+      if (changed) { saveSundayLiveState(state); loadStatus() }
+    } finally { sundayEnsuringRef.current = false }
+  }, [statusLoaded, status.scheduled, postLiveJob, loadStatus])
+
+  useEffect(() => { ensureSundayLiveSlots() }, [ensureSundayLiveSlots])
 
   const loadDiag = useCallback(async () => {
     const [logR, srsR] = await Promise.allSettled([
@@ -782,7 +863,10 @@ export default function StudioClient() {
       body: JSON.stringify({ filename, streamKey: 'live', datetime: utcDate.toISOString() }),
     })
     const d = await r.json().catch(() => ({}))
-    if (r.ok) addHistory({ datetime: utcDate.toISOString(), filename, mode: 'video' })
+    if (r.ok) {
+      addHistory({ datetime: utcDate.toISOString(), filename, mode: 'video' })
+      if (slot.slot === 3) markSundayLive(slot.date, 'set')
+    }
     flash(r.ok ? `Eingeplant: ${filename} um ${t}` : (d.error || `Fehler ${r.status}`), r.ok ? false : true)
     setAssigning(null); loadStatus()
   }
@@ -797,7 +881,10 @@ export default function StudioClient() {
       body: JSON.stringify({ mode: 'live', streamKey: 'live', datetime: utcDate.toISOString() }),
     })
     const d = await r.json().catch(() => ({}))
-    if (r.ok) addHistory({ datetime: utcDate.toISOString(), mode: 'live' })
+    if (r.ok) {
+      addHistory({ datetime: utcDate.toISOString(), mode: 'live' })
+      if (slot.slot === 3) markSundayLive(slot.date, 'live')
+    }
     flash(r.ok ? `🔴 Live-Slot gesetzt: ${t} (manuell via OBS starten)` : (d.error || `Fehler ${r.status}`), r.ok ? false : true)
     setAssigning(null); loadStatus()
   }
@@ -805,6 +892,13 @@ export default function StudioClient() {
   async function cancelSlot(jobId: string, datetime: string) {
     await fetch(`${API}/stream/schedule/${jobId}`, { method: 'DELETE' })
     removeHistory(datetime)
+    // Sonntags-Live-Slot selbst geloescht -> nicht automatisch wieder anlegen.
+    const ms = new Date(datetime).getTime()
+    if (Number.isFinite(ms)) {
+      const dayKey = berlinDayKey(ms)
+      const isSunday = new Date(dayKey + 'T12:00:00').getDay() === 0
+      if (isSunday && ms >= berlinToUTC(dayKey, 18, 0).getTime()) markSundayLive(dayKey, 'off')
+    }
     loadStatus()
   }
 
@@ -1235,7 +1329,7 @@ export default function StudioClient() {
                     <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const, width: 110 }}>Datum</th>
                     <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 1</th>
                     <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 2</th>
-                    <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 3 (So)</th>
+                    <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 3 (So 20:30)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1251,20 +1345,16 @@ export default function StudioClient() {
                       <tr key={date} style={{ borderBottom: `1px solid ${C.border}`, background: rowIdx % 2 === 0 ? 'transparent' : 'rgba(221,213,200,.15)' }}>
                         <td style={{ padding: '10px 12px', color: C.muted, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 500 }}>{slot1.label}</td>
                         {[slot1, slot2, slot3].map((slot, slotIdx) => {
-                          if (!slot) {
-                            return (
-                              <td key={`slot-${slotIdx}`} style={{ padding: '8px 12px' }}>
-                                <span style={{ color: C.faint, fontSize: 11 }}>—</span>
-                              </td>
-                            )
-                          }
+                          if (!slot) return null
                           const t = getSlotTime(slot)
                           const job = slot.slot === 3 ? slot3Job : matchJob(slot, jobs12, t)
                           const [hh, mm] = t.split(':').map(Number)
                           const slotDt = berlinToUTC(slot.date, hh, mm)
                           const isPast = slotDt.getTime() < Date.now()
                           return (
-                            <td key={slot.slot} style={{ padding: '8px 12px' }}>
+                            // Ohne Sonntags-Slot 3 spaltet Slot 2 die Spalte mit,
+                            // damit die Zeile wie vorher aussieht.
+                            <td key={slot.slot} colSpan={slotIdx === 1 && !slot3 ? 2 : 1} style={{ padding: '8px 12px' }}>
                               {job ? (
                                 job.mode === 'live' ? (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: C.redLight, border: `1px solid ${C.red}`, borderRadius: 5 }}>
