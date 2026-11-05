@@ -74,7 +74,7 @@ type FlaskStatus = {
   diskUsedPct: number
   lastInfo: { filename?: string }
 }
-type SlotDef = { date: string; label: string; slot: 1 | 2 }
+type SlotDef = { date: string; label: string; slot: 1 | 2 | 3 }
 
 function fmt(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -92,7 +92,9 @@ function localDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
-function defaultSlotTime(date: string, slot: 1 | 2): string {
+function defaultSlotTime(date: string, slot: 1 | 2 | 3): string {
+  // Slot 3: Sonntags-Programmslot 20:30 (Europe/Berlin) - feste Zeit.
+  if (slot === 3) return '20:30'
   const dow = new Date(date + 'T12:00:00').getDay()
   const isWeekend = dow === 0 || dow === 6
   const baseSlot1 = isWeekend ? '07:00' : '06:30'
@@ -160,16 +162,38 @@ function buildSlots(): SlotDef[] {
     const label = `${DAYS[dow]} ${d.getDate()} ${MONTHS[d.getMonth()]}`
     slots.push({ date: dateStr, label, slot: 1 })
     slots.push({ date: dateStr, label, slot: 2 })
+    // Sonntag: dritter Programmslot 20:30 (nur Sonntage).
+    if (dow === 0) slots.push({ date: dateStr, label, slot: 3 })
   }
   return slots
 }
 
-function matchJob(slot: SlotDef, jobs: ScheduledJob[]): ScheduledJob | undefined {
+// Wie weit ein Job von der Slot-Zeit abweichen darf, damit er dem Slot 3
+// (Sonntag 20:30) zugeordnet wird.
+const SLOT3_TOLERANCE_MS = 45 * 60 * 1000
+
+function dayJobsFor(slot: SlotDef, jobs: ScheduledJob[]): ScheduledJob[] {
   const dayStart = berlinToUTC(slot.date, 0, 0).getTime()
   const dayEnd = berlinToUTC(slot.date, 23, 59).getTime()
-  const dayJobs = jobs
+  return jobs
     .filter(j => { const t = new Date(j.datetime).getTime(); return t >= dayStart && t <= dayEnd })
     .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
+}
+
+function matchJob(slot: SlotDef, jobs: ScheduledJob[], time: string): ScheduledJob | undefined {
+  const dayJobs = dayJobsFor(slot, jobs)
+  if (slot.slot === 3) {
+    // Slot 3 (Sonntag 20:30): der Job, der am naechsten an der Slot-Zeit
+    // liegt - der Live-Job um 20:30 darf nicht in Spalte 1/2 landen, nur
+    // weil dort kein Video geplant ist.
+    const [hh, mm] = time.split(':').map(Number)
+    const slotMs = berlinToUTC(slot.date, hh, mm).getTime()
+    return dayJobs
+      .filter(j => Math.abs(new Date(j.datetime).getTime() - slotMs) <= SLOT3_TOLERANCE_MS)
+      .sort((a, b) =>
+        Math.abs(new Date(a.datetime).getTime() - slotMs) - Math.abs(new Date(b.datetime).getTime() - slotMs),
+      )[0]
+  }
   return dayJobs[slot.slot - 1]
 }
 
@@ -767,6 +791,7 @@ export default function StudioClient() {
     const t = getSlotTime(slot)
     const [hh, mm] = t.split(':').map(Number)
     const utcDate = berlinToUTC(slot.date, hh, mm)
+    if (utcDate.getTime() < Date.now()) { flash('Slot liegt in der Vergangenheit — bitte andere Zeit wählen'); return }
     const r = await fetch(`${API}/stream/schedule`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'live', streamKey: 'live', datetime: utcDate.toISOString() }),
@@ -928,7 +953,7 @@ export default function StudioClient() {
               onMouseLeave={e => (e.currentTarget.style.background = C.redLight)}>
               <span style={{ fontSize: 16, lineHeight: 1 }}>🔴</span>
               <span style={{ flex: 1, fontWeight: 700, fontSize: 13, color: C.red }}>I stream live</span>
-              <span style={{ fontSize: 10, color: C.muted }}>kein Auto-Start</span>
+              <span style={{ fontSize: 10, color: C.muted }}>{assigning.slot === 3 ? 'Standard für diesen Slot' : 'kein Auto-Start'}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <div style={{ flex: 1, height: 1, background: C.border }} />
@@ -1210,18 +1235,31 @@ export default function StudioClient() {
                     <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const, width: 110 }}>Datum</th>
                     <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 1</th>
                     <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 2</th>
+                    <th style={{ textAlign: 'left', padding: '6px 12px', color: C.faint, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' as const }}>Slot 3 (So)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(groupedSlots).map(([date, daySlots], rowIdx) => {
                     const slot1 = daySlots.find(s => s.slot === 1)!
                     const slot2 = daySlots.find(s => s.slot === 2)!
+                    const slot3 = daySlots.find(s => s.slot === 3)
+                    // Der Job im Sonntags-Slot 3 gehoert in Spalte 3 und nicht
+                    // in die Spalten 1+2 (Index-Matching der uebrigen Slots).
+                    const slot3Job = slot3 ? matchJob(slot3, status.scheduled, getSlotTime(slot3)) : undefined
+                    const jobs12 = slot3Job ? status.scheduled.filter(j => j.id !== slot3Job.id) : status.scheduled
                     return (
                       <tr key={date} style={{ borderBottom: `1px solid ${C.border}`, background: rowIdx % 2 === 0 ? 'transparent' : 'rgba(221,213,200,.15)' }}>
                         <td style={{ padding: '10px 12px', color: C.muted, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 500 }}>{slot1.label}</td>
-                        {[slot1, slot2].map(slot => {
+                        {[slot1, slot2, slot3].map((slot, slotIdx) => {
+                          if (!slot) {
+                            return (
+                              <td key={`slot-${slotIdx}`} style={{ padding: '8px 12px' }}>
+                                <span style={{ color: C.faint, fontSize: 11 }}>—</span>
+                              </td>
+                            )
+                          }
                           const t = getSlotTime(slot)
-                          const job = matchJob(slot, status.scheduled)
+                          const job = slot.slot === 3 ? slot3Job : matchJob(slot, jobs12, t)
                           const [hh, mm] = t.split(':').map(Number)
                           const slotDt = berlinToUTC(slot.date, hh, mm)
                           const isPast = slotDt.getTime() < Date.now()
@@ -1257,11 +1295,19 @@ export default function StudioClient() {
                               ) : isPast ? (
                                 <span style={{ color: C.faint, fontSize: 11 }}>—</span>
                               ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                   <input type="time" value={t}
                                     onChange={e => setSlotTimes(prev => ({ ...prev, [slotKey(slot)]: e.target.value }))}
                                     style={inputStyle} />
-                                  <button onClick={() => setAssigning(slot)} style={btnSmall('gold')}>+ Zuweisen</button>
+                                  {slot.slot === 3 ? (
+                                    <>
+                                      <button onClick={() => assignLiveSlot(slot)} style={{ ...btnSmall('danger'), fontWeight: 700 }}
+                                        title="Live-Slot (Standard) — Video aus der Mediathek wählbar">🔴 Live</button>
+                                      <button onClick={() => setAssigning(slot)} style={btnSmall('gold')}>+ Video</button>
+                                    </>
+                                  ) : (
+                                    <button onClick={() => setAssigning(slot)} style={btnSmall('gold')}>+ Zuweisen</button>
+                                  )}
                                 </div>
                               )}
                             </td>
