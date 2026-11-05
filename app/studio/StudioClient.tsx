@@ -1737,6 +1737,14 @@ function fmtClock(iso: string | null): string {
   })
 }
 
+// A slot counts as archived once its window is over.
+function isPastSlot(w: WebinarState, nowMs: number): boolean {
+  const raw = w.endsAt || w.startsAt
+  if (!raw) return false
+  const end = Date.parse(raw)
+  return Number.isFinite(end) && end < nowMs
+}
+
 function WebinarPanel({
   API, files, cardStyle, labelStyle, btnPrimary, btnSmall, inputStyle,
   flash, onUpload, uploading,
@@ -2016,41 +2024,10 @@ function WebinarPanel({
     }
   }
 
-  return (
-    <div style={{ ...cardStyle }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-        <span style={{ ...labelStyle, marginBottom: 0 }}>Webinar ({items.length})</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <a href="/webinar-anmeldung" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
-            Anmeldung öffnen ↗
-          </a>
-          <a href="/webinar" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
-            Seite öffnen ↗
-          </a>
-          <button style={btnSmall('gold')} onClick={resetForm} disabled={busy}>
-            + Neues Webinar
-          </button>
-          <button style={btnSmall('ghost')} onClick={load} disabled={busy}>Neu laden</button>
-        </div>
-      </div>
-
-      <p style={{ fontSize: 12, color: C.muted, margin: '0 0 10px', lineHeight: 1.7 }}>
-        Das Video läuft auf der öffentlichen Seite <strong>/webinar</strong> nur innerhalb des eingestellten
-        Zeitfensters (vor dem Start und nach dem Ende wird nichts ausgeliefert). Jeder Eintrag ist ein
-        Termin-Slot; mehrere Slots mit demselben Video sind parallel planbar.
-      </p>
-      <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.7 }}>
-        Über <strong>/webinar-anmeldung</strong> können sich Leute für einen Slot anmelden und
-        bekommen per Mail einen Link, der genau auf diesen Termin zeigt.
-      </p>
-
-      {/* Scheduled list */}
-      {items.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-          {items.map(w => {
-            const ph = webinarPhaseOf(w, now)
-            const isEditing = editingId === w.id
-            return (
+  const renderSlot = (w: WebinarState) => {
+    const ph = webinarPhaseOf(w, now)
+    const isEditing = editingId === w.id
+    return (
               <div
                 key={w.id}
                 style={{
@@ -2134,9 +2111,82 @@ function WebinarPanel({
                   </div>
                 )}
               </div>
-            )
-          })}
+    )
+  }
+
+  const activeSlots = items.filter(w => !isPastSlot(w, now))
+  const archivedSlots = items.filter(w => isPastSlot(w, now))
+
+  return (
+    <div style={{ ...cardStyle }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <span style={{ ...labelStyle, marginBottom: 0 }}>Webinar ({activeSlots.length})</span>
+        {archivedSlots.length > 0 ? (
+          <span style={{ fontSize: 11, color: C.faint }}>Archiv: {archivedSlots.length}</span>
+        ) : null}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <a href="/webinar-anmeldung" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
+            Anmeldung öffnen ↗
+          </a>
+          <a href="/webinar" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
+            Seite öffnen ↗
+          </a>
+          <button style={btnSmall('gold')} onClick={resetForm} disabled={busy}>
+            + Neues Webinar
+          </button>
+          <button style={btnSmall('ghost')} onClick={load} disabled={busy}>Neu laden</button>
         </div>
+      </div>
+
+      <p style={{ fontSize: 12, color: C.muted, margin: '0 0 10px', lineHeight: 1.7 }}>
+        Das Video läuft auf der öffentlichen Seite <strong>/webinar</strong> nur innerhalb des eingestellten
+        Zeitfensters (vor dem Start und nach dem Ende wird nichts ausgeliefert). Jeder Eintrag ist ein
+        Termin-Slot; mehrere Slots mit demselben Video sind parallel planbar.
+      </p>
+      <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.7 }}>
+        Über <strong>/webinar-anmeldung</strong> können sich Leute für einen Slot anmelden und
+        bekommen per Mail einen Link, der genau auf diesen Termin zeigt.
+      </p>
+
+      {/* Scheduled list */}
+      {activeSlots.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+          {activeSlots.map(renderSlot)}
+        </div>
+      )}
+
+      {/* Archiv: abgelaufene Termine, eingeklappt */}
+      {archivedSlots.length > 0 && (
+        <details
+          style={{
+            marginBottom: 20,
+            border: `1px solid ${C.border}`,
+            borderRadius: 6,
+            background: C.bg,
+          }}
+        >
+          <summary
+            style={{
+              cursor: 'pointer',
+              padding: 12,
+              fontSize: 13,
+              fontWeight: 600,
+              color: C.muted,
+            }}
+          >
+            Archiv · {archivedSlots.length} alte Termine — aufklappen
+          </summary>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              padding: '0 12px 12px',
+            }}
+          >
+            {archivedSlots.map(renderSlot)}
+          </div>
+        </details>
       )}
       {loaded && items.length === 0 && (
         <div style={{ color: C.faint, fontSize: 13, marginBottom: 16 }}>
