@@ -387,6 +387,13 @@ export default function StudioClient() {
   const [slotTimes, setSlotTimes] = useState<Record<string, string>>({})
   const [seekDraft, setSeekDraft] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  // Beim Loeschen eines kommenden Slots erst nachfragen: loeschen oder live?
+  const [slotDeleteAsk, setSlotDeleteAsk] = useState<{
+    jobId: string
+    datetime: string
+    when: string
+    isLive: boolean
+  } | null>(null)
   const [videoKey, setVideoKey] = useState(0)
   const [liveKey, setLiveKey] = useState(() => Date.now())
   const [statusError, setStatusError] = useState(false)
@@ -889,7 +896,8 @@ export default function StudioClient() {
     setAssigning(null); loadStatus()
   }
 
-  async function cancelSlot(jobId: string, datetime: string) {
+  // Loescht einen geplanten Slot beim Studio-API.
+  async function deleteSlotJob(jobId: string, datetime: string) {
     await fetch(`${API}/stream/schedule/${jobId}`, { method: 'DELETE' })
     removeHistory(datetime)
     // Sonntags-Live-Slot selbst geloescht -> nicht automatisch wieder anlegen.
@@ -898,6 +906,52 @@ export default function StudioClient() {
       const dayKey = berlinDayKey(ms)
       const isSunday = new Date(dayKey + 'T12:00:00').getDay() === 0
       if (isSunday && ms >= berlinToUTC(dayKey, 18, 0).getTime()) markSundayLive(dayKey, 'off')
+    }
+    loadStatus()
+  }
+
+  // Klick auf "Loeschen": bei kommenden Slots erst nachfragen, weil sich
+  // "Slot loeschen" und "Slot live schalten" beim Bediener leicht verwechseln.
+  function askDeleteSlot(job: ScheduledJob) {
+    const ms = new Date(job.datetime).getTime()
+    // Slot laeuft schon oder liegt in der Vergangenheit -> direkt loeschen,
+    // live schalten ist dann nicht mehr moeglich.
+    if (!Number.isFinite(ms) || ms <= Date.now()) {
+      deleteSlotJob(job.id, job.datetime)
+      return
+    }
+    setSlotDeleteAsk({
+      jobId: job.id,
+      datetime: job.datetime,
+      when: new Date(job.datetime).toLocaleString('de-DE', {
+        timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+      }),
+      isLive: job.mode === 'live',
+    })
+  }
+
+  // Aus einem Video-Slot einen Live-Slot machen. Wichtig: erst den alten Job
+  // loeschen - die Studio-API legt pro POST einen neuen Job an, sonst laeuft
+  // der Video-Timer des alten Slots parallel und das Video startet statt OBS.
+  async function switchSlotToLive(jobId: string, datetime: string) {
+    await fetch(`${API}/stream/schedule/${jobId}`, { method: 'DELETE' })
+    const r = await fetch(`${API}/stream/schedule`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'live', streamKey: 'live', datetime }),
+    })
+    const d = await r.json().catch(() => ({}))
+    if (r.ok) {
+      addHistory({ datetime, mode: 'live' })
+      const ms = new Date(datetime).getTime()
+      if (Number.isFinite(ms)) {
+        const dayKey = berlinDayKey(ms)
+        const isSunday = new Date(dayKey + 'T12:00:00').getDay() === 0
+        if (isSunday && ms >= berlinToUTC(dayKey, 18, 0).getTime()) markSundayLive(dayKey, 'live')
+      }
+      flash('🔴 Live-Slot gesetzt - jetzt manuell via OBS starten')
+    } else {
+      flash(d.error || `Fehler ${r.status}`, true)
     }
     loadStatus()
   }
@@ -1030,6 +1084,36 @@ export default function StudioClient() {
             <div style={{ display: 'flex', gap: 8 }}>
               <button style={btnPrimary(true)} onClick={confirmAndDelete}>Ja, löschen</button>
               <button style={btnSmall('ghost')} onClick={() => setConfirmDelete(null)}>Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slot loeschen? Frage: wirklich loeschen oder live schalten? */}
+      {slotDeleteAsk && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ ...card, maxWidth: 420, width: 'calc(100% - 32px)', boxShadow: '0 12px 32px rgba(44,36,22,.15)' }}>
+            <span style={label}>Slot {slotDeleteAsk.when}</span>
+            <p style={{ color: C.text, fontSize: 13, marginBottom: 6, fontWeight: 600 }}>Wirklich löschen — oder soll der Slot live gehen?</p>
+            <p style={{ color: C.muted, fontSize: 12, marginBottom: 20 }}>
+              {slotDeleteAsk.isLive
+                ? 'Der Slot ist bereits als Live eingetragen (🔴). Beobachte ihn beim Starten und entscheide dann.'
+                : 'Wenn du heute selbst streamen willst, wähle „Live schalten“ — der Slot startet dann als Live-Stream über OBS statt mit einem Video.'}
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button style={btnPrimary(true)} onClick={async () => {
+                const ask = slotDeleteAsk
+                setSlotDeleteAsk(null)
+                await deleteSlotJob(ask.jobId, ask.datetime)
+              }}>Ja, löschen</button>
+              {!slotDeleteAsk.isLive && (
+                <button style={{ ...btnSmall('danger'), fontWeight: 700 }} onClick={async () => {
+                  const ask = slotDeleteAsk
+                  setSlotDeleteAsk(null)
+                  await switchSlotToLive(ask.jobId, ask.datetime)
+                }}>🔴 Live schalten</button>
+              )}
+              <button style={btnSmall('ghost')} onClick={() => setSlotDeleteAsk(null)}>Abbrechen</button>
             </div>
           </div>
         </div>
@@ -1363,7 +1447,7 @@ export default function StudioClient() {
                                       <div style={{ fontSize: 11, fontWeight: 700, color: C.red }}>{formatJobTime(job.datetime)}</div>
                                       <div style={{ fontSize: 11, color: C.red, fontWeight: 600 }}>Live — manuell via OBS starten</div>
                                     </div>
-                                    <button onClick={() => cancelSlot(job.id, job.datetime)} style={btnSmall('danger')}>×</button>
+                                    <button onClick={() => askDeleteSlot(job)} style={btnSmall('danger')} title="Loeschen oder live schalten">×</button>
                                   </div>
                                 ) : (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1379,7 +1463,7 @@ export default function StudioClient() {
                                       <div style={{ fontSize: 11, fontWeight: 700, color: C.green }}>{formatJobTime(job.datetime)}</div>
                                       <div style={{ fontSize: 11, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{job.filename}</div>
                                     </div>
-                                    <button onClick={() => cancelSlot(job.id, job.datetime)} style={btnSmall('danger')}>×</button>
+                                    <button onClick={() => askDeleteSlot(job)} style={btnSmall('danger')} title="Loeschen oder live schalten">×</button>
                                   </div>
                                 )
                               ) : isPast ? (
@@ -1569,7 +1653,7 @@ export default function StudioClient() {
                         </div>
                         <div style={{ textAlign: 'right' as const, flexShrink: 0 }}>
                           <div style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>{minutesLeft > 0 ? `in ${minutesLeft} min` : 'gleich'}</div>
-                          <button onClick={() => cancelSlot(j.id, j.datetime)} style={btnSmall('danger')}>Löschen</button>
+                          <button onClick={() => askDeleteSlot(j)} style={btnSmall('danger')} title="Loeschen oder live schalten">Löschen</button>
                         </div>
                       </div>
                     )
