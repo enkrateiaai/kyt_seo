@@ -4,22 +4,32 @@ import { NextRequest, NextResponse } from 'next/server'
  * POST /api/clerk/create-member
  *
  * Wird aus der Shop-Automation (n8n) nach einer NEUEN Bestellung aufgerufen.
- * Legt den Clerk-Nutzer an (falls es ihn noch nicht gibt) und setzt die
- * passende Tribe-Berechtigung:
+ * Legt den Clerk-Nutzer an (falls es ihn noch nicht gibt), setzt die
+ * passende Tribe-Berechtigung und erstellt fuer NEUE Kunden zusaetzlich eine
+ * Clerk-Einladung, damit der Kunde sein Passwort selbst waehlt.
  *
  *   tier "live"  -> The Tribe (mit lives)  -> role "mitlives"
  *   tier "video" -> The Tribe (ohne lives) -> role "ohnelives"
  *
  * Body (JSON):
  *   { "email": "kunde@example.com", "firstName": "...", "lastName": "...",
- *     "tier": "live" | "video", "password": "...", "orderNumber": "1234" }
+ *     "tier": "live" | "video", "password": "...", "orderNumber": "1234",
+ *     "sendInvite": true }
+ *
+ * "sendInvite" (Default true): nur fuer NEU angelegte Nutzer. Bestandskunden
+ * bekommen keine Einladung - sie behalten ihr Passwort. Schlaegt die
+ * Einladung fehl, laeuft alles normal weiter (Fallback auf Passwort).
  *
  * Auth: entweder "Authorization: Bearer <CLERK_MEMBER_SECRET>" oder
  *       "secret" im Body. Identisch zum Muster von /api/clerk/set-member.
  *
- * Antwort: { ok, created, userId, email, tier, role, orgId, label, checked }
+ * Antwort: { ok, created, invited, inviteId, inviteUrl, inviteOk, userId,
+ *            email, tier, role, orgId, label, checked, orderNumber }
  */
 const CLERK_API = 'https://api.clerk.com/v1'
+
+const INVITE_REDIRECT_URL = 'https://kundaliniyogatribe.de/sign-up'
+const INVITE_VALID_DAYS = 14
 
 const TIERS = {
   live: {
@@ -61,6 +71,16 @@ async function clerkFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T
 }
 
+/**
+ * Die Clerk-REST-API liefert bei Listen ein reines Array (nicht { data: [...] }).
+ * Beide Formen akzeptieren, damit der Abruf robust bleibt.
+ */
+function asList(payload: any): any[] {
+  if (Array.isArray(payload)) return payload
+  if (payload && Array.isArray(payload.data)) return payload.data
+  return []
+}
+
 export async function POST(req: NextRequest) {
   const secret = process.env.CLERK_MEMBER_SECRET?.trim()
   if (!secret) {
@@ -74,6 +94,7 @@ export async function POST(req: NextRequest) {
     tier?: string
     password?: string
     orderNumber?: string | number
+    sendInvite?: boolean
     secret?: string
   }
   try {
@@ -94,12 +115,13 @@ export async function POST(req: NextRequest) {
 
   const tierKey: TierKey = body.tier === 'video' ? 'video' : 'live'
   const tier = TIERS[tierKey]
+  const sendInvite = body.sendInvite !== false
 
   try {
-    const list = await clerkFetch<{ data?: any[] }>(
+    const list = await clerkFetch<any>(
       `/users?email_address=${encodeURIComponent(email)}&limit=1`,
     )
-    const existing = list?.data?.[0] ?? null
+    const existing = asList(list)[0] ?? null
     let user: any = existing
     let created = false
 
@@ -133,6 +155,47 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Einladung nur fuer NEUE Kunden. Bestandskunden behalten ihr Passwort.
+    let invited = false
+    let inviteId: string | null = null
+    let inviteUrl: string | null = null
+    let inviteOk = false
+    let inviteError: string | null = null
+
+    if (sendInvite && created) {
+      try {
+        const invitation = await clerkFetch<any>('/invitations', {
+          method: 'POST',
+          body: JSON.stringify({
+            email_address: email,
+            public_metadata: publicMetadata,
+            redirect_url: INVITE_REDIRECT_URL,
+            ignore_existing: true,
+            expires_in_days: INVITE_VALID_DAYS,
+          }),
+        })
+        inviteId = invitation?.id ?? null
+        inviteUrl = invitation?.url ?? invitation?.publicUrl ?? null
+
+        // Zuruecklesen und die Einladung wirklich pruefen.
+        const invList = await clerkFetch<any>(
+          `/invitations?email_address=${encodeURIComponent(email)}&limit=10`,
+        )
+        const found = asList(invList).find((inv: any) => inv?.id === inviteId)
+        inviteOk = Boolean(
+          found &&
+            found.status === 'pending' &&
+            String(found.email_address ?? '').toLowerCase() === email &&
+            inviteUrl,
+        )
+        invited = inviteOk
+      } catch (e: any) {
+        // Einladung ist optional - der Kunde behält in jedem Fall sein Passwort.
+        inviteError = e?.message || 'invite failed'
+        console.error('Clerk invite error:', e)
+      }
+    }
+
     // Zuruecklesen und die Berechtigung wirklich pruefen.
     const check = await clerkFetch<any>(`/users/${user.id}`)
     const meta = (check?.public_metadata || {}) as Record<string, unknown>
@@ -143,6 +206,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: checked,
       created,
+      invited,
+      inviteId,
+      inviteUrl,
+      inviteOk,
+      inviteError,
       userId: user.id,
       email,
       tier: tierKey,
