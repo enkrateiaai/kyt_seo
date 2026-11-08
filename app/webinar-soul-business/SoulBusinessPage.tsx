@@ -332,7 +332,7 @@ export default async function SoulBusinessPage({
         <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
           <h2
             style={{
-              fontFamily: "'Cormorant Garamond', serif', fontSize: 'clamp(30px, 4vw, 44px)',
+              fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(30px, 4vw, 44px)',
               fontWeight: 400, lineHeight: 1.2, margin: '0 0 24px', color: C.warmWhite,
             }}
           >
