@@ -26,6 +26,45 @@ const EVENTS: EventItem[] = [
   { id: 'so-2026-10-25', date: '2026-10-25', time: '20:30', title: 'Sonntags-Meditation: Ankommen — die neue Aura', description: 'Geführte Meditation am Sonntagabend. Wir integrieren alles und feiern die neue Aura.', category: 'sonntag' },
 ]
 
+// Feste Sonntags-Meditation: Der Eintrag existiert an jedem Sonntag um 20:30 Uhr
+// und wird fuer den Kalender automatisch erzeugt - unabhaengig davon, ob ein
+// eigenes Thema hinterlegt ist. Die Themen der einzelnen Sonntage koennen
+// separat als EVENTS gepflegt werden (siehe oben).
+const SUNDAY_MEDITATION_TITLE = 'Sonntags-Meditation: Balance, Innere Ruhe und Klarheit'
+const SUNDAY_MEDITATION_DESCRIPTION =
+  'Gefuehrte Meditation am Sonntagabend um 20:30 Uhr fuer Balance, innere Ruhe und Klarheit. Wir kommen zur Ruhe, sammeln uns im Feld und lassen die Woche still ausklingen.'
+const SUNDAY_MEDITATION_TIME = '20:30'
+
+/**
+ * Baut alle Sonntags-Meditationen fuer ein Zeitfenster (Standard: 12 Monate
+ * zurueck und 6 Monate voraus) und haengt sie an die festen Themen.
+ */
+function buildSundayMeditations(
+  now: Date,
+  monthsBack = 12,
+  monthsForward = 6,
+): EventItem[] {
+  const out: EventItem[] = []
+  const start = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + monthsForward, 0)
+  const cursor = new Date(start)
+  while (cursor <= end) {
+    if (cursor.getDay() === 0) {
+      const iso = toISODate(cursor)
+      out.push({
+        id: `so-auto-${iso}`,
+        date: iso,
+        time: SUNDAY_MEDITATION_TIME,
+        title: SUNDAY_MEDITATION_TITLE,
+        description: SUNDAY_MEDITATION_DESCRIPTION,
+        category: 'sonntag',
+      })
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return out
+}
+
 const C = {
   bg: '#FAF7F2',
   bgWarm: '#F3EDE4',
@@ -132,10 +171,22 @@ export default function ProgrammContent() {
     return () => window.clearInterval(id)
   }, [])
 
+  // Alle Events: die fest gepflegten Themen plus die automatisch fuer jeden
+  // Sonntag erzeugte Meditation. Die generierten Eintraege überschreiben
+  // nichts - ein eigenes Sonntags-Thema gewinnt, weil es zuerst kommt.
+  const allEvents = useMemo(() => {
+    const generated = buildSundayMeditations(new Date())
+    const byDate = new Map<string, EventItem>()
+    for (const ev of generated) byDate.set(ev.date, ev)
+    // Feste Themen haben Vorrang vor dem generierten Eintrag.
+    for (const ev of EVENTS) byDate.set(ev.date, ev)
+    return [...byDate.values()]
+  }, [])
+
   // Events grouped by ISO date for the current month view
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventItem[]>()
-    for (const ev of EVENTS) {
+    for (const ev of allEvents) {
       const arr = map.get(ev.date) ?? []
       arr.push(ev)
       map.set(ev.date, arr)
@@ -145,16 +196,16 @@ export default function ProgrammContent() {
       arr.sort((a, b) => a.time.localeCompare(b.time))
     }
     return map
-  }, [])
+  }, [allEvents])
 
   // Upcoming events sorted by absolute datetime
   const upcoming = useMemo(() => {
     const nowD = new Date()
-    return [...EVENTS]
+    return [...allEvents]
       .map((ev) => ({ ev, dt: combineDateTime(ev.date, ev.time) }))
       .filter((x) => x.dt.getTime() >= nowD.getTime() - 1000)
       .sort((a, b) => a.dt.getTime() - b.dt.getTime())
-  }, [])
+  }, [allEvents])
 
   const nextEvent = upcoming[0] ?? null
 
