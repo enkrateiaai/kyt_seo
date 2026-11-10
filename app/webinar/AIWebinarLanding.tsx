@@ -219,7 +219,7 @@ export default function AIWebinarLanding({ invalidToken = false }: { invalidToke
           </div>
 
           <p style={{ color: '#8A7B72', fontSize: 13, margin: '20px 0 0', lineHeight: 1.7 }}>
-            Bezahlung über PayPal · Du bekommst sofort deinen persönlichen Zugangslink per E-Mail.
+            Sichere Zahlung via Stripe · Du bekommst sofort deinen persönlichen Zugangslink per E-Mail.
           </p>
         </div>
       </section>
