@@ -7,7 +7,7 @@ import { isResendConfigured, sendResendEmail } from '@/lib/resend'
 import { buildWebinarCheckoutMail } from '@/lib/webinarCheckoutMail'
 
 const WC_WEBINAR_PRODUCT_ID = 8365
-const TOKEN_TTL_SEC = 60 * 60 * 24 * 180 // 180 days
+const TOKEN_TTL_SEC = 60 * 60 * 24 * 30 // 30 days
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
