@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     const intent = await createWebinarPaymentIntent(name, email)
     return NextResponse.json({ clientSecret: intent.client_secret })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    // The detail goes into the log, the client gets a clean message.
+    console.error('[webinar] Checkout konnte nicht erstellt werden', e)
+    return NextResponse.json({ error: 'Checkout konnte nicht gestartet werden' }, { status: 500 })
   }
 }

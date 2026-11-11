@@ -29,7 +29,15 @@ export async function POST(req: NextRequest) {
   if (!paymentIntentId) return NextResponse.json({ error: 'paymentIntentId fehlt' }, { status: 400 })
 
   // 1. Verify payment
-  const intent = await retrievePaymentIntent(paymentIntentId)
+  let intent
+  try {
+    intent = await retrievePaymentIntent(paymentIntentId)
+  } catch (error) {
+    // Unknown or malformed payment intent (e.g. a reload with an old id).
+    // That is a normal client situation, not a server error.
+    console.error('[webinar] PaymentIntent konnte nicht geladen werden', paymentIntentId, error)
+    return NextResponse.json({ error: 'Zahlung nicht gefunden' }, { status: 404 })
+  }
   if (intent.status !== 'succeeded') {
     return NextResponse.json({ error: 'Zahlung nicht abgeschlossen', status: intent.status }, { status: 402 })
   }
