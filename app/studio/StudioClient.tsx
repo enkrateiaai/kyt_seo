@@ -1505,7 +1505,10 @@ export default function StudioClient() {
                           const t = getSlotTime(slot)
                           const baseT = baseSlotTime(slot.date, slot.slot)
                           const job = slot.slot === 3 ? slot3Job : matchJob(slot, jobs12, baseT)
-                          const [hh, mm] = baseT.split(':').map(Number)
+                          // isPast uses the today-adjusted time so today's empty slots still
+                          // show the input field (allowing ad-hoc scheduling), while future
+                          // past slots (yesterday etc.) correctly show "—".
+                          const [hh, mm] = t.split(':').map(Number)
                           const slotDt = berlinToUTC(slot.date, hh, mm)
                           const isPast = slotDt.getTime() < Date.now()
                           return (
