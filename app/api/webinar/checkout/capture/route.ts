@@ -5,12 +5,13 @@ import { createWcOrder } from '@/lib/woocommerce'
 import redis from '@/lib/redis'
 import { isResendConfigured, sendResendEmail } from '@/lib/resend'
 import { buildWebinarCheckoutMail } from '@/lib/webinarCheckoutMail'
+import { ACCESS_TTL_SECONDS, indexBuyer } from '@/lib/webinarAccess'
 
 const WC_WEBINAR_PRODUCT_ID = 8365
 const PRICE_CENTS = 2900
 const PRICE_CURRENCY = 'eur'
 const PRODUCT_KEY = 'ai-webinar'
-const TOKEN_TTL_SEC = 60 * 60 * 24 * 30 // 30 days
+const TOKEN_TTL_SEC = ACCESS_TTL_SECONDS // 30 days
 
 // Maps a payment to the token it produced. A double submit (retry, refresh)
 // must not hand out a second token, a second order and a second mail.
@@ -101,6 +102,16 @@ export async function POST(req: NextRequest) {
     } catch {
       return NextResponse.json({ error: 'Zugang konnte nicht gespeichert werden' }, { status: 500 })
     }
+  }
+
+  // 3b. Remember who bought it and which token belongs to them, so the
+  // buyer can be found again later (reminder mail, support) without asking
+  // the customer for their token. A failure here must not block the purchase:
+  // the access token itself is already stored.
+  try {
+    await indexBuyer(email, token)
+  } catch (error) {
+    console.error('[webinar] Käufer-Index konnte nicht geschrieben werden', error)
   }
 
   // 4. Send confirmation email
