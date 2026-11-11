@@ -447,11 +447,11 @@ export default function SoulPathVideo({
               Dieser Termin gibt es nicht (mehr)
             </span>
             <span className="kyt-webinar-notice-text" style={{ opacity: 0.72, maxWidth: 440 }}>
-              Der Link ist abgelaufen oder der Termin wurde verschoben. Wähle auf der
-              Anmeldeseite einfach einen neuen Termin.
+              Der Link ist abgelaufen oder der Termin wurde verschoben. Hol dir unter
+              /webinar einfach einen neuen Zugang.
             </span>
-            <a href="/webinar-anmeldung" className="kyt-btn kyt-btn--primary">
-              Termin wählen
+            <a href="/webinar" className="kyt-btn kyt-btn--primary">
+              Jetzt anmelden
             </a>
           </div>
         ) : (
@@ -502,10 +502,10 @@ export default function SoulPathVideo({
         <p style={{ color: C.muted, fontSize: 14, margin: '16px 0 0', lineHeight: 1.8 }}>
           Wenn du noch nicht gebucht hast, dann{' '}
           <a
-            href="/webinar-anmeldung"
+            href="/webinar"
             style={{ color: C.warmBrown, textDecoration: 'underline' }}
           >
-            Bitte hier zum Webinar anmelden
+            Hier zum Webinar anmelden
           </a>
           .
         </p>

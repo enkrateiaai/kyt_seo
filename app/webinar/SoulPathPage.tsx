@@ -332,10 +332,10 @@ export default async function SoulPathPage({ slotId, token }: { slotId?: string;
           <p style={{ color: '#B9A995', fontSize: 14, margin: '16px 0 0', lineHeight: 1.8 }}>
             Wenn du noch nicht gebucht hast, dann{' '}
             <a
-              href="/webinar-anmeldung"
+              href="/webinar"
               style={{ color: '#E2C898', textDecoration: 'underline' }}
             >
-              Bitte hier zum Webinar anmelden
+              Hier zum Webinar anmelden
             </a>
             .
           </p>

@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import http from 'http'
 import { Readable } from 'stream'
+import { auth } from '@clerk/nextjs/server'
+import { hasClerkServerConfig } from '@/lib/authConfig'
+import { getViewerUser, isAdminUser } from '@/lib/memberAccess'
 
 export const maxDuration = 300
 
 const STUDIO_BASE = process.env.STUDIO_API_URL ?? 'http://100.117.19.15:3500'
 const STUDIO_TOKEN = process.env.STUDIO_API_TOKEN ?? ''
+
+// This proxy injects the studio API token, so it is as powerful as the studio
+// itself: it can list and delete media, read the schedule and start streams.
+// Only studio admins may use it - without this check the endpoint was open
+// to anyone and handed out the studio token on every call.
+async function requireAdmin(): Promise<NextResponse | null> {
+  if (!hasClerkServerConfig()) {
+    return NextResponse.json({ error: 'Auth nicht konfiguriert' }, { status: 503 })
+  }
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user = await getViewerUser()
+  if (!isAdminUser(user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  return null
+}
 
 function nodeProxy(request: NextRequest, joined: string): Promise<NextResponse> {
   return new Promise((resolve) => {
@@ -61,6 +79,9 @@ async function streamProxy(request: NextRequest, joined: string): Promise<NextRe
 }
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  const denied = await requireAdmin()
+  if (denied) return denied
+
   const { path } = await context.params
   const joined = Array.isArray(path) ? path.join('/') : ''
   if (joined.endsWith('/stream') || joined.endsWith('/thumbnail')) return streamProxy(request, joined)

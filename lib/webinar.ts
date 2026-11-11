@@ -101,7 +101,7 @@ export function buildPersonalSlotLink(slot: WebinarConfig, token: string): strin
   return url.toString()
 }
 
-// The public registration page.
+// The public page of the paid webinar (checkout).
 export function buildRegistrationLink(): string {
-  return `${SITE_URL}/webinar-anmeldung`
+  return `${SITE_URL}/webinar`
 }

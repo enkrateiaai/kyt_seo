@@ -27,6 +27,7 @@ export default function WebinarCheckout() {
   const [touched, setTouched] = useState(false)
   const [status, setStatus]   = useState<'idle'|'loading'|'paying'|'success'|'error'>('idle')
   const [message, setMessage] = useState('')
+  const [link, setLink] = useState('')
 
   const [stripe, setStripe]     = useState<Stripe | null>(null)
   const [elements, setElements] = useState<StripeElements | null>(null)
@@ -100,7 +101,12 @@ export default function WebinarCheckout() {
       const data = await res.json()
       if (data.success) {
         setStatus('success')
-        setMessage(`Dein Zugangslink ist unterwegs an ${email.trim()}.`)
+        setLink(`${window.location.origin}/webinar?token=${data.token}`)
+        setMessage(
+          data.mailSent === false
+            ? `Die Bestaetigungsmail konnte nicht zugestellt werden. Bitte nutze diesen Link: ${window.location.origin}/webinar?token=${data.token}`
+            : `Dein Zugangslink ist unterwegs an ${email.trim()}.`,
+        )
       } else {
         setStatus('error')
         setMessage(data.error || 'Fehler nach der Zahlung.')
@@ -115,6 +121,11 @@ export default function WebinarCheckout() {
         maxWidth: 480, margin: '0 auto' }}>
         <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
         <p style={{ margin: 0, fontSize: 15 }}>{message}</p>
+        {link && (
+          <a href={link} style={{ display: 'inline-block', marginTop: 12, color: '#2A5C2A', fontSize: 14, wordBreak: 'break-all' }}>
+            {link}
+          </a>
+        )}
       </div>
     )
   }

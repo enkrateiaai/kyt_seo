@@ -9,14 +9,32 @@ import {
   webinarPhase,
 } from '@/lib/webinar'
 import { recordView } from '@/lib/webinarAttendance'
+import { verifyWebinarAccess } from '@/lib/webinarAccess'
+import { auth } from '@clerk/nextjs/server'
+import { hasClerkServerConfig } from '@/lib/authConfig'
+import { getViewerUser, isAdminUser } from '@/lib/memberAccess'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 const PASS_THROUGH = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'last-modified']
 
+// The studio admins may watch their own video without a buyer token.
+async function isAdmin(): Promise<boolean> {
+  if (!hasClerkServerConfig()) return false
+  try {
+    const { userId } = await auth()
+    if (!userId) return false
+    return isAdminUser(await getViewerUser())
+  } catch {
+    return false
+  }
+}
+
 // Streams the webinar video from the studio. Only a scheduled webinar can be
-// requested, and only while its own time window is open.
+// requested, only while its own time window is open, and only with a valid
+// access token - the webinar is a paid product, so the file must not be
+// downloadable without the token from the purchase.
 export async function GET(request: NextRequest) {
   const now = Date.now()
   const webinars = await fetchWebinars()
@@ -38,12 +56,22 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // The token comes from the personal link of the buyer.
+  const token = request.nextUrl.searchParams.get('token')?.trim() || null
+  const access = await verifyWebinarAccess(token)
+  const admin = access.ok ? false : await isAdmin()
+
+  if (!access.ok && !admin) {
+    return NextResponse.json(
+      { error: 'Kein Zugang zu diesem Webinar' },
+      { status: 403, headers: { 'cache-control': 'no-store, max-age=0' } },
+    )
+  }
+
   const target = new URL(`/api/files/${encodeURIComponent(webinar.filename)}/stream`, STUDIO_BASE + '/')
   const range = request.headers.get('range')
 
-  // Who is watching and since when. The token comes from the personal link,
-  // direct visitors are only counted.
-  const token = request.nextUrl.searchParams.get('token')?.trim() || null
+  // Who is watching and since when. Direct visitors are only counted.
   const ip =
     request.headers.get('cf-connecting-ip') ||
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -64,7 +92,7 @@ export async function GET(request: NextRequest) {
       (upstream) => {
         // Only a video that really starts counts as attendance.
         if ((upstream.statusCode ?? 500) < 400) {
-          void recordView(webinar.id, token, ip)
+          void recordView(webinar.id, access.ok ? token : null, ip)
         }
         const outHeaders = new Headers()
         for (const name of PASS_THROUGH) {

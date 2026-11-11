@@ -92,9 +92,13 @@ const audiences = [
 export default async function SoulBusinessPage({
   slotId,
   token,
+  locked = false,
 }: {
   slotId?: string
   token?: string
+  // The webinar is a paid product: without a valid access token the video is
+  // replaced by the call to action.
+  locked?: boolean
 }) {
   const { webinars, cta, serverNow } = await fetchWebinarSnapshot()
 
@@ -149,17 +153,56 @@ export default async function SoulBusinessPage({
             Art zu arbeiten passen. Die Soul-Path-KI-Plattform baut dir das – live im Webinar.
           </p>
 
-          <SoulBusinessVideo
-            webinars={webinars}
-            serverNow={serverNow}
-            ctaUrl={ctaUrl}
-            slotId={slotId}
-            token={token}
-          />
+          {locked ? (
+            <div
+              style={{
+                background: C.cream,
+                border: `1px solid ${C.sand}`,
+                borderRadius: 16,
+                padding: '38px 28px',
+                maxWidth: 560,
+                margin: '0 auto',
+                textAlign: 'center',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 12,
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: C.warmBrown,
+                  margin: '0 0 14px',
+                  fontWeight: 500,
+                }}
+              >
+                Kostenpflichtiges Webinar
+              </p>
+              <p style={{ fontSize: 17, lineHeight: 1.8, color: C.warmBrown, fontWeight: 300, margin: '0 0 6px' }}>
+                Der Zugang kostet einmalig 29&nbsp;€. Dein persönlicher Link kommt direkt
+                per E-Mail zu dir.
+              </p>
+              <p style={{ fontSize: 14, lineHeight: 1.8, color: C.muted, fontWeight: 300, margin: '0 0 26px' }}>
+                Einmal zahlen, dann 30 Tage lang ansehen.
+              </p>
+              <a href="/webinar" className="kyt-btn kyt-btn--primary">
+                Jetzt anmelden · 29&nbsp;€
+              </a>
+            </div>
+          ) : (
+            <>
+              <SoulBusinessVideo
+                webinars={webinars}
+                serverNow={serverNow}
+                ctaUrl={ctaUrl}
+                slotId={slotId}
+                token={token}
+              />
 
-          <p style={{ fontSize: 13, color: C.muted, margin: '18px 0 0', lineHeight: 1.7 }}>
-            Das Video ist ausschließlich während des geplanten Termins abrufbar.
-          </p>
+              <p style={{ fontSize: 13, color: C.muted, margin: '18px 0 0', lineHeight: 1.7 }}>
+                Das Video ist ausschließlich während des geplanten Termins abrufbar.
+              </p>
+            </>
+          )}
         </div>
       </section>
 

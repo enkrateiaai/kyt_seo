@@ -2237,7 +2237,7 @@ function WebinarPanel({
                   </button>
                   <button
                     style={btnSmall('ghost')}
-                    onClick={() => copyText(`${window.location.origin}/webinar-anmeldung`, 'Anmelde-Link')}
+                    onClick={() => copyText(`${window.location.origin}/webinar`, 'Anmelde-Link')}
                     disabled={busy}
                   >
                     Anmelde-Link kopieren
@@ -2293,7 +2293,7 @@ function WebinarPanel({
           <span style={{ fontSize: 11, color: C.faint }}>Archiv: {archivedSlots.length}</span>
         ) : null}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <a href="/webinar-anmeldung" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
+          <a href="/webinar" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
             Anmeldung öffnen ↗
           </a>
           <a href="/webinar" target="_blank" rel="noreferrer" style={{ ...btnSmall('ghost'), textDecoration: 'none' }}>
@@ -2312,8 +2312,9 @@ function WebinarPanel({
         Termin-Slot; mehrere Slots mit demselben Video sind parallel planbar.
       </p>
       <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.7 }}>
-        Über <strong>/webinar-anmeldung</strong> können sich Leute für einen Slot anmelden und
-        bekommen per Mail einen Link, der genau auf diesen Termin zeigt.
+        Das Webinar ist ein bezahltes Produkt: Interessenten melden sich über
+        <strong>/webinar</strong> an (29&nbsp;€) und bekommen per Mail ihren persönlichen
+        Zugangslink, der genau auf diesen Termin zeigt.
       </p>
 
       {/* Scheduled list */}
@@ -2475,8 +2476,8 @@ function WebinarPanel({
 
         <p style={{ fontSize: 12, color: C.muted, margin: '0 0 14px', lineHeight: 1.7 }}>
           Ein Video, mehrere Uhrzeiten pro Tag. Jeder Termin ist ein eigener Slot mit eigenem
-          Link. Auf der Anmeldeseite (<strong>/webinar-anmeldung</strong>) werden die nächsten
-          7 Tage angezeigt. Vorhandene Termine mit demselben Video werden dabei ersetzt -
+          Link. Auf der Anmeldeseite (<strong>/webinar</strong>) wird der Checkout gezeigt.
+          Vorhandene Termine mit demselben Video werden dabei ersetzt -
           auch solche ausserhalb des gewaehlten Zeitraums.
         </p>
 

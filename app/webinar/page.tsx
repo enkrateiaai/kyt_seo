@@ -1,6 +1,6 @@
-import redis from '@/lib/redis'
 import AIWebinarLanding from './AIWebinarLanding'
 import SoulPathPage from './SoulPathPage'
+import { verifyWebinarAccess } from '@/lib/webinarAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,15 +29,11 @@ export default async function Page({
   const rawToken = params.token
   const token = typeof rawToken === 'string' ? rawToken.trim() : ''
 
+  // The webinar is a paid product: only the personal link from the purchase
+  // opens the player. Everybody else sees the landing page with "Jetzt anmelden".
   if (token) {
-    let isValid = false
-    try {
-      const data = await redis.get(`webinar:access:${token}`)
-      isValid = Boolean(data)
-    } catch {
-      // Redis unavailable – treat as invalid
-    }
-    if (isValid) {
+    const access = await verifyWebinarAccess(token)
+    if (access.ok) {
       const rawSlot = params.slot
       const slotId = typeof rawSlot === 'string' ? rawSlot.trim() : ''
       return <SoulPathPage slotId={slotId} token={token} />
