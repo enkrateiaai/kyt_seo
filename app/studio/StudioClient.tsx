@@ -1504,10 +1504,17 @@ export default function StudioClient() {
                           if (!slot) return null
                           const t = getSlotTime(slot)
                           const baseT = baseSlotTime(slot.date, slot.slot)
-                          const job = slot.slot === 3 ? slot3Job : matchJob(slot, jobs12, baseT)
+                          const todayBerlinDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' })
+                          const isToday = slot.date === todayBerlinDate
+                          // Today: positional (ad-hoc jobs can be at any time).
+                          // Future: proximity to base slot time (prevents cross-slot assignment).
+                          const job = slot.slot === 3 ? slot3Job : (
+                            isToday
+                              ? dayJobsFor(slot, jobs12)[slot.slot - 1]
+                              : matchJob(slot, jobs12, baseT)
+                          )
                           // isPast uses the today-adjusted time so today's empty slots still
-                          // show the input field (allowing ad-hoc scheduling), while future
-                          // past slots (yesterday etc.) correctly show "—".
+                          // show the input field (allowing ad-hoc scheduling).
                           const [hh, mm] = t.split(':').map(Number)
                           const slotDt = berlinToUTC(slot.date, hh, mm)
                           const isPast = slotDt.getTime() < Date.now()
