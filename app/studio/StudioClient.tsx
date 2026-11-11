@@ -150,6 +150,12 @@ function berlinToUTC(dateStr: string, hour: number, minute: number): Date {
   return new Date(Date.UTC(y, m - 1, d, hour - (dst ? 2 : 1), minute, 0))
 }
 
+function baseSlotTime(date: string, slot: 1 | 2 | 3): string {
+  if (slot === 3) return '20:30'
+  const dow = new Date(date + 'T12:00:00').getDay()
+  return slot === 1 ? (dow === 0 || dow === 6 ? '07:00' : '06:30') : '10:00'
+}
+
 function buildSlots(): SlotDef[] {
   const slots: SlotDef[] = []
   for (const day of buildDays(14)) {
@@ -237,7 +243,16 @@ function matchJob(slot: SlotDef, jobs: ScheduledJob[], time: string): ScheduledJ
         Math.abs(new Date(a.datetime).getTime() - slotMs) - Math.abs(new Date(b.datetime).getTime() - slotMs),
       )[0]
   }
-  return dayJobs[slot.slot - 1]
+  // Match by proximity (90-min window) so slot 1 is not falsely occupied
+  // when only slot 2 has a job.
+  const [hh2, mm2] = time.split(':').map(Number)
+  const slotMs2 = berlinToUTC(slot.date, hh2, mm2).getTime()
+  const SLOT_TOL_MS = 90 * 60 * 1000
+  return dayJobs
+    .filter(j => Math.abs(new Date(j.datetime).getTime() - slotMs2) <= SLOT_TOL_MS)
+    .sort((a, b) =>
+      Math.abs(new Date(a.datetime).getTime() - slotMs2) - Math.abs(new Date(b.datetime).getTime() - slotMs2),
+    )[0]
 }
 
 function ThumbnailImg({ name, size = 48 }: { name: string; size?: number }) {
@@ -966,11 +981,14 @@ export default function StudioClient() {
     setAutoFilling(true)
     const recentFiles = [...files].sort((a, b) => b.mtime - a.mtime).slice(0, autoFillN)
     const now = new Date()
+    const todayBerlin = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' })
     const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() + autoFillDays)
     const emptyFuture = slots.filter(s => {
+      if (s.date === todayBerlin) return false
+      if (s.slot === 3) return false
       if (berlinToUTC(s.date, 0, 0) >= cutoff) return false
       if (berlinToUTC(s.date, 23, 59) < now) return false
-      return !matchJob(s, status.scheduled, getSlotTime(s))
+      return !matchJob(s, status.scheduled, baseSlotTime(s.date, s.slot))
     })
     if (emptyFuture.length === 0) { flash('Keine leeren Slots im gewählten Zeitraum'); setAutoFilling(false); return }
     let filled = 0
@@ -1477,7 +1495,7 @@ export default function StudioClient() {
                     const slot3 = daySlots.find(s => s.slot === 3)
                     // Der Job im Sonntags-Slot 3 gehoert in Spalte 3 und nicht
                     // in die Spalten 1+2 (Index-Matching der uebrigen Slots).
-                    const slot3Job = slot3 ? matchJob(slot3, status.scheduled, getSlotTime(slot3)) : undefined
+                    const slot3Job = slot3 ? matchJob(slot3, status.scheduled, baseSlotTime(slot3.date, 3)) : undefined
                     const jobs12 = slot3Job ? status.scheduled.filter(j => j.id !== slot3Job.id) : status.scheduled
                     return (
                       <tr key={date} style={{ borderBottom: `1px solid ${C.border}`, background: rowIdx % 2 === 0 ? 'transparent' : 'rgba(221,213,200,.15)' }}>
@@ -1485,8 +1503,9 @@ export default function StudioClient() {
                         {[slot1, slot2, slot3].map((slot, slotIdx) => {
                           if (!slot) return null
                           const t = getSlotTime(slot)
-                          const job = slot.slot === 3 ? slot3Job : matchJob(slot, jobs12, t)
-                          const [hh, mm] = t.split(':').map(Number)
+                          const baseT = baseSlotTime(slot.date, slot.slot)
+                          const job = slot.slot === 3 ? slot3Job : matchJob(slot, jobs12, baseT)
+                          const [hh, mm] = baseT.split(':').map(Number)
                           const slotDt = berlinToUTC(slot.date, hh, mm)
                           const isPast = slotDt.getTime() < Date.now()
                           return (
@@ -1686,6 +1705,7 @@ export default function StudioClient() {
                     const isLive = j.mode === 'live'
                     const localTime = new Date(j.datetime).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
                     const minutesLeft = Math.round((new Date(j.datetime).getTime() - Date.now()) / 60000)
+                    const isRunningThisSlot = status.running && minutesLeft <= 0 && minutesLeft > -5 && status.info?.filename === j.filename
                     const fileIdx = files.findIndex(f => f.name === j.filename)
                     return (
                       <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : 'none' }}>
@@ -1706,7 +1726,7 @@ export default function StudioClient() {
                           <div style={{ fontSize: 11, color: C.green, fontWeight: 600 }}>{localTime}</div>
                         </div>
                         <div style={{ textAlign: 'right' as const, flexShrink: 0 }}>
-                          <div style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>{minutesLeft > 0 ? `in ${minutesLeft} min` : 'gleich'}</div>
+                          <div style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>{isRunningThisSlot ? '▶ läuft' : minutesLeft > 0 ? `in ${minutesLeft} min` : 'gleich'}</div>
                           <button onClick={() => askDeleteSlot(j)} style={btnSmall('danger')} title="Loeschen oder live schalten">Löschen</button>
                         </div>
                       </div>
