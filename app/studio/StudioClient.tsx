@@ -411,6 +411,9 @@ export default function StudioClient() {
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [streamStats, setStreamStats] = useState<StreamStat[]>([])
   const [liveViewers, setLiveViewers] = useState(0)
+  const [autoFillN, setAutoFillN] = useState(3)
+  const [autoFillDays, setAutoFillDays] = useState(7)
+  const [autoFilling, setAutoFilling] = useState(false)
   const ownSessionIdRef = useRef<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const slots = buildSlots()
@@ -958,6 +961,36 @@ export default function StudioClient() {
 
   const [deletingName, setDeletingName] = useState<string | null>(null)
 
+  async function autoFillSlots() {
+    if (files.length === 0) { flash('Keine Videos vorhanden'); return }
+    setAutoFilling(true)
+    const recentFiles = [...files].sort((a, b) => b.mtime - a.mtime).slice(0, autoFillN)
+    const now = new Date()
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() + autoFillDays)
+    const emptyFuture = slots.filter(s => {
+      if (berlinToUTC(s.date, 0, 0) >= cutoff) return false
+      if (berlinToUTC(s.date, 23, 59) < now) return false
+      return !matchJob(s, status.scheduled, getSlotTime(s))
+    })
+    if (emptyFuture.length === 0) { flash('Keine leeren Slots im gewählten Zeitraum'); setAutoFilling(false); return }
+    let filled = 0
+    for (const slot of emptyFuture) {
+      const t = getSlotTime(slot)
+      const [h, m] = t.split(':').map(Number)
+      const when = berlinToUTC(slot.date, h, m)
+      if (when <= now) continue
+      const file = recentFiles[Math.floor(Math.random() * recentFiles.length)]
+      const res = await apiCall('/stream/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, datetime: when.toISOString(), mode: 'video', streamKey: 'live' }),
+      })
+      if (res.ok) filled++
+    }
+    await loadStatus()
+    flash(`${filled} Slot(s) automatisch gefüllt`)
+    setAutoFilling(false)
+  }
   async function deleteFile(name: string) {
     if (preview === name) setPreview(null)
     setDeletingName(name)
@@ -1406,6 +1439,27 @@ export default function StudioClient() {
                 </button>
               )}
             </div>
+            {/* Auto-fill toolbar */}
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' as const, gap: 8, marginBottom: 14, padding: '8px 10px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: C.muted, whiteSpace: 'nowrap' as const }}>Zufällig füllen:</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: C.muted }}>
+                Letzte Videos
+                <input type="number" value={autoFillN} min={1} max={files.length || 1}
+                  onChange={e => setAutoFillN(Math.max(1, parseInt(e.target.value) || 1))}
+                  style={{ ...inputStyle, width: 50, textAlign: 'center' as const, padding: '3px 6px', minHeight: 28 }} />
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: C.muted }}>
+                Tage voraus
+                <input type="number" value={autoFillDays} min={1} max={14}
+                  onChange={e => setAutoFillDays(Math.max(1, Math.min(14, parseInt(e.target.value) || 7)))}
+                  style={{ ...inputStyle, width: 50, textAlign: 'center' as const, padding: '3px 6px', minHeight: 28 }} />
+              </label>
+              <button onClick={autoFillSlots} disabled={autoFilling || files.length === 0}
+                style={{ ...btnSmall('gold'), marginLeft: 2, opacity: (autoFilling || files.length === 0) ? 0.5 : 1, cursor: (autoFilling || files.length === 0) ? 'not-allowed' : 'pointer' }}>
+                {autoFilling ? '…' : 'Leere Slots füllen'}
+              </button>
+            </div>
+
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
