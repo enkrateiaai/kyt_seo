@@ -1,38 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 
 const TELEGRAM_URL = process.env.NEXT_PUBLIC_TELEGRAM_URL || 'https://t.me/kundaliniyogatribe'
+const TRIBE_URL = 'https://www.charan-amrit-kaur.de/yoga-tribe/'
 
 export default function JoinPage() {
-  const [email, setEmail] = useState('')
-  const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [errorMsg, setErrorMsg] = useState('')
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setState('loading')
-    setErrorMsg('')
-    try {
-      const res = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, lang: 'en' }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setState('success')
-      } else {
-        setErrorMsg(data.error || 'Something went wrong.')
-        setState('error')
-      }
-    } catch {
-      setErrorMsg('Connection error. Please try again.')
-      setState('error')
-    }
-  }
-
   return (
     <div style={{ minHeight: '100vh', background: '#fbf8f1', color: '#2a2520', fontFamily: 'sans-serif' }}>
       {/* Header */}
@@ -54,7 +27,7 @@ export default function JoinPage() {
           color: '#2a2520',
           margin: '0 0 16px',
         }}>
-          Choose Your Path into the Tribe
+          Wähle Deinen Weg in den Tribe
         </h1>
         <p style={{
           fontSize: '17px',
@@ -63,7 +36,7 @@ export default function JoinPage() {
           maxWidth: '480px',
           margin: '0 auto',
         }}>
-          A short Kundalini practice every day. Kriyas, meditations and insights for your life.
+          Eine kurze Kundalini-Praxis für jeden Tag. Kriyas, Meditationen und Impulse für Dein Leben.
         </p>
       </header>
 
@@ -103,17 +76,17 @@ export default function JoinPage() {
           </div>
           <div>
             <p style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#b89654', marginBottom: '8px' }}>
-              Join Instantly
+              Sofort beitreten
             </p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '24px', fontWeight: 300, margin: '0 0 12px', color: '#2a2520' }}>
               Telegram Community
             </h2>
             <p style={{ fontSize: '15px', lineHeight: 1.7, color: '#6b5d4f', margin: 0 }}>
-              Join our Telegram channel and receive daily Kriyas, short insights and community — straight to your phone.
+              Tritt unserer Telegram-Community bei und erhalte tägliche Kriyas, kurze Impulse und Gemeinschaft — direkt auf Dein Handy.
             </p>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {['Daily practice insights', 'Direct connection with the community', 'A real, living community'].map(item => (
+            {['Tägliche Praxis-Impulse', 'Direkter Kontakt zur Community', 'Eine echte, lebendige Community'].map(item => (
               <li key={item} style={{ fontSize: '14px', color: '#6b5d4f', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ color: '#b89654', fontSize: '16px' }}>✓</span> {item}
               </li>
@@ -137,7 +110,7 @@ export default function JoinPage() {
               marginTop: 'auto',
             }}
           >
-            Join now →
+            Jetzt beitreten →
           </a>
         </div>
 
@@ -169,7 +142,7 @@ export default function JoinPage() {
             borderRadius: '100px',
             whiteSpace: 'nowrap',
           }}>
-            Free Programme
+            Kostenloses Programm
           </div>
           <div style={{
             width: '48px',
@@ -185,84 +158,43 @@ export default function JoinPage() {
           </div>
           <div>
             <p style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#b89654', marginBottom: '8px' }}>
-              7-Day Kundalini Reset
+              7-Tage-Kundalini-Reset
             </p>
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '24px', fontWeight: 300, margin: '0 0 12px', color: '#2a2520' }}>
-              Your free 7-day programme
+              Teste den Tribe 7 Tage kostenlos
             </h2>
             <p style={{ fontSize: '15px', lineHeight: 1.7, color: '#6b5d4f', margin: 0 }}>
-              A short Kundalini practice straight to your inbox every day — built so you can feel the shift.
+              Eine kurze Kundalini-Praxis jeden Tag — dazu tägliche Live-Sessions und die ganze Community. Teste den Tribe eine Woche lang, ohne Verpflichtung.
             </p>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {['7 guided Kriyas (~15 min each)', 'A new energy every day', 'Then: monthly newsletter'].map(item => (
+            {['7 begleitete Kriyas (je ca. 15 Min.)', 'Tägliche Live-Session zum Mitmachen', 'Danach: monatlicher Newsletter'].map(item => (
               <li key={item} style={{ fontSize: '14px', color: '#6b5d4f', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ color: '#b89654', fontSize: '16px' }}>✓</span> {item}
               </li>
             ))}
           </ul>
 
-          {state === 'success' ? (
-            <div style={{
-              background: '#f0ebe0',
-              borderRadius: '12px',
-              padding: '20px',
+          <a
+            href={TRIBE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block',
               textAlign: 'center',
-            }}>
-              <p style={{ fontSize: '22px', marginBottom: '8px' }}>🙏</p>
-              <p style={{ fontFamily: 'Georgia, serif', fontSize: '18px', color: '#2a2520', margin: '0 0 6px' }}>
-                Sat Nam!
-              </p>
-              <p style={{ fontSize: '14px', color: '#6b5d4f', margin: 0 }}>
-                Check your inbox and confirm your sign-up.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                disabled={state === 'loading'}
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '13px 16px',
-                  border: '1px solid #ddd6c8',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  background: '#fdfaf5',
-                  color: '#2a2520',
-                  outline: 'none',
-                }}
-              />
-              {state === 'error' && (
-                <p style={{ fontSize: '13px', color: '#c0392b', margin: 0 }}>{errorMsg}</p>
-              )}
-              <button
-                type="submit"
-                disabled={state === 'loading'}
-                style={{
-                  background: state === 'loading' ? '#d4c498' : '#b89654',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '14px 28px',
-                  borderRadius: '100px',
-                  fontSize: '15px',
-                  fontWeight: 500,
-                  cursor: state === 'loading' ? 'not-allowed' : 'pointer',
-                  letterSpacing: '0.02em',
-                }}
-              >
-                {state === 'loading' ? 'Sending…' : 'Start Reset →'}
-              </button>
-              <p style={{ fontSize: '11px', color: '#9b8e7e', textAlign: 'center', margin: 0 }}>
-                No spam. Unsubscribe anytime.
-              </p>
-            </form>
-          )}
+              background: '#b89654',
+              color: '#fff',
+              textDecoration: 'none',
+              padding: '14px 28px',
+              borderRadius: '100px',
+              fontSize: '15px',
+              fontWeight: 500,
+              letterSpacing: '0.02em',
+              marginTop: 'auto',
+            }}
+          >
+            7 Tage kostenlos testen →
+          </a>
         </div>
       </main>
 
