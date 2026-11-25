@@ -24,8 +24,7 @@ const EVENTS: EventItem[] = [
   { id: 'so-2026-10-11', date: '2026-10-11', time: '20:30', title: 'Sonntags-Meditation: Das Feld halten', description: 'Geführte Meditation am Sonntagabend. Wir halten das Magnetfeld in Stille und lassen es sich weiten.', category: 'sonntag' },
   { id: 'so-2026-10-18', date: '2026-10-18', time: '20:30', title: 'Sonntags-Meditation: Vertiefung', description: 'Geführte Meditation am Sonntagabend. Wir vertiefen die Verbindung von Herz, Lungen und Aura.', category: 'sonntag' },
   { id: 'so-2026-10-25', date: '2026-10-25', time: '20:30', title: 'Sonntags-Meditation: Ankommen — die neue Aura', description: 'Geführte Meditation am Sonntagabend. Wir integrieren alles und feiern die neue Aura.', category: 'sonntag' },
-  // Advent-Sondertermine (Catherine 2026-11-25)
-  { id: 'sp-2026-11-27', date: '2026-11-27', time: '20:30', title: 'Advent: Raum der Stille', description: 'In der Stille entsteht das Neue.', category: 'special' },
+  // Sondertermine (Catherine 2026-11-25)
   { id: 'sp-2026-12-24', date: '2026-12-24', time: '20:30', title: 'Heilig-Abend-Special: Verbundenheit und Herzöffnung', description: 'Ein besonderer Abend für Verbundenheit und Herzöffnung.', category: 'special' },
   { id: 'sp-2026-12-31', date: '2026-12-31', time: '20:30', title: 'Sylvester-Special: Loslassen und Neuausrichtung', description: 'Silvester-Special zum Loslassen und zur Neuausrichtung.', category: 'special' },
 ]
@@ -38,6 +37,14 @@ const SUNDAY_MEDITATION_TITLE = 'Sonntags-Meditation: Balance, Innere Ruhe und K
 const SUNDAY_MEDITATION_DESCRIPTION =
   'Gefuehrte Meditation am Sonntagabend um 20:30 Uhr fuer Balance, innere Ruhe und Klarheit. Wir kommen zur Ruhe, sammeln uns im Feld und lassen die Woche still ausklingen.'
 const SUNDAY_MEDITATION_TIME = '20:30'
+
+// Ab dem 27.11.2026 bekommen die Sonntagabende einen eigenen Titel
+// (Catherine 2026-11-25): Raum fuer Stille, Reflektion und Neuausrichtung
+// fuer 2027. Ab da ersetzt dieser Titel den generischen Sonntagsthemen-Titel.
+const SUNDAY_NEW_TITLE_FROM_ISO = '2026-11-27'
+const SUNDAY_NEW_TITLE = 'Raum für Stille, Reflektion und Neuausrichtung für 2027'
+const SUNDAY_NEW_DESCRIPTION =
+  'Sonntagabend um 20:30 Uhr: Raum für Stille, Reflektion und Neuausrichtung für 2027. In der Stille entsteht das Neue.'
 
 /**
  * Baut alle Sonntags-Meditationen fuer ein Zeitfenster (Standard: 12 Monate
@@ -55,12 +62,15 @@ function buildSundayMeditations(
   while (cursor <= end) {
     if (cursor.getDay() === 0) {
       const iso = toISODate(cursor)
+      // Ab dem 27.11.2026 gibt es den neuen Sonntagabend-Titel
+      // (Catherine 2026-11-25) statt des generischen Themen-Titels.
+      const isNewSeason = iso >= SUNDAY_NEW_TITLE_FROM_ISO
       out.push({
         id: `so-auto-${iso}`,
         date: iso,
         time: SUNDAY_MEDITATION_TIME,
-        title: SUNDAY_MEDITATION_TITLE,
-        description: SUNDAY_MEDITATION_DESCRIPTION,
+        title: isNewSeason ? SUNDAY_NEW_TITLE : SUNDAY_MEDITATION_TITLE,
+        description: isNewSeason ? SUNDAY_NEW_DESCRIPTION : SUNDAY_MEDITATION_DESCRIPTION,
         category: 'sonntag',
       })
     }
