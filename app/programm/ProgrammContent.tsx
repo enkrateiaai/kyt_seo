@@ -52,6 +52,38 @@ const NEXT_THEMA_FROM_ISO = '2026-11-29'
 const NEXT_THEMA_TO_ISO = '2026-12-31'
 const THEMA_COUNTDOWN_END_ISO = '2026-12-31'
 
+// Live-Slots (Europe/Amsterdam) fuer den Button "Naechstes Live":
+// 07:00 taeglich, 10:00 taeglich, 20:30 am Sonntag (Programmslot).
+// Catherine 2026-11-25: "Aendere die Zeiten zu 7 Uhr, 10 Uhr und 20:30 Uhr"
+// (gilt nur fuer diesen Button, nicht fuer die Live-Slots im Studio).
+const LIVE_SLOT_TIMES: Array<{ time: string; weekdays: number[] }> = [
+  { time: '07:00', weekdays: [0, 1, 2, 3, 4, 5, 6] },
+  { time: '10:00', weekdays: [0, 1, 2, 3, 4, 5, 6] },
+  { time: '20:30', weekdays: [0] },
+]
+const LIVE_SLOT_LABEL = 'Lives: 7:00 · 10:00 · 20:30 Uhr'
+
+/**
+ * Naechster Live-Slot ab 'now': taeglich 07:00 und 10:00, sonntags 20:30.
+ */
+function nextLiveSlot(now: Date): { date: Date; time: string } | null {
+  const cursor = new Date(now)
+  cursor.setSeconds(0, 0)
+  for (let dayOffset = 0; dayOffset <= 14; dayOffset++) {
+    const day = new Date(cursor)
+    day.setDate(day.getDate() + dayOffset)
+    day.setHours(0, 0, 0, 0)
+    for (const slot of LIVE_SLOT_TIMES) {
+      if (!slot.weekdays.includes(day.getDay())) continue
+      const [h, m] = slot.time.split(':').map(Number)
+      const dt = new Date(day)
+      dt.setHours(h, m, 0, 0)
+      if (dt.getTime() >= now.getTime()) return { date: dt, time: slot.time }
+    }
+  }
+  return null
+}
+
 /**
  * Baut alle Sonntags-Meditationen fuer ein Zeitfenster (Standard: 12 Monate
  * zurueck und 6 Monate voraus) und haengt sie an die festen Themen.
@@ -233,6 +265,9 @@ export default function ProgrammContent() {
 
   const nextEvent = upcoming[0] ?? null
 
+  // Naechster Live-Slot (07:00 / 10:00 taeglich, 20:30 sonntags).
+  const nextLive = useMemo(() => nextLiveSlot(new Date()), [])
+
   // Build calendar grid (Mon-start)
   const grid = useMemo(() => {
     const firstOfMonth = new Date(cursor.year, cursor.month, 1)
@@ -279,11 +314,13 @@ export default function ProgrammContent() {
     d.setHours(23, 59, 59, 999)
     return d
   }, [])
-  const cd = nextEvent
-    ? (today >= parseISODate(NEXT_THEMA_FROM_ISO) && today <= parseISODate(THEMA_COUNTDOWN_END_ISO)
-        ? diffToCountdown(themaCountdownEnd, now)
-        : diffToCountdown(nextEvent.dt, now))
-    : null
+  // Im Themen-Zeitraum (29.11.-31.12.) zaehlt der Countdown zum naechsten
+  // Live-Slot, sonst zum naechsten Programm-Event.
+  const inThemaPhase =
+    today >= parseISODate(NEXT_THEMA_FROM_ISO) && today <= parseISODate(THEMA_COUNTDOWN_END_ISO)
+  const cd = inThemaPhase
+    ? (nextLive ? diffToCountdown(nextLive.date, now) : null)
+    : (nextEvent ? diffToCountdown(nextEvent.dt, now) : null)
   const kriyaCd = diffToCountdown(KRIYA_END, now)
   const kriyaElapsedDays = (() => {
     const ms = today.getTime() - KRIYA_START.getTime()
@@ -724,20 +761,24 @@ export default function ProgrammContent() {
           </p>
         </header>
 
-        {nextEvent && cd && (
+        {((inThemaPhase && nextLive) || (!inThemaPhase && nextEvent)) && cd && (
           <div className="countdown-banner" aria-live="polite">
             <div>
               <p className="countdown-banner__eyebrow">
-                {nextEvent.ev.date >= NEXT_THEMA_FROM_ISO &&
-                nextEvent.ev.date <= NEXT_THEMA_TO_ISO
-                  ? 'Aktuelles Thema'
-                  : 'Nächstes Event'}{' '}
-                · {getCategoryLabel(nextEvent.ev.category)}
+                {inThemaPhase ? 'Nächstes Live' : 'Nächstes Event'}{' '}
+                · {inThemaPhase ? 'Live-Stream' : getCategoryLabel(nextEvent.ev.category)}
               </p>
-              <p className="countdown-banner__title">{nextEvent.ev.title}</p>
+              <p className="countdown-banner__title">
+                {inThemaPhase ? 'Kundalini Yoga Live' : nextEvent.ev.title}
+              </p>
               <p className="countdown-banner__meta">
-                {formatFullDateDE(nextEvent.ev.date)} · {formatTime(nextEvent.ev.time)}
+                {inThemaPhase
+                  ? `${formatFullDateDE(toISODate(nextLive.date))} · ${formatTime(nextLive.time)}`
+                  : `${formatFullDateDE(nextEvent.ev.date)} · ${formatTime(nextEvent.ev.time)}`}
               </p>
+              {inThemaPhase && (
+                <p className="countdown-banner__meta">{LIVE_SLOT_LABEL}</p>
+              )}
             </div>
             <div className="countdown-banner__ticker">
               <div className="countdown-cell">
