@@ -46,6 +46,11 @@ const SUNDAY_NEW_TITLE = 'Raum für Stille, Reflektion und Neuausrichtung für 2
 const SUNDAY_NEW_DESCRIPTION =
   'Sonntagabend um 20:30 Uhr: Raum für Stille, Reflektion und Neuausrichtung für 2027. In der Stille entsteht das Neue.'
 
+// Der Hinweis-Button heisst vom 29.11.2026 bis zum 31.12.2026 "Naechstes
+// Thema" statt "Naechstes Event" (Catherine 2026-11-25).
+const NEXT_THEMA_FROM_ISO = '2026-11-29'
+const NEXT_THEMA_TO_ISO = '2026-12-31'
+
 /**
  * Baut alle Sonntags-Meditationen fuer ein Zeitfenster (Standard: 12 Monate
  * zurueck und 6 Monate voraus) und haengt sie an die festen Themen.
@@ -710,7 +715,11 @@ export default function ProgrammContent() {
           <div className="countdown-banner" aria-live="polite">
             <div>
               <p className="countdown-banner__eyebrow">
-                Nächstes Event · {getCategoryLabel(nextEvent.ev.category)}
+                {nextEvent.ev.date >= NEXT_THEMA_FROM_ISO &&
+                nextEvent.ev.date <= NEXT_THEMA_TO_ISO
+                  ? 'Nächstes Thema'
+                  : 'Nächstes Event'}{' '}
+                · {getCategoryLabel(nextEvent.ev.category)}
               </p>
               <p className="countdown-banner__title">{nextEvent.ev.title}</p>
               <p className="countdown-banner__meta">
