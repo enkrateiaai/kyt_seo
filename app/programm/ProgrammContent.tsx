@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-type EventCategory = 'sonntag' | 'gastauftritt'
+type EventCategory = 'sonntag' | 'gastauftritt' | 'special'
 
 interface EventItem {
   id: string
@@ -24,6 +24,10 @@ const EVENTS: EventItem[] = [
   { id: 'so-2026-10-11', date: '2026-10-11', time: '20:30', title: 'Sonntags-Meditation: Das Feld halten', description: 'Geführte Meditation am Sonntagabend. Wir halten das Magnetfeld in Stille und lassen es sich weiten.', category: 'sonntag' },
   { id: 'so-2026-10-18', date: '2026-10-18', time: '20:30', title: 'Sonntags-Meditation: Vertiefung', description: 'Geführte Meditation am Sonntagabend. Wir vertiefen die Verbindung von Herz, Lungen und Aura.', category: 'sonntag' },
   { id: 'so-2026-10-25', date: '2026-10-25', time: '20:30', title: 'Sonntags-Meditation: Ankommen — die neue Aura', description: 'Geführte Meditation am Sonntagabend. Wir integrieren alles und feiern die neue Aura.', category: 'sonntag' },
+  // Advent-Sondertermine (Catherine 2026-11-25)
+  { id: 'sp-2026-11-27', date: '2026-11-27', time: '20:30', title: 'Advent: Raum der Stille', description: 'In der Stille entsteht das Neue.', category: 'special' },
+  { id: 'sp-2026-12-24', date: '2026-12-24', time: '20:30', title: 'Heilig-Abend-Special: Verbundenheit und Herzöffnung', description: 'Ein besonderer Abend für Verbundenheit und Herzöffnung.', category: 'special' },
+  { id: 'sp-2026-12-31', date: '2026-12-31', time: '20:30', title: 'Sylvester-Special: Loslassen und Neuausrichtung', description: 'Silvester-Special zum Loslassen und zur Neuausrichtung.', category: 'special' },
 ]
 
 // Feste Sonntags-Meditation: Der Eintrag existiert an jedem Sonntag um 20:30 Uhr
@@ -80,11 +84,15 @@ const C = {
 }
 
 function getCategoryColor(c: EventCategory): string {
-  return c === 'sonntag' ? C.accent : C.accentDeep
+  if (c === 'sonntag') return C.accent
+  if (c === 'special') return C.accentDeep
+  return C.accentDeep
 }
 
 function getCategoryLabel(c: EventCategory): string {
-  return c === 'sonntag' ? 'Sonntagabend' : 'Gastauftritt'
+  if (c === 'sonntag') return 'Sonntagabend'
+  if (c === 'special') return 'Special'
+  return 'Gastauftritt'
 }
 
 function pad(n: number): string {
@@ -476,6 +484,10 @@ export default function ProgrammContent() {
           background: ${C.accentDeep};
         }
         .calendar__dot--gast { background: ${C.accentDeep}; }
+        .calendar__dot--special {
+          background: ${C.text};
+          box-shadow: 0 0 0 1.5px ${C.accent};
+        }
 
         .event-detail {
           margin-top: 24px;
@@ -816,7 +828,7 @@ export default function ProgrammContent() {
                       {evs.slice(0, 3).map((e) => (
                         <span
                           key={e.id}
-                          className={`calendar__dot${e.category === 'gastauftritt' ? ' calendar__dot--gast' : ''}`}
+                          className={`calendar__dot${e.category === 'gastauftritt' ? ' calendar__dot--gast' : ''}${e.category === 'special' ? ' calendar__dot--special' : ''}`}
                         />
                       ))}
                     </span>
