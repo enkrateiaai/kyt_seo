@@ -321,6 +321,34 @@ export default function ProgrammContent() {
   const cd = inThemaPhase
     ? (nextLive ? diffToCountdown(nextLive.date, now) : null)
     : (nextEvent ? diffToCountdown(nextEvent.dt, now) : null)
+
+  // Anzeige-Objekt fuer den Button: im Themen-Zeitraum das naechste Live,
+  // sonst das naechste Programm-Event.
+  const bannerEvent: {
+    eyebrow: string
+    category: string
+    title: string
+    meta: string
+    extraMeta?: string
+  } | null = (() => {
+    if (inThemaPhase) {
+      if (!nextLive) return null
+      return {
+        eyebrow: 'Nächstes Live',
+        category: 'Live-Stream',
+        title: 'Kundalini Yoga Live',
+        meta: `${formatFullDateDE(toISODate(nextLive.date))} · ${formatTime(nextLive.time)}`,
+        extraMeta: LIVE_SLOT_LABEL,
+      }
+    }
+    if (!nextEvent) return null
+    return {
+      eyebrow: 'Nächstes Event',
+      category: getCategoryLabel(nextEvent.ev.category),
+      title: nextEvent.ev.title,
+      meta: `${formatFullDateDE(nextEvent.ev.date)} · ${formatTime(nextEvent.ev.time)}`,
+    }
+  })()
   const kriyaCd = diffToCountdown(KRIYA_END, now)
   const kriyaElapsedDays = (() => {
     const ms = today.getTime() - KRIYA_START.getTime()
@@ -761,23 +789,16 @@ export default function ProgrammContent() {
           </p>
         </header>
 
-        {((inThemaPhase && nextLive) || (!inThemaPhase && nextEvent)) && cd && (
+        {bannerEvent && cd && (
           <div className="countdown-banner" aria-live="polite">
             <div>
               <p className="countdown-banner__eyebrow">
-                {inThemaPhase ? 'Nächstes Live' : 'Nächstes Event'}{' '}
-                · {inThemaPhase ? 'Live-Stream' : getCategoryLabel(nextEvent.ev.category)}
+                {bannerEvent.eyebrow} · {bannerEvent.category}
               </p>
-              <p className="countdown-banner__title">
-                {inThemaPhase ? 'Kundalini Yoga Live' : nextEvent.ev.title}
-              </p>
-              <p className="countdown-banner__meta">
-                {inThemaPhase
-                  ? `${formatFullDateDE(toISODate(nextLive.date))} · ${formatTime(nextLive.time)}`
-                  : `${formatFullDateDE(nextEvent.ev.date)} · ${formatTime(nextEvent.ev.time)}`}
-              </p>
-              {inThemaPhase && (
-                <p className="countdown-banner__meta">{LIVE_SLOT_LABEL}</p>
+              <p className="countdown-banner__title">{bannerEvent.title}</p>
+              <p className="countdown-banner__meta">{bannerEvent.meta}</p>
+              {bannerEvent.extraMeta && (
+                <p className="countdown-banner__meta">{bannerEvent.extraMeta}</p>
               )}
             </div>
             <div className="countdown-banner__ticker">
