@@ -46,10 +46,11 @@ const SUNDAY_NEW_TITLE = 'Raum für Stille, Reflektion und Neuausrichtung für 2
 const SUNDAY_NEW_DESCRIPTION =
   'Sonntagabend um 20:30 Uhr: Raum für Stille, Reflektion und Neuausrichtung für 2027. In der Stille entsteht das Neue.'
 
-// Der Hinweis-Button heisst vom 29.11.2026 bis zum 31.12.2026 "Naechstes
-// Thema" statt "Naechstes Event" (Catherine 2026-11-25).
+// Ab dem 29.11.2026 heisst der Hinweis "Aktuelles Thema" statt "Naechstes
+// Event" und der Countdown laeuft bis zum 31.12.2026 (Catherine 2026-11-25).
 const NEXT_THEMA_FROM_ISO = '2026-11-29'
 const NEXT_THEMA_TO_ISO = '2026-12-31'
+const THEMA_COUNTDOWN_END_ISO = '2026-12-31'
 
 /**
  * Baut alle Sonntags-Meditationen fuer ein Zeitfenster (Standard: 12 Monate
@@ -270,7 +271,19 @@ export default function ProgrammContent() {
     setSelected(null)
   }
 
-  const cd = nextEvent ? diffToCountdown(nextEvent.dt, now) : null
+  // Ab dem 29.11.2026 laeuft der Countdown nicht bis zum naechsten Termin,
+  // sondern bis zum Ende des Themen-Zeitraums am 31.12.2026
+  // (Catherine 2026-11-25).
+  const themaCountdownEnd = useMemo(() => {
+    const d = parseISODate(THEMA_COUNTDOWN_END_ISO)
+    d.setHours(23, 59, 59, 999)
+    return d
+  }, [])
+  const cd = nextEvent
+    ? (today >= parseISODate(NEXT_THEMA_FROM_ISO) && today <= parseISODate(THEMA_COUNTDOWN_END_ISO)
+        ? diffToCountdown(themaCountdownEnd, now)
+        : diffToCountdown(nextEvent.dt, now))
+    : null
   const kriyaCd = diffToCountdown(KRIYA_END, now)
   const kriyaElapsedDays = (() => {
     const ms = today.getTime() - KRIYA_START.getTime()
@@ -717,7 +730,7 @@ export default function ProgrammContent() {
               <p className="countdown-banner__eyebrow">
                 {nextEvent.ev.date >= NEXT_THEMA_FROM_ISO &&
                 nextEvent.ev.date <= NEXT_THEMA_TO_ISO
-                  ? 'Nächstes Thema'
+                  ? 'Aktuelles Thema'
                   : 'Nächstes Event'}{' '}
                 · {getCategoryLabel(nextEvent.ev.category)}
               </p>
